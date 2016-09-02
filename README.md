@@ -9,11 +9,15 @@ ucsf-vpn start --user=johndoe --pwd secrets
 
 If you have problems connect, you can confirm you are using the correct username and password via the USCF VPN web proxy (https://remote.ucsf.edu/).
 
+Alternatively to command-line options, the username and password can also be specified in file `~/.ucsfvpnrc`.  See `ucsf-vpn --help` for more details.
+
 
 ## Disconnect
 ```sh
 ucsf-vpn stop
 ```
+
+
 ## Usage
 ```sh
 ucsf-vpn --help
