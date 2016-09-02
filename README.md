@@ -8,6 +8,9 @@ $ ucsf-vpn start --user=johndoe --pwd secrets
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 RESULT: Connected via the UCSF VPN network (your public IP is 128.218.43.111)
+
+$ ucsf-vpn status
+Connected via the UCSF VPN network (your public IP is 128.218.43.111)
 ```
 
 If you have problems connect, you can confirm you are using the correct username and password via the USCF VPN web proxy (https://remote.ucsf.edu/).
@@ -15,16 +18,13 @@ If you have problems connect, you can confirm you are using the correct username
 Alternatively to command-line options, the username and password can also be specified in file `~/.ucsfvpnrc`.  See `ucsf-vpn --help` for more details.
 
 
-## Check connection status
-```sh
-$ ucsf-vpn status
-Connected via the UCSF VPN network (your public IP is 128.218.43.111)
-```
-
 ## Disconnect
 ```sh
 $ ucsf-vpn stop
 RESULT: Not connected to the UCSF VPN network (your public IP is 73.93.141.38)
+
+$ ucsf-vpn status
+Not connected to the UCSF VPN network (your public IP is 73.93.141.38)
 ```
 
 
