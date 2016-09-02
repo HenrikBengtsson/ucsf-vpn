@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+### Usage:
+###  ucsf-vpn (start|stop|status) [options]
+###
+### Commands:
+###  start          Connects to UCSF VPN
+###  stop           Disconnects from UCSF VPN
+###  status         Displays UCSF VPN connection status
+###
+### Options:
+###  --user         UCSF VPN username
+###  --pwd          UCSF VPN password
+###  --verbose      Verbose output
+###  --help         This help
+###  --version      Display version
+###
+### Any other options are passed to openconnect as is.
+###
+### Example:
+###  ucsf-vpn start --user=johndoe --pwd secrets
+###  ucsf-vpn stop
+###
+### User credentials:
+### The default values for --user and --pwd can be specified in
+### ~/.ucsfvpnrc using one <key>=<value> pair per line. For example:
+###
+###   user=johndoe
+###   pwd=secret
+###
+### For security, the ~/.ucsfvpnrc file should be readable only by
+### the user / owner of the file.  If not, then 'ucsf-vpn start' will
+### set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
+###
+### Requirements:
+### * sudo rights
+### * openconnect (>= 7.06)
+###
+### Troubleshooting:
+### You can verify your username and password at https://remote.ucsf.edu/.
+###
+### See also:
+### * https://remote.ucsf.edu/
+### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
+###
+### Version: 3.0.0
+### Copyright: Henrik Bengtsson (2016)
+### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
+call="$0 $*"
+
+function mecho() { echo "$@" 1>&2; }
+function mdebug() {
+    if [[ $debug == TRUE ]]; then
+        mecho "[DEBUG] $@";
+    fi
+}
+function vecho() {
+    if [[ $verbose == TRUE ]]; then
+        echo "$@";
+    fi
+}
+function usage() {
+    grep "^###" $0 | grep -v "^####" | cut -b 5-
+}
+function public_ip() {
+    mdebug "public_ip($*)"
+    if [[ $1 == "" ]]; then
+        mdebug "Querying http://ipinfo.io/ip for public IP:"
+        wget http://ipinfo.io/ip -qO -
+    else
+        echo $1;
+    fi
+}
+function is_connected() {
+    mdebug "is_connected($*)"
+    ip=$(public_ip $1);
+    mdebug "Public IP: $ip"
+    nslookup $ip | grep -q -F "ucsf.edu"
+    if [[ $? == 0 ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+function status() {
+    mdebug "status($*)"
+    connected=$1
+    ip=$2
+    if [[ $ip == "" ]]; then
+      vecho "- Retrieving public IP"
+      ip=$(public_ip $1)
+      vecho "  => $ip"
+      mdebug ip=$ip
+    fi
+    if [[ $connected == "" ]]; then
+      vecho "- Testing if IP $ip is a registered UCSF IP number"
+      connected=$(is_connected $ip)
+      vecho "  => $connected"
+      mdebug ip=$ip
+      mdebug connected=$connected
+    fi
+    if [[ $connected == "true" ]]; then
+        echo "Connected via the UCSF VPN network (your public IP is $ip)"
+    else
+        echo "Not connected to the UCSF VPN network (your public IP is $ip)"
+    fi
+}
+
+## Actions
+action=help
+
+## Options    
+force=FALSE
+debug=FALSE
+verbose=FALSE
+dryrun=FALSE
+authgroup="Single-Factor Pulse Clients"
+extras=
+
+## User credentials
+user=
+pwd=
+
+# Parse command-line options
+while [[ $# > 0 ]]; do
+    opt=$1
+    if test "$1" == "--help"; then
+        action=help
+    elif test "$1" == "--version"; then
+        action=version
+    elif test "$1" == "start"; then
+        action=start
+    elif test "$1" == "status"; then
+        action=status
+    elif test "$1" == "stop"; then
+        action=stop
+    elif test "$1" == "--debug"; then
+        debug=TRUE
+    elif test "$1" == "--verbose"; then
+        verbose=TRUE
+    elif test "$1" == "--force"; then
+        force=TRUE
+    elif test "$1" == "--dry-run"; then
+        dryrun=TRUE
+    elif test "$1" == "--user"; then
+        shift
+        user=$1
+    elif test "$1" == "--pwd"; then
+        shift
+        pwd=$1
+    else
+        extras="$extras $1"
+    fi
+    shift
+done
+
+if [[ $debug == TRUE ]]; then
+    mdebug "call: $call"
+    mdebug "action: $action"
+    mdebug "verbose: $verbose"
+    mdebug "force: $force"
+    mdebug "dryrun: $dryrun"
+    mdebug "extras: $extras"
+fi
+
+
+if [[ $action == "version" ]]; then
+    usage | grep -F "Version:" | sed 's/Version: //g'
+    exit 0
+elif [[ $action == "help" ]]; then
+    usage
+    exit 0
+elif [[ $action == "status" ]]; then
+    status
+    exit $?
+elif [[ $action == "start" ]]; then
+    if [[ $force == "false" ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected $ip)	
+      if [[ $connected = "true" ]]; then
+          echo "ERROR: $(status $connected $ip)"
+          exit 1
+      fi
+    fi
+
+    ## Load user credentials from file?
+    if [[ -f ~/.ucsfvpnrc ]]; then
+        ## Force file to be accessible only by user
+        chmod go-rwx ~/.ucsfvpnrc
+        source ~/.ucsfvpnrc
+    fi
+
+    ## openconnect options
+    opts="$extras"
+    opts="$opts --no-cert-check"
+    opts="$opts --juniper https://remote.ucsf.edu/openconnect"
+    opts="$opts --background"
+    
+    if [[ -n $user ]]; then
+        opts="$opts --user=$user"
+    fi
+    if [[ -n $pwd ]]; then
+        opts="$opts --passwd-on-stdin"
+    fi
+
+    if [[ ! $verbose == TRUE ]]; then
+        opts="$opts --quiet"
+    fi
+    
+    if [[ $debug == TRUE ]]; then
+        mdebug "call: $call"
+        mdebug "user: $user"
+        if [[ -n $pwd ]]; then
+            mdebug "pwd: <hidden>"
+        else
+            mdebug "pwd: <not specified>"
+        fi
+        mdebug "opts: $opts"
+    fi
+    
+    if [[ $dryrun == TRUE ]]; then
+        exit 0
+    fi
+    
+    if [[ -n $pwd ]]; then
+        sudo echo "$pwd" | sudo openconnect $opts --authgroup="$authgroup"
+    else
+        sudo openconnect $opts --authgroup="$authgroup"
+    fi
+
+    ip=$(public_ip)
+    connected=$(is_connected $ip)	
+    echo "RESULT: $(status $connected $ip)"
+elif [[ $action == "stop" ]]; then
+    if [[ $force == "false" ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected $ip)	
+      if [[ $connected == "false" ]]; then
+          echo "ERROR: $(status $connected $ip)"
+          exit 1
+      fi
+      mdebug "Public IP (before): $ip"
+    fi
+    
+    ## FIXME / SAFER: Identify PID to kill using
+    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
+    ## instead. That would at least only kill UCSF VPN connections
+    sudo pkill -INT openconnect 2> /dev/null
+    ip=$(public_ip)
+    connected=$(is_connected $ip)
+    echo "RESULT: $(status $connected $ip)"
+fi
