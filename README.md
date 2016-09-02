@@ -1,9 +1,14 @@
 # UCSF VPN client (Linux)
 
+The `uscf-vpn` script is a Linux-only tool for connecting to and disconnecting from the CUSF VPN server.  It is based on [the official UCSF instructions](https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf) provided by [UCSF IT](http://it.ucsf.edu/services/vpn).
+
 ## Connect
 ```sh
 ucsf-vpn start --user=johndoe --pwd secrets
 ```
+
+If you have problems connect, you can confirm you are using the correct username and password via the USCF VPN web proxy (https://remote.ucsf.edu/).
+
 
 ## Disconnect
 ```sh
