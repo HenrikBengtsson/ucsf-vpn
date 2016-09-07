@@ -5,6 +5,7 @@
 ### Commands:
 ###  start          Connects to UCSF VPN
 ###  stop           Disconnects from UCSF VPN
+###  restart        Disconnects and reconnects to UCSF VPN
 ###  status         Displays UCSF VPN connection status
 ###
 ### Options:
@@ -105,74 +106,7 @@ function status() {
     fi
 }
 
-## Actions
-action=help
-
-## Options    
-force=FALSE
-debug=FALSE
-verbose=FALSE
-dryrun=FALSE
-authgroup="Single-Factor Pulse Clients"
-extras=
-
-## User credentials
-user=
-pwd=
-
-# Parse command-line options
-while [[ $# > 0 ]]; do
-    opt=$1
-    if test "$1" == "--help"; then
-        action=help
-    elif test "$1" == "--version"; then
-        action=version
-    elif test "$1" == "start"; then
-        action=start
-    elif test "$1" == "status"; then
-        action=status
-    elif test "$1" == "stop"; then
-        action=stop
-    elif test "$1" == "--debug"; then
-        debug=TRUE
-    elif test "$1" == "--verbose"; then
-        verbose=TRUE
-    elif test "$1" == "--force"; then
-        force=TRUE
-    elif test "$1" == "--dry-run"; then
-        dryrun=TRUE
-    elif test "$1" == "--user"; then
-        shift
-        user=$1
-    elif test "$1" == "--pwd"; then
-        shift
-        pwd=$1
-    else
-        extras="$extras $1"
-    fi
-    shift
-done
-
-if [[ $debug == TRUE ]]; then
-    mdebug "call: $call"
-    mdebug "action: $action"
-    mdebug "verbose: $verbose"
-    mdebug "force: $force"
-    mdebug "dryrun: $dryrun"
-    mdebug "extras: $extras"
-fi
-
-
-if [[ $action == "version" ]]; then
-    usage | grep -F "Version:" | sed 's/Version: //g'
-    exit 0
-elif [[ $action == "help" ]]; then
-    usage
-    exit 0
-elif [[ $action == "status" ]]; then
-    status
-    exit $?
-elif [[ $action == "start" ]]; then
+function start() {
     if [[ $force == "false" ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)	
@@ -226,11 +160,9 @@ elif [[ $action == "start" ]]; then
     else
         sudo openconnect $opts --authgroup="$authgroup"
     fi
+}
 
-    ip=$(public_ip)
-    connected=$(is_connected $ip)	
-    echo "RESULT: $(status $connected $ip)"
-elif [[ $action == "stop" ]]; then
+function stop() {
     if [[ $force == "false" ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)	
@@ -240,12 +172,102 @@ elif [[ $action == "stop" ]]; then
       fi
       mdebug "Public IP (before): $ip"
     fi
-    
+
     ## FIXME / SAFER: Identify PID to kill using
     ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
     ## instead. That would at least only kill UCSF VPN connections
     sudo pkill -INT openconnect 2> /dev/null
+}
+
+function result() {
     ip=$(public_ip)
-    connected=$(is_connected $ip)
+    connected=$(is_connected $ip)	
     echo "RESULT: $(status $connected $ip)"
+}
+
+## Actions
+action=help
+
+## Options    
+force=FALSE
+debug=FALSE
+verbose=FALSE
+dryrun=FALSE
+authgroup="Single-Factor Pulse Clients"
+extras=
+
+## User credentials
+user=
+pwd=
+
+# Parse command-line options
+while [[ $# > 0 ]]; do
+    opt=$1
+    if test "$1" == "--help"; then
+        action=help
+    elif test "$1" == "--version"; then
+        action=version
+    elif test "$1" == "start"; then
+        action=start
+    elif test "$1" == "status"; then
+        action=status
+    elif test "$1" == "stop"; then
+        action=stop
+    elif test "$1" == "restart"; then
+        action=restart
+    elif test "$1" == "--debug"; then
+        debug=TRUE
+    elif test "$1" == "--verbose"; then
+        verbose=TRUE
+    elif test "$1" == "--force"; then
+        force=TRUE
+    elif test "$1" == "--dry-run"; then
+        dryrun=TRUE
+    elif test "$1" == "--user"; then
+        shift
+        user=$1
+    elif test "$1" == "--pwd"; then
+        shift
+        pwd=$1
+    else
+        extras="$extras $1"
+    fi
+    shift
+done
+
+if [[ $debug == TRUE ]]; then
+    mdebug "call: $call"
+    mdebug "action: $action"
+    mdebug "verbose: $verbose"
+    mdebug "force: $force"
+    mdebug "dryrun: $dryrun"
+    mdebug "extras: $extras"
+fi
+
+
+if [[ $action == "version" ]]; then
+    usage | grep -F "Version:" | sed 's/Version: //g'
+    exit 0
+elif [[ $action == "help" ]]; then
+    usage
+    exit 0
+elif [[ $action == "status" ]]; then
+    status
+    exit $?
+elif [[ $action == "start" ]]; then
+    start
+    res=$?
+    result
+    exit $res
+elif [[ $action == "stop" ]]; then
+    stop
+    res=$?
+    result
+    exit $res
+elif [[ $action == "restart" ]]; then
+    stop
+    start
+    res=$?
+    result
+    exit $res
 fi
