@@ -228,6 +228,7 @@ while [[ $# > 0 ]]; do
         action=stop
     elif test "$1" == "restart"; then
         action=restart
+	force=TRUE
     elif test "$1" == "--debug"; then
         debug=TRUE
     elif test "$1" == "--verbose"; then
