@@ -73,6 +73,15 @@ function public_ip() {
         echo $1;
     fi
 }
+function is_online() {
+    mdebug "is_online()"
+    ping -c 1 -W 1 8.8.8.8 > /dev/null
+    if [[ $? == 0 ]]; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
 function is_connected() {
     mdebug "is_connected($*)"
     ip=$(public_ip $1);
@@ -86,6 +95,10 @@ function is_connected() {
 }
 function status() {
     mdebug "status($*)"
+    if [[ $online == FALSE ]]; then
+      echo "No internet connection"
+      exit 1
+    fi
     connected=$1
     ip=$2
     if [[ $ip == "" ]]; then
@@ -109,7 +122,10 @@ function status() {
 }
 
 function start() {
-    if [[ $force == FALSE || $skip == TRUE ]]; then
+    if [[ $online == FALSE ]]; then
+      echo "ERROR: $(status $connected $ip)"
+      exit 1
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)	
       if [[ $connected = TRUE ]]; then
@@ -170,7 +186,9 @@ function start() {
 }
 
 function stop() {
-    if [[ $force == FALSE || $skip == TRUE ]]; then
+    if [[ $online == FALSE ]]; then
+      echo "WARNING: $(status $connected $ip)"
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)
       if [[ $connected == FALSE ]]; then
@@ -189,6 +207,7 @@ function stop() {
     ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
     ## instead. That would at least only kill UCSF VPN connections
     sudo pkill -INT openconnect 2> /dev/null
+    echo "RESULT: Killed local VPN process"
 }
 
 function result() {
@@ -200,7 +219,10 @@ function result() {
 ## Actions
 action=help
 
-## Options    
+## Status
+online=TRUE
+
+## Options
 force=FALSE
 skip=FALSE
 debug=FALSE
@@ -268,7 +290,13 @@ if [[ $action == "version" ]]; then
 elif [[ $action == "help" ]]; then
     usage
     exit 0
-elif [[ $action == "status" ]]; then
+fi
+
+## Check internet connection
+online=$(is_online)
+mdebug "online: $online"
+
+if [[ $action == "status" ]]; then
     status
     exit $?
 elif [[ $action == "start" ]]; then
