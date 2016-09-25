@@ -302,11 +302,14 @@ if [[ $action == "status" ]]; then
 elif [[ $action == "start" ]]; then
     start
     res=$?
+    online=$(is_online)
     result
     exit $res
 elif [[ $action == "stop" ]]; then
     stop
     res=$?
+    sleep 2
+    online=$(is_online)
     result
     exit $res
 elif [[ $action == "restart" ]]; then
@@ -315,6 +318,7 @@ elif [[ $action == "restart" ]]; then
     online=$(is_online)
     start
     res=$?
+    online=$(is_online)
     result
     exit $res
 fi
