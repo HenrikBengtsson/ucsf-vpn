@@ -1,8 +1,12 @@
 ucsf-vpn
 ========
 
-Version 1.0.0-9000 (2016-09-02)
-o ...
+Version 1.1.0 (2016-09-25)
+o Now 'ucsf-vpn' checks for working internet connection and
+  adjust accordingly.  For instance, 'ucsf-vpn restart' will not
+  try to infer public IP number if there is no internet connection
+  but instead it will just go ahead an restart the local VPN service.
+o Add 'ucsf-vpn restart'.
 
 
 Version 1.0.0 (2016-09-02)
