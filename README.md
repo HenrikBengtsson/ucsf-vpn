@@ -30,18 +30,21 @@ Not connected to the UCSF VPN network (your public IP is 73.93.141.38)
 
 ## Usage
 ```sh
-ucsf-vpn --help
+$ ucsf-vpn --help
 Usage:
- ucsf-vpn (start|stop|status) [options]
+ ucsf-vpn (start|restart|stop|status) [options]
 
 Commands:
  start          Connects to UCSF VPN
  stop           Disconnects from UCSF VPN
+ restart        Disconnects and reconnects to UCSF VPN
  status         Displays UCSF VPN connection status
 
 Options:
  --user         UCSF VPN username
  --pwd          UCSF VPN password
+ --skip         If already fullfilled, skip command
+ --force        Force running the command
  --verbose      Verbose output
  --help         This help
  --version      Display version
@@ -74,7 +77,7 @@ See also:
 * https://remote.ucsf.edu/
 * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 
-Version: 1.0.0
+Version: 1.1.0
 Copyright: Henrik Bengtsson (2016)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ```
