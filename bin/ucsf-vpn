@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 ### Usage:
-###  ucsf-vpn (start|stop|status) [options]
+###  ucsf-vpn (start|restart|stop|status) [options]
 ###
 ### Commands:
 ###  start          Connects to UCSF VPN
 ###  stop           Disconnects from UCSF VPN
+###  restart        Disconnects and reconnects to UCSF VPN
 ###  status         Displays UCSF VPN connection status
 ###
 ### Options:
 ###  --user         UCSF VPN username
 ###  --pwd          UCSF VPN password
+###  --skip         If already fullfilled, skip command
+###  --force        Force running the command
 ###  --verbose      Verbose output
 ###  --help         This help
 ###  --version      Display version
@@ -42,7 +45,7 @@
 ### * https://remote.ucsf.edu/
 ### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 ###
-### Version: 1.0.0
+### Version: 1.1.0
 ### Copyright: Henrik Bengtsson (2016)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 call="$0 $*"
@@ -70,19 +73,32 @@ function public_ip() {
         echo $1;
     fi
 }
+function is_online() {
+    mdebug "is_online()"
+    ping -c 1 -W 1 8.8.8.8 > /dev/null
+    if [[ $? == 0 ]]; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
 function is_connected() {
     mdebug "is_connected($*)"
     ip=$(public_ip $1);
     mdebug "Public IP: $ip"
     nslookup $ip | grep -q -F "ucsf.edu"
     if [[ $? == 0 ]]; then
-        echo "true"
+        echo TRUE
     else
-        echo "false"
+        echo FALSE
     fi
 }
 function status() {
     mdebug "status($*)"
+    if [[ $online == FALSE ]]; then
+      echo "No internet connection"
+      exit 1
+    fi
     connected=$1
     ip=$2
     if [[ $ip == "" ]]; then
@@ -98,87 +114,28 @@ function status() {
       mdebug ip=$ip
       mdebug connected=$connected
     fi
-    if [[ $connected == "true" ]]; then
+    if [[ $connected == TRUE ]]; then
         echo "Connected via the UCSF VPN network (your public IP is $ip)"
     else
         echo "Not connected to the UCSF VPN network (your public IP is $ip)"
     fi
 }
 
-## Actions
-action=help
-
-## Options    
-force=FALSE
-debug=FALSE
-verbose=FALSE
-dryrun=FALSE
-authgroup="Single-Factor Pulse Clients"
-extras=
-
-## User credentials
-user=
-pwd=
-
-# Parse command-line options
-while [[ $# > 0 ]]; do
-    opt=$1
-    if test "$1" == "--help"; then
-        action=help
-    elif test "$1" == "--version"; then
-        action=version
-    elif test "$1" == "start"; then
-        action=start
-    elif test "$1" == "status"; then
-        action=status
-    elif test "$1" == "stop"; then
-        action=stop
-    elif test "$1" == "--debug"; then
-        debug=TRUE
-    elif test "$1" == "--verbose"; then
-        verbose=TRUE
-    elif test "$1" == "--force"; then
-        force=TRUE
-    elif test "$1" == "--dry-run"; then
-        dryrun=TRUE
-    elif test "$1" == "--user"; then
-        shift
-        user=$1
-    elif test "$1" == "--pwd"; then
-        shift
-        pwd=$1
-    else
-        extras="$extras $1"
-    fi
-    shift
-done
-
-if [[ $debug == TRUE ]]; then
-    mdebug "call: $call"
-    mdebug "action: $action"
-    mdebug "verbose: $verbose"
-    mdebug "force: $force"
-    mdebug "dryrun: $dryrun"
-    mdebug "extras: $extras"
-fi
-
-
-if [[ $action == "version" ]]; then
-    usage | grep -F "Version:" | sed 's/Version: //g'
-    exit 0
-elif [[ $action == "help" ]]; then
-    usage
-    exit 0
-elif [[ $action == "status" ]]; then
-    status
-    exit $?
-elif [[ $action == "start" ]]; then
-    if [[ $force == "false" ]]; then
+function start() {
+    if [[ $online == FALSE ]]; then
+      echo "ERROR: $(status $connected $ip)"
+      exit 1
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)	
-      if [[ $connected = "true" ]]; then
-          echo "ERROR: $(status $connected $ip)"
-          exit 1
+      if [[ $connected = TRUE ]]; then
+          if [[ $skip = TRUE ]]; then
+              echo "SKIPPING: $(status $connected $ip)"
+              exit 0
+	  else
+              echo "ERROR: $(status $connected $ip)"
+              exit 1
+	  fi
       fi
     fi
 
@@ -226,26 +183,142 @@ elif [[ $action == "start" ]]; then
     else
         sudo openconnect $opts --authgroup="$authgroup"
     fi
+}
 
-    ip=$(public_ip)
-    connected=$(is_connected $ip)	
-    echo "RESULT: $(status $connected $ip)"
-elif [[ $action == "stop" ]]; then
-    if [[ $force == "false" ]]; then
+function stop() {
+    if [[ $online == FALSE ]]; then
+      echo "WARNING: $(status $connected $ip)"
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)	
-      if [[ $connected == "false" ]]; then
-          echo "ERROR: $(status $connected $ip)"
-          exit 1
+      connected=$(is_connected $ip)
+      if [[ $connected == FALSE ]]; then
+          if [[ $skip = TRUE ]]; then
+              echo "SKIPPING: $(status $connected $ip)"
+              exit 0
+          else
+              echo "ERROR: $(status $connected $ip)"
+              exit 1
+	  fi
       fi
       mdebug "Public IP (before): $ip"
     fi
-    
+
     ## FIXME / SAFER: Identify PID to kill using
     ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
     ## instead. That would at least only kill UCSF VPN connections
     sudo pkill -INT openconnect 2> /dev/null
+    echo "RESULT: Killed local VPN process"
+}
+
+function result() {
     ip=$(public_ip)
-    connected=$(is_connected $ip)
+    connected=$(is_connected $ip)	
     echo "RESULT: $(status $connected $ip)"
+}
+
+## Actions
+action=help
+
+## Status
+online=TRUE
+
+## Options
+force=FALSE
+skip=FALSE
+debug=FALSE
+verbose=FALSE
+dryrun=FALSE
+authgroup="Single-Factor Pulse Clients"
+extras=
+
+## User credentials
+user=
+pwd=
+
+# Parse command-line options
+while [[ $# > 0 ]]; do
+    opt=$1
+    if test "$1" == "--help"; then
+        action=help
+    elif test "$1" == "--version"; then
+        action=version
+    elif test "$1" == "start"; then
+        action=start
+    elif test "$1" == "status"; then
+        action=status
+    elif test "$1" == "stop"; then
+        action=stop
+    elif test "$1" == "restart"; then
+        action=restart
+	force=TRUE
+    elif test "$1" == "--debug"; then
+        debug=TRUE
+    elif test "$1" == "--verbose"; then
+        verbose=TRUE
+    elif test "$1" == "--force"; then
+        force=TRUE 
+    elif test "$1" == "--skip"; then
+        skip=TRUE
+   elif test "$1" == "--dry-run"; then
+        dryrun=TRUE
+    elif test "$1" == "--user"; then
+        shift
+        user=$1
+    elif test "$1" == "--pwd"; then
+        shift
+        pwd=$1
+    else
+        extras="$extras $1"
+    fi
+    shift
+done
+
+if [[ $debug == TRUE ]]; then
+    mdebug "call: $call"
+    mdebug "action: $action"
+    mdebug "verbose: $verbose"
+    mdebug "force: $force"
+    mdebug "skip: $skip"
+    mdebug "dryrun: $dryrun"
+    mdebug "extras: $extras"
+fi
+
+
+if [[ $action == "version" ]]; then
+    usage | grep -F "Version:" | sed 's/Version: //g'
+    exit 0
+elif [[ $action == "help" ]]; then
+    usage
+    exit 0
+fi
+
+## Check internet connection
+online=$(is_online)
+mdebug "online: $online"
+
+if [[ $action == "status" ]]; then
+    status
+    exit $?
+elif [[ $action == "start" ]]; then
+    start
+    res=$?
+    online=$(is_online)
+    result
+    exit $res
+elif [[ $action == "stop" ]]; then
+    stop
+    res=$?
+    sleep 2
+    online=$(is_online)
+    result
+    exit $res
+elif [[ $action == "restart" ]]; then
+    stop
+    sleep 2
+    online=$(is_online)
+    start
+    res=$?
+    online=$(is_online)
+    result
+    exit $res
 fi
