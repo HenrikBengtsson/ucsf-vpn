@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 ### Usage:
-###  ucsf-vpn (start|restart|stop|status) [options]
+###  ucsf-vpn (start|restart|stop|toggle|status) [options]
 ###
 ### Commands:
 ###  start          Connects to UCSF VPN
 ###  stop           Disconnects from UCSF VPN
 ###  restart        Disconnects and reconnects to UCSF VPN
+###  toggle         Connects to or disconnects from UCSF VPN
 ###  status         Displays UCSF VPN connection status
 ###
 ### Options:
@@ -251,6 +252,9 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "restart"; then
         action=restart
 	force=TRUE
+    elif test "$1" == "toggle"; then
+        action=toggle
+	force=TRUE
     elif test "$1" == "--debug"; then
         debug=TRUE
     elif test "$1" == "--verbose"; then
@@ -318,6 +322,25 @@ elif [[ $action == "restart" ]]; then
     online=$(is_online)
     start
     res=$?
+    online=$(is_online)
+    result
+    exit $res
+elif [[ $action == "toggle" ]]; then
+    if [[ $online == FALSE ]]; then
+      echo "ERROR: $(status $connected $ip)"
+      exit 1
+    fi
+
+    ip=$(public_ip)
+    connected=$(is_connected $ip)
+    if [[ $connected = TRUE ]]; then
+      stop
+      res=$?
+    else
+      start
+      res=$?
+    fi
+    sleep 2
     online=$(is_online)
     result
     exit $res
