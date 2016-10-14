@@ -1,6 +1,10 @@
 ucsf-vpn
 ========
 
+Version 1.2.0 (2016-10-14)
+o Add 'ucsf-vpn toggle' for quick toggling of the UCSF VPN connect.
+
+
 Version 1.1.0 (2016-09-25)
 o Now 'ucsf-vpn' checks for working internet connection and
   adjust accordingly.  For instance, 'ucsf-vpn restart' will not
