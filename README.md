@@ -32,12 +32,13 @@ Not connected to the UCSF VPN network (your public IP is 73.93.141.38)
 ```sh
 $ ucsf-vpn --help
 Usage:
- ucsf-vpn (start|restart|stop|status) [options]
+ ucsf-vpn (start|restart|stop|toggle|status) [options]
 
 Commands:
  start          Connects to UCSF VPN
  stop           Disconnects from UCSF VPN
  restart        Disconnects and reconnects to UCSF VPN
+ toggle         Connects to or disconnects from UCSF VPN
  status         Displays UCSF VPN connection status
 
 Options:
@@ -77,7 +78,7 @@ See also:
 * https://remote.ucsf.edu/
 * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 
-Version: 1.1.0
+Version: 1.1.0-9000
 Copyright: Henrik Bengtsson (2016)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ```
