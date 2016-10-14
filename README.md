@@ -78,7 +78,7 @@ See also:
 * https://remote.ucsf.edu/
 * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 
-Version: 1.1.0-9000
+Version: 1.2.0
 Copyright: Henrik Bengtsson (2016)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ```
