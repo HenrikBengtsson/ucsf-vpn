@@ -316,6 +316,7 @@ if [[ $action == "status" ]]; then
 elif [[ $action == "start" ]]; then
     start
     res=$?
+    sleep 2
     online=$(is_online)
     result
     exit $res
