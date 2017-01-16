@@ -64,9 +64,14 @@ function vecho() {
         echo "$@";
     fi
 }
+
+function version() {
+    grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
+}
+
 function help() {
-    res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5-)
-    if [[ -n "${UCSF_DIR}" ]]; then
+    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5-)
+    if [[ ${UCSF_TOOLS} == true ]]; then
         printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/'
     else
         printf '%s\n' "${res[@]}"
@@ -306,7 +311,7 @@ fi
 
 
 if [[ $action == "version" ]]; then
-    help | grep -F "Version:" | sed 's/Version: //g'
+    version
     exit 0
 elif [[ $action == "help" ]]; then
     help 
