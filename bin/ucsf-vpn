@@ -37,9 +37,10 @@
 ### the user / owner of the file.  If not, then 'ucsf-vpn start' will
 ### set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 ###
-### Requirements:
+### 
+### Installed dependencies and requirements:
 ### * sudo rights
-### * openconnect (>= 7.06)
+### * openconnect {{openconnect_version}} (requires >= 7.06)
 ###
 ### Troubleshooting:
 ### You can verify your username and password at https://remote.ucsf.edu/.
@@ -69,13 +70,21 @@ function version() {
     grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
 }
 
-function help() {
-    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5-)
-    if [[ ${UCSF_TOOLS} == true ]]; then
-        printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/'
+function openconnect_version() {
+    res=$(openconnect --version 2> /dev/null)
+    if [[ $? -ne 0 ]]; then
+	echo "<PLEASE INSTALL>"
     else
-        printf '%s\n' "${res[@]}"
+        printf '%s\n' "${res[@]}" | grep -F version | sed -E 's/[[:alpha:] ]+//'
     fi
+}
+
+function help() {
+    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+    if [[ ${UCSF_TOOLS} == true ]]; then
+        res=$(printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/')
+    fi
+    printf '%s\n' "${res[@]}"
 }
 function public_ip() {
     mdebug "public_ip($*)"
