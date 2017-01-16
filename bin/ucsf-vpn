@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+### Connect and Disconnect to the UCSF VPN
+###
 ### Usage:
 ###  ucsf-vpn (start|restart|stop|toggle|status) [options]
 ###
@@ -47,7 +49,7 @@
 ### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 ###
 ### Version: 1.2.0-9000
-### Copyright: Henrik Bengtsson (2016)
+### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 call="$0 $*"
 
@@ -62,8 +64,13 @@ function vecho() {
         echo "$@";
     fi
 }
-function usage() {
-    grep "^###" $0 | grep -v "^####" | cut -b 5-
+function help() {
+    res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5-)
+    if [[ -n "${UCSF_DIR}" ]]; then
+        printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/'
+    else
+        printf '%s\n' "${res[@]}"
+    fi
 }
 function public_ip() {
     mdebug "public_ip($*)"
@@ -299,10 +306,10 @@ fi
 
 
 if [[ $action == "version" ]]; then
-    usage | grep -F "Version:" | sed 's/Version: //g'
+    help | grep -F "Version:" | sed 's/Version: //g'
     exit 0
 elif [[ $action == "help" ]]; then
-    usage
+    help 
     exit 0
 fi
 
