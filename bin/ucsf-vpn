@@ -194,7 +194,7 @@ function start() {
     if [[ ! $verbose == TRUE ]]; then
         opts="$opts --quiet"
     fi
-    
+
     if [[ $debug == TRUE ]]; then
         mdebug "call: $call"
         mdebug "user: $user"
@@ -204,6 +204,7 @@ function start() {
             mdebug "pwd: <not specified>"
         fi
         mdebug "opts: $opts"
+        mdebug "call: sudo openconnect $opts --authgroup=\"$authgroup\""
     fi
     
     if [[ $dryrun == TRUE ]]; then
