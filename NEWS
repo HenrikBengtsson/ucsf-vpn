@@ -1,6 +1,10 @@
 ucsf-vpn
 ========
 
+Version 1.2.0-9000 (2017-01-16)
+o 'ucsf-vpn --help' reports on the OpenConnect version available.
+
+
 Version 1.2.0 (2016-10-14)
 o Add 'ucsf-vpn toggle' for quick toggling of the UCSF VPN connect.
 
