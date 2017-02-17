@@ -31,8 +31,10 @@ Not connected to the UCSF VPN network (your public IP is 73.93.141.38)
 ## Usage
 ```sh
 $ ucsf-vpn --help
+Connect and Disconnect to the UCSF VPN
+
 Usage:
- ucsf-vpn (start|restart|stop|toggle|status) [options]
+ ucsf vpn (start|restart|stop|toggle|status) [options]
 
 Commands:
  start          Connects to UCSF VPN
@@ -44,6 +46,7 @@ Commands:
 Options:
  --user         UCSF VPN username
  --pwd          UCSF VPN password
+ --server       VPN server (defaults to remote.ucsf.edu)
  --skip         If already fullfilled, skip command
  --force        Force running the command
  --verbose      Verbose output
@@ -53,8 +56,8 @@ Options:
 Any other options are passed to openconnect as is.
 
 Example:
- ucsf-vpn start --user=johndoe --pwd secrets
- ucsf-vpn stop
+ ucsf vpn start --user=johndoe --pwd secrets
+ ucsf vpn stop
 
 User credentials:
 The default values for --user and --pwd can be specified in
@@ -64,12 +67,13 @@ The default values for --user and --pwd can be specified in
   pwd=secret
 
 For security, the ~/.ucsfvpnrc file should be readable only by
-the user / owner of the file.  If not, then 'ucsf-vpn start' will
+the user / owner of the file.  If not, then 'ucsf vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 
-Requirements:
+
+Installed dependencies and requirements:
 * sudo rights
-* openconnect (>= 7.06)
+* openconnect 7.06 (requires >= 7.06)
 
 Troubleshooting:
 You can verify your username and password at https://remote.ucsf.edu/.
@@ -78,8 +82,8 @@ See also:
 * https://remote.ucsf.edu/
 * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 
-Version: 1.2.0
-Copyright: Henrik Bengtsson (2016)
+Version: 1.3.0
+Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ```
 
