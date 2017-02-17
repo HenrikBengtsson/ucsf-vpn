@@ -14,6 +14,7 @@
 ### Options:
 ###  --user         UCSF VPN username
 ###  --pwd          UCSF VPN password
+###  --server       VPN server (defaults to remote.ucsf.edu)
 ###  --skip         If already fullfilled, skip command
 ###  --force        Force running the command
 ###  --verbose      Verbose output
@@ -49,7 +50,7 @@
 ### * https://remote.ucsf.edu/
 ### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 ###
-### Version: 1.2.0-9000
+### Version: 1.2.1-9000
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 call="$0 $*"
@@ -181,7 +182,7 @@ function start() {
     ## openconnect options
     opts="$extras"
     opts="$opts --no-cert-check"
-    opts="$opts --juniper https://remote.ucsf.edu/openconnect"
+    opts="$opts --juniper https://${server}/openconnect"
     opts="$opts --background"
     
     if [[ -n $user ]]; then
@@ -237,7 +238,7 @@ function stop() {
     fi
 
     ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
+    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
     ## instead. That would at least only kill UCSF VPN connections
     sudo pkill -INT openconnect 2> /dev/null
     echo "RESULT: Killed local VPN process"
@@ -256,6 +257,7 @@ action=help
 online=TRUE
 
 ## Options
+server=remote.ucsf.edu
 force=FALSE
 skip=FALSE
 debug=FALSE
@@ -295,8 +297,11 @@ while [[ $# > 0 ]]; do
         force=TRUE 
     elif test "$1" == "--skip"; then
         skip=TRUE
-   elif test "$1" == "--dry-run"; then
+    elif test "$1" == "--dry-run"; then
         dryrun=TRUE
+    elif test "$1" == "--server"; then
+        shift
+        server=$1
     elif test "$1" == "--user"; then
         shift
         user=$1
@@ -312,13 +317,13 @@ done
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
+    mdebug "VPN server: $server"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
     mdebug "dryrun: $dryrun"
     mdebug "extras: $extras"
 fi
-
 
 if [[ $action == "version" ]]; then
     version

@@ -1,21 +1,34 @@
 ucsf-vpn
 ========
 
-Version 1.2.0-9000 (2017-01-16)
-o 'ucsf-vpn --help' reports on the OpenConnect version available.
+Version 1.2.0-9000 (2017-02-16)
+
+NEW FEATURES:
+
+ o Add option --server <server> to override the default VPN specify.
+
+ o 'ucsf-vpn --help' reports on the OpenConnect version available.
 
 
 Version 1.2.0 (2016-10-14)
-o Add 'ucsf-vpn toggle' for quick toggling of the UCSF VPN connect.
+
+NEW FEATURES:
+
+ o Add 'ucsf-vpn toggle' for quick toggling of the UCSF VPN connect.
 
 
 Version 1.1.0 (2016-09-25)
-o Now 'ucsf-vpn' checks for working internet connection and
-  adjust accordingly.  For instance, 'ucsf-vpn restart' will not
-  try to infer public IP number if there is no internet connection
-  but instead it will just go ahead an restart the local VPN service.
-o Add 'ucsf-vpn restart'.
+
+NEW FEATURES:
+
+ o Now 'ucsf-vpn' checks for working internet connection and
+   adjust accordingly.  For instance, 'ucsf-vpn restart' will not
+   try to infer public IP number if there is no internet connection
+   but instead it will just go ahead an restart the local VPN service.
+   
+ o Add 'ucsf-vpn restart'.
 
 
 Version 1.0.0 (2016-09-02)
-o Public release.
+
+ o First public release.
