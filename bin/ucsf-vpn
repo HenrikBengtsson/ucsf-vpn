@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+### Connect and Disconnect to the UCSF VPN
+###
 ### Usage:
 ###  ucsf-vpn (start|restart|stop|toggle|status) [options]
 ###
@@ -12,6 +14,7 @@
 ### Options:
 ###  --user         UCSF VPN username
 ###  --pwd          UCSF VPN password
+###  --server       VPN server (defaults to remote.ucsf.edu)
 ###  --skip         If already fullfilled, skip command
 ###  --force        Force running the command
 ###  --verbose      Verbose output
@@ -35,9 +38,10 @@
 ### the user / owner of the file.  If not, then 'ucsf-vpn start' will
 ### set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 ###
-### Requirements:
+### 
+### Installed dependencies and requirements:
 ### * sudo rights
-### * openconnect (>= 7.06)
+### * openconnect {{openconnect_version}} (requires >= 7.06)
 ###
 ### Troubleshooting:
 ### You can verify your username and password at https://remote.ucsf.edu/.
@@ -46,8 +50,8 @@
 ### * https://remote.ucsf.edu/
 ### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
 ###
-### Version: 1.2.0
-### Copyright: Henrik Bengtsson (2016)
+### Version: 1.3.0
+### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 call="$0 $*"
 
@@ -62,8 +66,26 @@ function vecho() {
         echo "$@";
     fi
 }
-function usage() {
-    grep "^###" $0 | grep -v "^####" | cut -b 5-
+
+function version() {
+    grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
+}
+
+function openconnect_version() {
+    res=$(openconnect --version 2> /dev/null)
+    if [[ $? -ne 0 ]]; then
+	echo "<PLEASE INSTALL>"
+    else
+        printf '%s\n' "${res[@]}" | grep -F version | sed -E 's/[[:alpha:] ]+//'
+    fi
+}
+
+function help() {
+    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+    if [[ ${UCSF_TOOLS} == true ]]; then
+        res=$(printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/')
+    fi
+    printf '%s\n' "${res[@]}"
 }
 function public_ip() {
     mdebug "public_ip($*)"
@@ -160,7 +182,7 @@ function start() {
     ## openconnect options
     opts="$extras"
     opts="$opts --no-cert-check"
-    opts="$opts --juniper https://remote.ucsf.edu/openconnect"
+    opts="$opts --juniper https://${server}/openconnect"
     opts="$opts --background"
     
     if [[ -n $user ]]; then
@@ -173,7 +195,7 @@ function start() {
     if [[ ! $verbose == TRUE ]]; then
         opts="$opts --quiet"
     fi
-    
+
     if [[ $debug == TRUE ]]; then
         mdebug "call: $call"
         mdebug "user: $user"
@@ -183,6 +205,7 @@ function start() {
             mdebug "pwd: <not specified>"
         fi
         mdebug "opts: $opts"
+        mdebug "call: sudo openconnect $opts --authgroup=\"$authgroup\""
     fi
     
     if [[ $dryrun == TRUE ]]; then
@@ -215,7 +238,7 @@ function stop() {
     fi
 
     ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://remote.ucsf.edu/openconnect"
+    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
     ## instead. That would at least only kill UCSF VPN connections
     sudo pkill -INT openconnect 2> /dev/null
     echo "RESULT: Killed local VPN process"
@@ -234,6 +257,7 @@ action=help
 online=TRUE
 
 ## Options
+server=remote.ucsf.edu
 force=FALSE
 skip=FALSE
 debug=FALSE
@@ -273,8 +297,11 @@ while [[ $# > 0 ]]; do
         force=TRUE 
     elif test "$1" == "--skip"; then
         skip=TRUE
-   elif test "$1" == "--dry-run"; then
+    elif test "$1" == "--dry-run"; then
         dryrun=TRUE
+    elif test "$1" == "--server"; then
+        shift
+        server=$1
     elif test "$1" == "--user"; then
         shift
         user=$1
@@ -290,6 +317,7 @@ done
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
+    mdebug "VPN server: $server"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
@@ -297,12 +325,11 @@ if [[ $debug == TRUE ]]; then
     mdebug "extras: $extras"
 fi
 
-
 if [[ $action == "version" ]]; then
-    usage | grep -F "Version:" | sed 's/Version: //g'
+    version
     exit 0
 elif [[ $action == "help" ]]; then
-    usage
+    help 
     exit 0
 fi
 
@@ -316,19 +343,19 @@ if [[ $action == "status" ]]; then
 elif [[ $action == "start" ]]; then
     start
     res=$?
+    sleep 1
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "stop" ]]; then
     stop
     res=$?
-    sleep 2
+    sleep 1
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "restart" ]]; then
     stop
-    sleep 2
     online=$(is_online)
     start
     res=$?

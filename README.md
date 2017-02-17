@@ -83,6 +83,22 @@ Copyright: Henrik Bengtsson (2016)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ```
 
+
+## Installation
+
+```
+$ mkdir ~/bin
+$ cd bin
+$ wget https://raw.githubusercontent.com/UCSF-CBC/ucsf-vpn/master/bin/ucsf-vpn
+$ chmod ugo+x ucsf-vpn
+```
+
+You also need `openconnect` (>= 7.06) on you system, e.g.
+
+* Debian / Ubuntu: `sudo apt install openconnect`
+* Centos / RHEL: `sudo yum install openconnect`
+
+
 ## See also
 * https://remote.ucsf.edu/
 * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
