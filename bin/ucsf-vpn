@@ -15,7 +15,7 @@
 ###  --user         UCSF VPN username
 ###  --pwd          UCSF VPN password
 ###  --server       VPN server (defaults to remote.ucsf.edu)
-###  --skip         If already fullfilled, skip command
+###  --skip         If already fulfilled, skip command
 ###  --force        Force running the command
 ###  --verbose      Verbose output
 ###  --help         This help
