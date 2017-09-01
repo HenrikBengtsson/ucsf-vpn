@@ -1,6 +1,8 @@
-# UPDATE September 2017
+# UPDATE 2017-09-01
 
 As of end of August 2017, access to UCSF VPN via OpenConnect is broken (and probably no longer supported).  Because of this, **the current implementation of `ucsf-vpn` no longer works**.  Instead, the officially recommended method to connect to the UCSF VPN on Linux is via the (closed-source) [Junos Pulse Secure client](https://software.ucsf.edu/content/vpn-virtual-private-network) ([access via browser-based UCSF VPN](https://remote.ucsf.edu/content/,DanaInfo=software.ucsf.edu,SSL,SSO=U+vpn-virtual-private-network)), which is available for Debian and RedHat Linux distributions.
+
+There are some very brief [installation notes](https://github.com/HenrikBengtsson/ucsf-vpn/wiki/Notes) on the wiki.  Please feel free to contribute whatever you think is useful.
 
 The goal is to update this `ucsf-vpn` tool to support Pulse Secure from the command line, iff possible.
 
