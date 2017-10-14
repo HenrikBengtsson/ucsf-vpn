@@ -5,11 +5,13 @@
 ###  ucsf-vpn (start|restart|stop|toggle|status) [options]
 ###
 ### Commands:
+###  start-gui      Open the Pulse Secure GUI
 ###  start          Connects to UCSF VPN
 ###  stop           Disconnects from UCSF VPN
 ###  restart        Disconnects and reconnects to UCSF VPN
 ###  toggle         Connects to or disconnects from UCSF VPN
 ###  status         Displays UCSF VPN connection status
+###  details        Displays connection details
 ###
 ### Options:
 ###  --user         UCSF VPN username
@@ -21,7 +23,7 @@
 ###  --help         This help
 ###  --version      Display version
 ###
-### Any other options are passed to openconnect as is.
+### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
 ###  ucsf-vpn start --user=johndoe --pwd secrets
@@ -39,21 +41,27 @@
 ### set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 ###
 ### 
-### Installed dependencies and requirements:
+### Requirements & installed dependencies:
+### * Ports 4242 (UDP) and 443 (TCP)
 ### * sudo rights
-### * openconnect {{openconnect_version}} (requires >= 7.06)
+### * Junos Pulse Secure client {{pulsesvc_version}} (requires >= 5.3)
 ###
 ### Troubleshooting:
 ### You can verify your username and password at https://remote.ucsf.edu/.
 ###
 ### See also:
 ### * https://remote.ucsf.edu/
-### * https://it.ucsf.edu/sites/it.ucsf.edu/files/installopenconnect.pdf
+### * https://software.ucsf.edu/content/vpn-virtual-private-network
 ###
-### Version: 1.3.0-9000
+### Version: 1.9.0-9000
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 call="$0 $*"
+
+export PULSEDIR=/usr/local/pulse
+export PATH="${PULSEDIR}:${PATH}"
+export LD_LIBRARY_PATH="${PULSEDIR}:${LD_LIBRARY_PATH}"
+export PUBLIC_INFO=
 
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
@@ -71,31 +79,51 @@ function version() {
     grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
 }
 
-function openconnect_version() {
-    res=$(openconnect --version 2> /dev/null)
+function pulsesvc_version() {
+    res=$(pulsesvc --version 2> /dev/null)
     if [[ $? -ne 0 ]]; then
 	echo "<PLEASE INSTALL>"
     else
-        printf '%s\n' "${res[@]}" | grep -F version | sed -E 's/[[:alpha:] ]+//'
+        printf '%s\n' "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
     fi
 }
 
 function help() {
-    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
         res=$(printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/')
     fi
     printf '%s\n' "${res[@]}"
 }
+
+function connection_details() {
+    mdebug "connection_details($*)"
+    if [[ -z ${PUBLIC_INFO} || "$1" == "--force" ]]; then
+      mdebug "Querying http://ipinfo.io/ip for public IP:"
+      export PUBLIC_INFO=$(wget http://ipinfo.io/json -qO -)
+    fi
+    mdebug "Public connection information: $PUBLIC_INFO"
+    if [[ -z ${PUBLIC_INFO} ]]; then
+        mdebug "ERROR: Failed to infer public IP information"
+	exit 1
+    fi
+    echo "$PUBLIC_INFO"
+}
+
 function public_ip() {
     mdebug "public_ip($*)"
     if [[ $1 == "" ]]; then
-        mdebug "Querying http://ipinfo.io/ip for public IP:"
-        wget http://ipinfo.io/ip -qO -
+        connection_details | grep -F "ip" | sed -E 's/[ ",]//g' | cut -d : -f 2
     else
-        echo $1;
+        echo $1
     fi
 }
+
+function public_hostname() {
+    mdebug "public_hostname($*)"
+    connection_details | grep -F "hostname" | sed -E 's/[ ",]//g' | cut -d : -f 2
+}
+
 function is_online() {
     mdebug "is_online()"
     ping -c 1 -W 1 8.8.8.8 > /dev/null
@@ -107,7 +135,7 @@ function is_online() {
 }
 
 function is_running() {
-    ps -C openconnect > /dev/null
+    ps -C pulsesvc > /dev/null
     if [[ $? == 0 ]]; then
         echo TRUE
     else
@@ -117,9 +145,7 @@ function is_running() {
 
 function is_connected() {
     mdebug "is_connected($*)"
-    ip=$(public_ip $1);
-    mdebug "Public IP: $ip"
-    nslookup $ip | grep -q -F "ucsf.edu"
+    connection_details | grep -q -E "hostname.*[.](ucsf[.]edu|ucsfmedicalcenter[.]org)"
     if [[ $? == 0 ]]; then
         echo TRUE
     else
@@ -148,10 +174,40 @@ function status() {
       mdebug connected=$connected
     fi
     if [[ $connected == TRUE ]]; then
-        echo "Connected via the UCSF VPN network (your public IP is $ip)"
+        echo "Connected to the UCSF network [$(public_hostname) ($(public_ip))]"
     else
-        echo "Not connected to the UCSF VPN network (your public IP is $ip)"
+        echo "Not connected to the UCSF network [$(public_hostname) ($(public_ip))]"
     fi
+}
+
+function start_gui() {
+    if [[ $online == FALSE ]]; then
+      echo "ERROR: $(status $connected $ip)"
+      exit 1
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected $ip)	
+      if [[ $connected == TRUE ]]; then
+          if [[ $skip == TRUE ]]; then
+              echo "SKIPPING: $(status $connected $ip)"
+              exit 0
+	  else
+              echo "ERROR: $(status $connected $ip)"
+              exit 1
+	  fi
+      fi
+    fi
+
+    if [[ $debug == TRUE ]]; then
+        mdebug "call: $call"
+        mdebug "call: pulseUi"
+    fi
+    
+    if [[ $dryrun == TRUE ]]; then
+        exit 0
+    fi
+    
+    pulseUi &
 }
 
 function start() {
@@ -179,21 +235,21 @@ function start() {
         source ~/.ucsfvpnrc
     fi
 
-    ## openconnect options
+    ## Pulse Secure options
     opts="$extras"
-    opts="$opts --no-cert-check"
-    opts="$opts --juniper https://${server}/openconnect"
-    opts="$opts --background"
+    opts="$opts -h ${server}"
+    realm="Single-Factor Pulse Clients"
     
     if [[ -n $user ]]; then
-        opts="$opts --user=$user"
+        opts="-u $user $opts"
     fi
-    if [[ -n $pwd ]]; then
-        opts="$opts --passwd-on-stdin"
-    fi
-
+    
+#    if [[ -n $pwd ]]; then
+#        opts="-p $pwd $opts"
+#    fi
+    
     if [[ ! $verbose == TRUE ]]; then
-        opts="$opts --quiet"
+        opts="-log-level 5 $opts"
     fi
 
     if [[ $debug == TRUE ]]; then
@@ -205,7 +261,7 @@ function start() {
             mdebug "pwd: <not specified>"
         fi
         mdebug "opts: $opts"
-        mdebug "call: sudo openconnect $opts --authgroup=\"$authgroup\""
+        mdebug "call: pulsesvc $opts -r \"${realm}\""
     fi
     
     if [[ $dryrun == TRUE ]]; then
@@ -213,9 +269,9 @@ function start() {
     fi
     
     if [[ -n $pwd ]]; then
-        sudo echo "$pwd" | sudo openconnect $opts --authgroup="$authgroup"
+        echo "$pwd" | pulsesvc $opts -r "${realm}" | grep -viF password &
     else
-        sudo openconnect $opts --authgroup="$authgroup"
+        pulsesvc $opts -r "${realm}" &
     fi
 }
 
@@ -238,9 +294,9 @@ function stop() {
     fi
 
     ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
+    ##   ps -ef | grep -F "pulsesvc"
     ## instead. That would at least only kill UCSF VPN connections
-    sudo pkill -INT openconnect 2> /dev/null
+    sudo pkill -INT pulsesvc 2> /dev/null
     echo "RESULT: Killed local VPN process"
 }
 
@@ -277,10 +333,14 @@ while [[ $# > 0 ]]; do
         action=help
     elif test "$1" == "--version"; then
         action=version
+    elif test "$1" == "start-gui"; then
+        action=start-gui
     elif test "$1" == "start"; then
         action=start
     elif test "$1" == "status"; then
         action=status
+    elif test "$1" == "details"; then
+        action=details
     elif test "$1" == "stop"; then
         action=stop
     elif test "$1" == "restart"; then
@@ -340,10 +400,17 @@ mdebug "online: $online"
 if [[ $action == "status" ]]; then
     status
     exit $?
+elif [[ $action == "details" ]]; then
+    connection_details
+    exit $?
+elif [[ $action == "start-gui" ]]; then
+    start_gui
+    res=$?
+    exit $res
 elif [[ $action == "start" ]]; then
     start
     res=$?
-    sleep 1
+    sleep 4
     online=$(is_online)
     result
     exit $res
