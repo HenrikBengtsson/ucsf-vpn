@@ -423,28 +423,26 @@ elif [[ $action == "stop" ]]; then
     exit $res
 elif [[ $action == "restart" ]]; then
     stop
+    sleep 1
     online=$(is_online)
     start
+    sleep 4
     res=$?
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "toggle" ]]; then
-    running=$(is_running)
-    mdebug "running: $running"
-    if [[ $running == FALSE && $online == FALSE ]]; then
-      echo "ERROR: $(status $connected $ip)"
-      exit 1
-    fi
-
-    if [[ $running == TRUE ]]; then
-      stop
+    connected=$(is_connected $ip)
+    mdebug "connected: $connected"
+    if [[ $connected == FALSE ]]; then
+      start
+      sleep 4
       res=$?
     else
-      start
+      stop
+      sleep 1
       res=$?
     fi
-    sleep 2
     online=$(is_online)
     result
     exit $res
