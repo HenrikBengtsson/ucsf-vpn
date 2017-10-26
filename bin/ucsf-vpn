@@ -42,9 +42,8 @@
 ###
 ### 
 ### Requirements & installed dependencies:
-### * Ports 4242 (UDP) and 443 (TCP)
-### * sudo rights
 ### * Junos Pulse Secure client {{pulsesvc_version}} (requires >= 5.3)
+### * Ports 4242 (UDP) and 443 (TCP)
 ###
 ### Troubleshooting:
 ### You can verify your username and password at https://remote.ucsf.edu/.
@@ -293,10 +292,8 @@ function stop() {
       mdebug "Public IP (before): $ip"
     fi
 
-    ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "pulsesvc"
-    ## instead. That would at least only kill UCSF VPN connections
-    sudo pkill -INT pulsesvc 2> /dev/null
+    ## "Kill all running ncsvc services"
+    pulsesvc -Kill
     echo "RESULT: Killed local VPN process"
 }
 
