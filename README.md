@@ -83,6 +83,7 @@ its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
 * Ports 4242 (UDP) and 443 (TCP)
+* `curl`
 * No need for sudo rights to run :)
 
 Troubleshooting:

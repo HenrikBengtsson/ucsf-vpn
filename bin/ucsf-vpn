@@ -43,6 +43,7 @@
 ### Requirements:
 ### * Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
 ### * Ports 4242 (UDP) and 443 (TCP)
+### * `curl`
 ### * No need for sudo rights to run :)
 ###
 ### Troubleshooting:
