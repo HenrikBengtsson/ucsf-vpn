@@ -23,7 +23,7 @@ $ ucsf vpn details
 }
 ```
 
-If you have problems connect using `ucsf-vpn`, make sure you are using the correct username and password, e.g. do they work at UCSF VPN web proxy (https://remote.ucsf.edu/)?
+If you have problems connect using `ucsf-vpn`, make sure you are using the correct username and password, e.g. by testing to log in via the [UCSF VPN web proxy](https://remote.ucsf.edu/).
 
 Alternatively to command-line options, the username and password can also be specified in file `~/.ucsfvpnrc`.  See `ucsf-vpn --help` for more details.
 
@@ -136,9 +136,3 @@ your public internet connection.
 
 The software does _not_ collect or attempt to collect any of your UCSF
 credentials.
-
-
-
-## See also
-
-* https://remote.ucsf.edu/
