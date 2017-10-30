@@ -93,7 +93,6 @@ Troubleshooting:
 See also:
 * https://remote.ucsf.edu/
 * https://software.ucsf.edu/content/vpn-virtual-private-network
-  http://software.ucsf.edu/content/vpn-virtual-private-network
 Version: 2.0.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
