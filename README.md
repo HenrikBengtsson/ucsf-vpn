@@ -132,7 +132,5 @@ Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
 
 The `ucsf-vpn` software uses the https://ipinfo.io/ service to infer whether
 a VPN connection is established or not, and to provide you with details on
-your public internet connection.
-
-The software does _not_ collect or attempt to collect any of your UCSF
+your public internet connection.  The software does _not_ collect or attempt to collect any of your UCSF
 credentials.
