@@ -107,7 +107,7 @@ code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
 "install" it, just do
 
 ```
-$ curl -O https://raw.githubusercontent.com/UCSF-CBC/ucsf-vpn/master/bin/ucsf-vpn
+$ curl -O https://raw.githubusercontent.com/HenrikBengtsson/ucsf-vpn/master/bin/ucsf-vpn
 $ chmod ugo+x ucsf-vpn
 ```
 
