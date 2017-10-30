@@ -83,7 +83,7 @@ its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
 * Ports 4242 (UDP) and 443 (TCP)
-* `curl`
+* curl
 * No need for sudo rights to run :)
 
 Troubleshooting:
@@ -104,11 +104,9 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 The `ucsf-vpn` script is distributed under GPL (>= 2.1) and the source
 code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
-install it, do
+"install" it, just do
 
 ```
-$ mkdir ~/bin
-$ cd bin
 $ curl -O https://raw.githubusercontent.com/UCSF-CBC/ucsf-vpn/master/bin/ucsf-vpn
 $ chmod ugo+x ucsf-vpn
 ```
