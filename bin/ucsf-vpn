@@ -26,14 +26,14 @@
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --user=johndoe --pwd secrets
+###  ucsf-vpn start --user=alice --pwd secrets
 ###  ucsf-vpn stop
 ###
 ### User credentials:
 ### The default values for --user and --pwd can be specified in
 ### ~/.ucsfvpnrc using one <key>=<value> pair per line. For example:
 ###
-###   user=johndoe
+###   user=alice
 ###   pwd=secret
 ###
 ### For security, the ~/.ucsfvpnrc file should be readable only by
@@ -56,6 +56,7 @@
 ### Version: 1.9.0-9000
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
+### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
 
 export PULSEDIR=/usr/local/pulse
