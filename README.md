@@ -74,7 +74,7 @@ The default values for --user and --pwd can be specified in
 ~/.ucsfvpnrc using one <key>=<value> pair per line. For example:
 
   user=alice
-  pwd=secret
+  pwd=secrets
 
 For security, the ~/.ucsfvpnrc file should be readable only by the
 user/owner of the file.  If not, then 'ucsf vpn start' will set
