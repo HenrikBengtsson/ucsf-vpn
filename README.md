@@ -10,7 +10,7 @@ RESULT: Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 $ ucsf-vpn status
 Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 
-$ ucsf vpn details
+$ ucsf-vpn details
 {
   "ip": "128.218.42.138",
   "hostname": "otp477510ots.ucsf.edu",
@@ -42,7 +42,7 @@ $ ucsf-vpn --help
 Connect and Disconnect to the UCSF VPN
 
 Usage:
- ucsf vpn (start|restart|stop|toggle|status|details) [options]
+ ucsf-vpn (start|restart|stop|toggle|status|details) [options]
 
 Commands:
  start-gui      Open the Pulse Secure GUI
@@ -66,8 +66,8 @@ Options:
 Any other options are passed to Pulse Secure as is.
 
 Example:
- ucsf vpn start --user=alice --pwd secrets
- ucsf vpn stop
+ ucsf-vpn start --user=alice --pwd secrets
+ ucsf-vpn stop
 
 User credentials:
 The default values for --user and --pwd can be specified in
@@ -77,7 +77,7 @@ The default values for --user and --pwd can be specified in
   pwd=secrets
 
 For security, the ~/.ucsfvpnrc file should be readable only by the
-user/owner of the file.  If not, then 'ucsf vpn start' will set
+user/owner of the file.  If not, then 'ucsf-vpn start' will set
 its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
 
 Requirements:
