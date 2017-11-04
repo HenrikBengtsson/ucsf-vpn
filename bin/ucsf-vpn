@@ -5,28 +5,28 @@
 ###  ucsf-vpn (start|restart|stop|toggle|status|details) [options]
 ###
 ### Commands:
-###  start-gui      Open the Pulse Secure GUI
-###  start          Connects to UCSF VPN
-###  stop           Disconnects from UCSF VPN
-###  restart        Disconnects and reconnects to UCSF VPN
-###  toggle         Connects to or disconnects from UCSF VPN
-###  status         Displays UCSF VPN connection status
-###  details        Displays connection details
+###  start-gui        Open the Pulse Secure GUI
+###  start            Connects to UCSF VPN
+###  stop             Disconnects from UCSF VPN
+###  restart          Disconnects and reconnects to UCSF VPN
+###  toggle           Connects to or disconnects from UCSF VPN
+###  status           Displays UCSF VPN connection status
+###  details          Displays connection details
 ###
 ### Options:
-###  --user         UCSF VPN username
-###  --pwd          UCSF VPN password
-###  --server       VPN server (defaults to remote.ucsf.edu)
-###  --skip         If already fulfilled, skip command
-###  --force        Force running the command
-###  --verbose      Verbose output
-###  --help         This help
-###  --version      Display version
+###  --user <user>    UCSF VPN username
+###  --pwd <pwd>      UCSF VPN password
+###  --server <host>  VPN server (defaults to remote.ucsf.edu)
+###  --skip           If already fulfilled, skip command
+###  --force          Force running the command
+###  --verbose        Verbose output
+###  --help           This help
+###  --version        Display version
 ###
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --user=alice --pwd secrets
+###  ucsf-vpn start --user alice --pwd secrets
 ###  ucsf-vpn stop
 ###
 ### User credentials:

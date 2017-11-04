@@ -4,7 +4,7 @@ The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting f
 
 ## Connect
 ```sh
-$ ucsf-vpn start --user=alice --pwd secrets
+$ ucsf-vpn start --user alice --pwd secrets
 RESULT: Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 
 $ ucsf-vpn status
@@ -42,32 +42,32 @@ $ ucsf-vpn --help
 Connect and Disconnect to the UCSF VPN
 
 Usage:
- ucsf-vpn (start|restart|stop|toggle|status|details) [options]
+ ucsf vpn (start|restart|stop|toggle|status|details) [options]
 
 Commands:
- start-gui      Open the Pulse Secure GUI
- start          Connects to UCSF VPN
- stop           Disconnects from UCSF VPN
- restart        Disconnects and reconnects to UCSF VPN
- toggle         Connects to or disconnects from UCSF VPN
- status         Displays UCSF VPN connection status
- details        Displays connection details
+ start-gui        Open the Pulse Secure GUI
+ start            Connects to UCSF VPN
+ stop             Disconnects from UCSF VPN
+ restart          Disconnects and reconnects to UCSF VPN
+ toggle           Connects to or disconnects from UCSF VPN
+ status           Displays UCSF VPN connection status
+ details          Displays connection details
 
 Options:
- --user         UCSF VPN username
- --pwd          UCSF VPN password
- --server       VPN server (defaults to remote.ucsf.edu)
- --skip         If already fulfilled, skip command
- --force        Force running the command
- --verbose      Verbose output
- --help         This help
- --version      Display version
+ --user <user>    UCSF VPN username
+ --pwd <pwd>      UCSF VPN password
+ --server <host>  VPN server (defaults to remote.ucsf.edu)
+ --skip           If already fulfilled, skip command
+ --force          Force running the command
+ --verbose        Verbose output
+ --help           This help
+ --version        Display version
 
 Any other options are passed to Pulse Secure as is.
 
 Example:
- ucsf-vpn start --user=alice --pwd secrets
- ucsf-vpn stop
+ ucsf vpn start --user alice --pwd secrets
+ ucsf vpn stop
 
 User credentials:
 The default values for --user and --pwd can be specified in your
@@ -79,13 +79,13 @@ For example:
       password secrets
 
 For security, the ~/.netrc file should be readable only by
-the user / owner of the file.  If not, then 'ucsf-vpn start' will
+the user / owner of the file.  If not, then 'ucsf vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
 * Ports 4242 (UDP) and 443 (TCP)
-* curl
+* `curl`
 * No need for sudo rights to run :)
 
 Troubleshooting:
@@ -95,6 +95,7 @@ Troubleshooting:
 See also:
 * https://remote.ucsf.edu/
 * https://software.ucsf.edu/content/vpn-virtual-private-network
+
 Version: 2.1.0-9000
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
