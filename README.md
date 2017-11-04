@@ -4,7 +4,7 @@ The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting f
 
 ## Connect
 ```sh
-$ ucsf-vpn start --user=alice --pwd secrets
+$ ucsf-vpn start --user alice --pwd secrets
 RESULT: Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 
 $ ucsf-vpn status
@@ -66,7 +66,7 @@ Options:
 Any other options are passed to Pulse Secure as is.
 
 Example:
- ucsf-vpn start --user=alice --pwd secrets
+ ucsf-vpn start --user alice --pwd secrets
  ucsf-vpn stop
 
 User credentials:
@@ -80,7 +80,7 @@ For example:
 
 For security, the ~/.netrc file should be readable only by
 the user / owner of the file.  If not, then 'ucsf vpn start' will
-set its permission accordingly (by calling chmod go-rwx ~/.netc).
+set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
