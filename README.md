@@ -76,7 +76,7 @@ For example:
 
   machine remote.ucsf.edu
       login alice
-      password secret
+      password secrets
 
 For security, the ~/.netrc file should be readable only by
 the user / owner of the file.  If not, then 'ucsf vpn start' will
@@ -95,7 +95,7 @@ Troubleshooting:
 See also:
 * https://remote.ucsf.edu/
 * https://software.ucsf.edu/content/vpn-virtual-private-network
-Version: 2.0.0-9000
+Version: 2.1.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
