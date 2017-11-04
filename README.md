@@ -79,7 +79,7 @@ For example:
       password secrets
 
 For security, the ~/.netrc file should be readable only by
-the user / owner of the file.  If not, then 'ucsf vpn start' will
+the user / owner of the file.  If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netc).
 
 Requirements:
