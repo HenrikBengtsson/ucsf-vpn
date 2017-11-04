@@ -80,7 +80,7 @@ For example:
 
 For security, the ~/.netrc file should be readable only by
 the user / owner of the file.  If not, then 'ucsf-vpn start' will
-set its permission accordingly (by calling chmod go-rwx ~/.netc).
+set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
