@@ -95,7 +95,7 @@ function pulsesvc_version() {
 function help() {
     local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
-        res=$(printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/')
+        res=$(printf '%s\n' "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
     printf '%s\n' "${res[@]}"
 }
