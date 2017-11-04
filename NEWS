@@ -1,9 +1,26 @@
 ucsf-vpn
 ========
 
-Version 1.3.0-9000 (2017-02-16)
+Version 2.0.0-9000 (2017-11-04)
 
- o ...
+NEW FEATURES:
+
+ o Credentials in ~/.netrc are now supported.
+
+DEPRECATED & DEFUNCT:
+
+ o Credentials in ~/.ucsfvpnrc is deprecated. Use ~/.netrc instead.
+
+
+Version 2.0.0 (2017-11-03)
+
+SIGNIFICANT CHANGES:
+
+ o Now supporting the new Junos Secure Pulse client.
+
+DEPRECATED & DEFUNCT:
+
+ o Support for OpenConnect is defunct due to UCSF VPN server changes.
  
 
 Version 1.3.0 (2017-02-16)

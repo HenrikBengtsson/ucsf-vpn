@@ -258,6 +258,8 @@ function source_ucsfvpnrc() {
     local rcfile=~/.ucsfvpnrc
     if [[ ! -f "${rcfile}" ]]; then return; fi
 
+    mecho "DEPRECATED: The use of '${rcfile}' is deprecated. Please put credentials in '~/.netrc' instead.";
+    
     if [[ $debug == TRUE ]]; then
         mdebug "rcfile: ${rcfile}"
     fi
