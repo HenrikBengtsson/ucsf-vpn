@@ -30,15 +30,17 @@
 ###  ucsf-vpn stop
 ###
 ### User credentials:
-### The default values for --user and --pwd can be specified in
-### ~/.ucsfvpnrc using one <key>=<value> pair per line. For example:
+### The default values for --user and --pwd can be specified in your
+### ~/.netrc file (or according to environment variable NETRC).
+### For example:
 ###
-###   user=alice
-###   pwd=secret
+###   machine remote.ucsf.edu
+###       login alice
+###       password secrets
 ###
-### For security, the ~/.ucsfvpnrc file should be readable only by
+### For security, the ~/.netrc file should be readable only by
 ### the user / owner of the file.  If not, then 'ucsf-vpn start' will
-### set its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
+### set its permission accordingly (by calling chmod go-rwx ~/.netc).
 ###
 ### Requirements:
 ### * Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
@@ -54,7 +56,7 @@
 ### * https://remote.ucsf.edu/
 ### * https://software.ucsf.edu/content/vpn-virtual-private-network
 ###
-### Version: 2.0.0
+### Version: 2.1.0
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -215,6 +217,68 @@ function start_gui() {
     pulseUi &
 }
 
+function source_netrc() {
+    local machine=$1
+
+    local rcfile=${NETRC:-~/.netrc}
+    if [[ $debug == TRUE ]]; then
+        mdebug "rcfile: $rcfile"
+    fi
+
+    ## No such file?
+    if [[ ! -f "${rcfile}" ]]; then return; fi
+    ## Force file to be accessible only by user
+    chmod go-rwx "${rcfile}"
+
+    if [[ $debug == TRUE ]]; then
+        mdebug "- search: ${machine}"
+    fi
+
+    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
+    
+    ## No such machine?
+    grep -qE "${pattern}" "${rcfile}"
+    if [[ $? -eq 1 ]]; then return; fi
+
+    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[[:space:]]/{flag=0} flag;" "${rcfile}")
+    user=$(echo ${bfr} | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    pwd=$(echo ${bfr} | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    
+    if [[ $debug == TRUE ]]; then
+	mdebug "- user=${user}"
+	if [[ -z "${pwd}" ]]; then
+            mdebug "- pwd=<MISSING>"
+	else
+            mdebug "- pwd=<hidden>"
+	fi
+    fi
+}
+
+function source_ucsfvpnrc() {
+    local rcfile=~/.ucsfvpnrc
+    if [[ ! -f "${rcfile}" ]]; then return; fi
+
+    mecho "DEPRECATED: The use of '${rcfile}' is deprecated. Please put credentials in '~/.netrc' instead.";
+    
+    if [[ $debug == TRUE ]]; then
+        mdebug "rcfile: ${rcfile}"
+    fi
+    
+    ## Force file to be accessible only by user
+    chmod go-rwx "${rcfile}"
+    
+    source "${rcfile}"
+    
+    if [[ $debug == TRUE ]]; then
+	mdebug "- user=${user}"
+	if [[ -z "${pwd}" ]]; then
+            mdebug "- pwd=<MISSING>"
+	else
+            mdebug "- pwd=<hidden>"
+	fi
+    fi
+}
+
 function start() {
     if [[ $online == FALSE ]]; then
       echo "ERROR: $(status $connected $ip)"
@@ -234,11 +298,8 @@ function start() {
     fi
 
     ## Load user credentials from file?
-    if [[ -f ~/.ucsfvpnrc ]]; then
-        ## Force file to be accessible only by user
-        chmod go-rwx ~/.ucsfvpnrc
-        source ~/.ucsfvpnrc
-    fi
+    source_netrc ${server}
+    source_ucsfvpnrc  ## deprecated
 
     ## Pulse Secure options
     opts="$extras"

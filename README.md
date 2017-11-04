@@ -25,7 +25,7 @@ $ ucsf-vpn details
 
 If you have problems connect using `ucsf-vpn`, make sure you are using the correct username and password, e.g. by testing to log in via the [UCSF VPN web proxy](https://remote.ucsf.edu/).
 
-Alternatively to command-line options, the username and password can also be specified in file `~/.ucsfvpnrc`.  See `ucsf-vpn --help` for more details.
+Alternatively to command-line options, the username and password can also be specified in file `~/.netrc` (or the file that environment variable `NETRC` specifies).  See `ucsf-vpn --help` for more details.
 
 
 ## Disconnect
@@ -70,15 +70,17 @@ Example:
  ucsf-vpn stop
 
 User credentials:
-The default values for --user and --pwd can be specified in
-~/.ucsfvpnrc using one <key>=<value> pair per line. For example:
+The default values for --user and --pwd can be specified in your
+~/.netrc file (or according to environment variable NETRC).
+For example:
 
-  user=alice
-  pwd=secrets
+  machine remote.ucsf.edu
+      login alice
+      password secrets
 
-For security, the ~/.ucsfvpnrc file should be readable only by the
-user/owner of the file.  If not, then 'ucsf-vpn start' will set
-its permission accordingly (by calling chmod go-rwx ~/.ucsfvpnrc).
+For security, the ~/.netrc file should be readable only by
+the user / owner of the file.  If not, then 'ucsf vpn start' will
+set its permission accordingly (by calling chmod go-rwx ~/.netc).
 
 Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
@@ -93,7 +95,7 @@ Troubleshooting:
 See also:
 * https://remote.ucsf.edu/
 * https://software.ucsf.edu/content/vpn-virtual-private-network
-Version: 2.0.0
+Version: 2.1.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
