@@ -221,12 +221,16 @@ function source_netrc() {
     local machine=$1
 
     local rcfile=${NETRC:-~/.netrc}
-    if [[ $debug == TRUE ]]; then
-        mdebug "rcfile: $rcfile"
-    fi
-
     ## No such file?
-    if [[ ! -f "${rcfile}" ]]; then return; fi
+    if [[ ! -f "${rcfile}" ]]; then
+        if [[ $debug == TRUE ]]; then
+            mdebug "No .netrc file: $rcfile"
+        fi
+	return;
+    fi
+    if [[ $debug == TRUE ]]; then
+        mdebug "Detected .netrc file: $rcfile"
+    fi
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
@@ -328,6 +332,16 @@ function start() {
         fi
         mdebug "opts: $opts"
         mdebug "call: pulsesvc $opts -r \"${realm}\""
+    fi
+
+    if [[ -z ${user} ]]; then
+        mdebug "ERROR: Username is missing."
+	exit 1
+    fi
+    
+    if [[ -z ${pwd} ]]; then
+        mdebug "ERROR: Password is missing."
+	exit 1
     fi
     
     if [[ $dryrun == TRUE ]]; then

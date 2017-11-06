@@ -1,9 +1,11 @@
 ucsf-vpn
 ========
 
-Version 2.1.0-9000 (2017-11-04)
+Version 2.1.0-9000 (2017-11-05)
 
- o ...
+NEW FEATURES:
+
+ o Now an informative error is produced if username or password is missing.
  
 
 Version 2.1.0 (2017-11-04)
