@@ -38,7 +38,7 @@ RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
 
 ## Usage
 ```sh
-Connect and Disconnect to the UCSF VPN
+Connect to and Disconnect from the UCSF VPN
 
 Usage:
  ucsf-vpn (start|restart|stop|toggle|status|details) [options]
@@ -104,7 +104,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 2.1.0-9000
+Version: 2.2.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
