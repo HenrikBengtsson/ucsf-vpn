@@ -69,9 +69,10 @@ Example:
  ucsf-vpn stop
 
 User credentials:
-The default values for --user and --pwd can be specified in your
-~/.netrc file (or according to environment variable NETRC).
-For example:
+If --user and/or --pwd are not specified, then the user will be
+prompted to enter them.  Furthermore, the default values for --user
+and --pwd can be specified in your ~/.netrc file (or according to
+environment variable NETRC).  For example:
 
   machine remote.ucsf.edu
       login alice
