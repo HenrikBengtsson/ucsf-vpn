@@ -7,8 +7,6 @@ NEW FEATURES:
 
  o If username and/or password are not specified or not identifiable from
    the ~/.netrc file, then the user will be prompted to enter them.
-
- o Now an informative error is produced if username or password is missing.
  
 
 Version 2.1.0 (2017-11-04)
