@@ -253,8 +253,8 @@ function source_netrc() {
     if [[ $? -eq 1 ]]; then return; fi
 
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[[:space:]]/{flag=0} flag;" "${rcfile}")
-    user=$(echo ${bfr} | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
-    pwd=$(echo ${bfr} | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
     if [[ $debug == TRUE ]]; then
 	mdebug "- user=${user}"
