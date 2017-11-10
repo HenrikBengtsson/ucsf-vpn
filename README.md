@@ -95,12 +95,14 @@ Troubleshooting:
 * Make sure ports 4242 & 443 are not used by other processes
 
 Useful resources:
-* UCSF Web-based VPN Interface:
-  - https://remote.ucsf.edu/
-* UCSF Active Directory Account Manager:
-  - https://pwmanage.ucsf.edu/pm/
 * UCSF VPN information:
   - https://software.ucsf.edu/content/vpn-virtual-private-network
+* UCSF Web-based VPN Interface:
+  - https://remote.ucsf.edu/
+* UCSF Two-Factory Authentication (2FA):
+  - http://it.ucsf.edu/services/duo-two-factor-authentication
+* UCSF Active Directory Account Manager:
+  - https://pwmanage.ucsf.edu/pm/
 
 Version: 2.1.0-9000
 Copyright: Henrik Bengtsson (2016-2017)
