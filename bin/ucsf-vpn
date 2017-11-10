@@ -1,38 +1,39 @@
 #!/usr/bin/env bash
-### Connect and Disconnect to the UCSF VPN
+### Connect to and Disconnect from the UCSF VPN
 ###
 ### Usage:
 ###  ucsf-vpn (start|restart|stop|toggle|status|details) [options]
 ###
 ### Commands:
-###  start-gui      Open the Pulse Secure GUI
-###  start          Connects to UCSF VPN
-###  stop           Disconnects from UCSF VPN
-###  restart        Disconnects and reconnects to UCSF VPN
-###  toggle         Connects to or disconnects from UCSF VPN
-###  status         Displays UCSF VPN connection status
-###  details        Displays connection details
+###  start-gui        Open the Pulse Secure GUI
+###  start            Connects to UCSF VPN
+###  stop             Disconnects from UCSF VPN
+###  restart          Disconnects and reconnects to UCSF VPN
+###  toggle           Connects to or disconnects from UCSF VPN
+###  status           Displays UCSF VPN connection status
+###  details          Displays connection details
 ###
 ### Options:
-###  --user         UCSF VPN username
-###  --pwd          UCSF VPN password
-###  --server       VPN server (defaults to remote.ucsf.edu)
-###  --skip         If already fulfilled, skip command
-###  --force        Force running the command
-###  --verbose      Verbose output
-###  --help         This help
-###  --version      Display version
+###  --user <user>    UCSF Active Directory ID (username)
+###  --pwd <pwd>      UCSF Active Directory ID password
+###  --server <host>  VPN server (defaults to remote.ucsf.edu)
+###  --skip           If already fulfilled, skip command
+###  --force          Force running the command
+###  --verbose        Verbose output
+###  --help           This help
+###  --version        Display version
 ###
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --user=alice --pwd secrets
+###  ucsf-vpn start --user alice --pwd secrets
 ###  ucsf-vpn stop
 ###
 ### User credentials:
-### The default values for --user and --pwd can be specified in your
-### ~/.netrc file (or according to environment variable NETRC).
-### For example:
+### If --user and/or --pwd are not specified, then the user will be
+### prompted to enter them.  Furthermore, the default values for --user
+### and --pwd can be specified in your ~/.netrc file (or according to
+### environment variable NETRC).  For example:
 ###
 ###   machine remote.ucsf.edu
 ###       login alice
@@ -40,7 +41,7 @@
 ###
 ### For security, the ~/.netrc file should be readable only by
 ### the user / owner of the file.  If not, then 'ucsf-vpn start' will
-### set its permission accordingly (by calling chmod go-rwx ~/.netc).
+### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 ###
 ### Requirements:
 ### * Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
@@ -50,13 +51,21 @@
 ###
 ### Troubleshooting:
 ### * Verify your username and password at https://remote.ucsf.edu/.
+###   This should be your UCSF Active Directory ID (username); neither
+###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 ### * Make sure ports 4242 & 443 are not used by other processes
 ###
-### See also:
-### * https://remote.ucsf.edu/
-### * https://software.ucsf.edu/content/vpn-virtual-private-network
+### Useful resources:
+### * UCSF VPN information:
+###   - https://software.ucsf.edu/content/vpn-virtual-private-network
+### * UCSF Web-based VPN Interface:
+###   - https://remote.ucsf.edu/
+### * UCSF Two-Factory Authentication (2FA):
+###   - http://it.ucsf.edu/services/duo-two-factor-authentication
+### * UCSF Active Directory Account Manager:
+###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 2.1.0
+### Version: 2.2.0
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -95,7 +104,7 @@ function pulsesvc_version() {
 function help() {
     local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
-        res=$(printf '%s\n' "${res[@]}" | sed 's/ucsf-vpn/ucsf vpn/')
+        res=$(printf '%s\n' "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
     printf '%s\n' "${res[@]}"
 }
@@ -221,12 +230,16 @@ function source_netrc() {
     local machine=$1
 
     local rcfile=${NETRC:-~/.netrc}
-    if [[ $debug == TRUE ]]; then
-        mdebug "rcfile: $rcfile"
-    fi
-
     ## No such file?
-    if [[ ! -f "${rcfile}" ]]; then return; fi
+    if [[ ! -f "${rcfile}" ]]; then
+        if [[ $debug == TRUE ]]; then
+            mdebug "No .netrc file: $rcfile"
+        fi
+	return;
+    fi
+    if [[ $debug == TRUE ]]; then
+        mdebug "Detected .netrc file: $rcfile"
+    fi
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
@@ -241,13 +254,13 @@ function source_netrc() {
     if [[ $? -eq 1 ]]; then return; fi
 
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[[:space:]]/{flag=0} flag;" "${rcfile}")
-    user=$(echo ${bfr} | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
-    pwd=$(echo ${bfr} | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
     if [[ $debug == TRUE ]]; then
 	mdebug "- user=${user}"
 	if [[ -z "${pwd}" ]]; then
-            mdebug "- pwd=<MISSING>"
+            mdebug "- pwd=<missing>"
 	else
             mdebug "- pwd=<hidden>"
 	fi
@@ -258,7 +271,7 @@ function source_ucsfvpnrc() {
     local rcfile=~/.ucsfvpnrc
     if [[ ! -f "${rcfile}" ]]; then return; fi
 
-    mecho "DEPRECATED: The use of '${rcfile}' is deprecated. Please put credentials in '~/.netrc' instead.";
+    mecho "DEPRECATED: The use of '${rcfile}' is deprecated. Please put credentials in '~/.netrc'.";
     
     if [[ $debug == TRUE ]]; then
         mdebug "rcfile: ${rcfile}"
@@ -272,7 +285,39 @@ function source_ucsfvpnrc() {
     if [[ $debug == TRUE ]]; then
 	mdebug "- user=${user}"
 	if [[ -z "${pwd}" ]]; then
-            mdebug "- pwd=<MISSING>"
+            mdebug "- pwd=<missing>"
+	else
+            mdebug "- pwd=<hidden>"
+	fi
+    fi
+}
+
+function prompt_user() {
+    user=$1
+    if [[ -n ${user} ]]; then return; fi
+    mdebug "PROMPT: Asking user to enter username:"
+    while [ -z ${user} ]; do
+        printf "Username: " 1>&2;
+	read user
+	user=${user/ /}
+    done
+    if [[ $debug == TRUE ]]; then
+	mdebug "- user=${user}"
+    fi
+}
+
+function prompt_pwd() {
+    pwd=$1
+    if [[ -n ${pwd} ]]; then return; fi
+    mdebug "PROMPT: Asking user to enter password:"
+    while [ -z ${pwd} ]; do
+        printf "Password: " 1>&2;
+	read -s pwd
+	pwd=${pwd/ /}
+    done
+    if [[ $debug == TRUE ]]; then
+	if [[ -z "${pwd}" ]]; then
+            mdebug "- pwd=<missing>"
 	else
             mdebug "- pwd=<hidden>"
 	fi
@@ -301,6 +346,10 @@ function start() {
     source_netrc ${server}
     source_ucsfvpnrc  ## deprecated
 
+    ## Prompt for username and password, if missing
+    prompt_user ${user}
+    prompt_pwd ${pwd}
+    
     ## Pulse Secure options
     opts="$extras"
     opts="$opts -h ${server}"
@@ -309,10 +358,6 @@ function start() {
     if [[ -n $user ]]; then
         opts="-u $user $opts"
     fi
-    
-#    if [[ -n $pwd ]]; then
-#        opts="-p $pwd $opts"
-#    fi
     
     if [[ ! $verbose == TRUE ]]; then
         opts="-log-level 5 $opts"
@@ -331,6 +376,11 @@ function start() {
     fi
     
     if [[ $dryrun == TRUE ]]; then
+        if [[ -n $pwd ]]; then
+            echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
+	else
+            echo "pulsesvc $opts -r \"${realm}\" &"
+	fi
         exit 0
     fi
     
@@ -447,6 +497,12 @@ if [[ $debug == TRUE ]]; then
     mdebug "skip: $skip"
     mdebug "dryrun: $dryrun"
     mdebug "extras: $extras"
+    mdebug "user: $user"
+    if [[ -z "${pwd}" ]]; then
+        mdebug "pwd=<missing>"
+    else
+        mdebug "pwd=<hidden>"
+    fi
 fi
 
 if [[ $action == "version" ]]; then

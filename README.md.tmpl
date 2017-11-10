@@ -38,76 +38,7 @@ RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
 
 ## Usage
 ```sh
-Connect to and Disconnect from the UCSF VPN
-
-Usage:
- ucsf-vpn (start|restart|stop|toggle|status|details) [options]
-
-Commands:
- start-gui        Open the Pulse Secure GUI
- start            Connects to UCSF VPN
- stop             Disconnects from UCSF VPN
- restart          Disconnects and reconnects to UCSF VPN
- toggle           Connects to or disconnects from UCSF VPN
- status           Displays UCSF VPN connection status
- details          Displays connection details
-
-Options:
- --user <user>    UCSF Active Directory ID (username)
- --pwd <pwd>      UCSF Active Directory ID password
- --server <host>  VPN server (defaults to remote.ucsf.edu)
- --skip           If already fulfilled, skip command
- --force          Force running the command
- --verbose        Verbose output
- --help           This help
- --version        Display version
-
-Any other options are passed to Pulse Secure as is.
-
-Example:
- ucsf-vpn start --user alice --pwd secrets
- ucsf-vpn stop
-
-User credentials:
-If --user and/or --pwd are not specified, then the user will be
-prompted to enter them.  Furthermore, the default values for --user
-and --pwd can be specified in your ~/.netrc file (or according to
-environment variable NETRC).  For example:
-
-  machine remote.ucsf.edu
-      login alice
-      password secrets
-
-For security, the ~/.netrc file should be readable only by
-the user / owner of the file.  If not, then 'ucsf-vpn start' will
-set its permission accordingly (by calling chmod go-rwx ~/.netrc).
-
-Requirements:
-* Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
-* Ports 4242 (UDP) and 443 (TCP)
-* `curl`
-* No need for sudo rights to run :)
-
-Troubleshooting:
-* Verify your username and password at https://remote.ucsf.edu/.
-  This should be your UCSF Active Directory ID (username); neither
-  MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
-* Make sure ports 4242 & 443 are not used by other processes
-
-Useful resources:
-* UCSF VPN information:
-  - https://software.ucsf.edu/content/vpn-virtual-private-network
-* UCSF Web-based VPN Interface:
-  - https://remote.ucsf.edu/
-* UCSF Two-Factory Authentication (2FA):
-  - http://it.ucsf.edu/services/duo-two-factor-authentication
-* UCSF Active Directory Account Manager:
-  - https://pwmanage.ucsf.edu/pm/
-
-Version: 2.2.0
-Copyright: Henrik Bengtsson (2016-2017)
-License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
-Source: https://github.com/HenrikBengtsson/ucsf-vpn
+{{ HELP }}
 ```
 
 
