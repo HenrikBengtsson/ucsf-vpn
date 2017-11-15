@@ -83,7 +83,7 @@ the user / owner of the file.  If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
+* Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
 * Ports 4242 (UDP) and 443 (TCP)
 * `curl`
 * No need for sudo rights to run :)
@@ -93,6 +93,9 @@ Troubleshooting:
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 * Make sure ports 4242 & 443 are not used by other processes
+* If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
+  'https://remote.ucsf.edu/pulse' as the URL when adding a new
+  connection.
 
 Useful resources:
 * UCSF VPN information:
@@ -104,7 +107,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 2.2.0
+Version: 2.2.0-9000
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -112,6 +115,8 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 
 ## Installation
+
+### `ucsf-vpn`
 
 The `ucsf-vpn` script is distributed under GPL (>= 2.1) and the source
 code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
@@ -121,6 +126,8 @@ code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
 $ curl -O https://raw.githubusercontent.com/HenrikBengtsson/ucsf-vpn/master/bin/ucsf-vpn
 $ chmod ugo+x ucsf-vpn
 ```
+
+### Pulse Secure client
 
 Importantly, `ucsf-vpn` is just a convenient wrapper script around the Junos
 Pulse Secure client (Pulse Secure, LLC), which it expect to be available
