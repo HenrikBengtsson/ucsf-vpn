@@ -142,7 +142,7 @@ Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
 
 ## OpenConnect?
 
-In August 2017, the UCSF VPN server was updated such that it no longer works with ~~the open-source OpenConnect client~~ OpenConnect (< 7.08).  For instance, uses on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connection with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this has been fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) from the Ubuntu 17.04 (Zesty) distribution to Ubuntu 16.04, but it is not sure whether it leaves the system in a stable state or not.
+In August 2017, the UCSF VPN server was updated such that it no longer works with OpenConnect (< 7.08).  For instance, users on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connection with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this has been fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) from the Ubuntu 17.04 (Zesty) distribution to Ubuntu 16.04, but it is not sure whether it leaves the system in a stable state or not.
 
 
 ## Privacy
