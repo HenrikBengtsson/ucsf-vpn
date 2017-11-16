@@ -96,6 +96,7 @@ Troubleshooting:
 * If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
   'https://remote.ucsf.edu/pulse' as the URL when adding a new
   connection.
+* The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
 
 Useful resources:
 * UCSF VPN information:
