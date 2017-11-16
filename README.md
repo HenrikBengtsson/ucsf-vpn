@@ -1,6 +1,6 @@
 # UCSF VPN client (Linux)
 
-The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](http://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
+The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
 ## Connect
 ```sh
@@ -103,7 +103,7 @@ Useful resources:
 * UCSF Web-based VPN Interface:
   - https://remote.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
-  - http://it.ucsf.edu/services/duo-two-factor-authentication
+  - https://it.ucsf.edu/services/duo-two-factor-authentication
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
