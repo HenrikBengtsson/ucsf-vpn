@@ -248,17 +248,28 @@ function source_netrc() {
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
+    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
+    local pattern="^[ \t]*machine[ \t]+${machine}([ \t]+|$)"
+        
     if [[ $debug == TRUE ]]; then
         mdebug "- search: ${machine}"
+        mdebug "- search pattern: ${pattern}"
     fi
 
-    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    
     ## No such machine?
     grep -qE "${pattern}" "${rcfile}"
     if [[ $? -eq 1 ]]; then return; fi
 
-    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[[:space:]]/{flag=0} flag;" "${rcfile}")
+    if [[ $debug == TRUE ]]; then
+        mdebug "- found: ${machine}"
+    fi
+    
+    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
+    if [[ -z $bfr ]]; then
+        mecho "[INTERNAL ERROR] Failed to extract ${machine} credentials from ${rcfile}"
+	exit 1
+    fi
+    
     user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
