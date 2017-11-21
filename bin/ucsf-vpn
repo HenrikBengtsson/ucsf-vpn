@@ -18,6 +18,7 @@
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
 ###  --server <host>  VPN server (defaults to remote.ucsf.edu)
+###  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
 ###  --verbose        Verbose output
@@ -145,7 +146,7 @@ function public_hostname() {
 function is_online() {
     mdebug "is_online()"
     ping -c 1 -W 1 8.8.8.8 > /dev/null
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -154,7 +155,7 @@ function is_online() {
 
 function is_running() {
     ps -C pulsesvc > /dev/null
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -167,7 +168,7 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -369,7 +370,6 @@ function start() {
     ## Pulse Secure options
     opts="$extras"
     opts="$opts -h ${server}"
-    realm="Single-Factor Pulse Clients"
     
     if [[ -n $user ]]; then
         opts="-u $user $opts"
@@ -449,7 +449,7 @@ skip=FALSE
 debug=FALSE
 verbose=FALSE
 dryrun=FALSE
-authgroup="Single-Factor Pulse Clients"
+realm="Single-Factor Pulse Clients"
 extras=
 
 ## User credentials
@@ -494,6 +494,9 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--server"; then
         shift
         server=$1
+    elif test "$1" == "--realm"; then
+        shift
+        realm=$1
     elif test "$1" == "--user"; then
         shift
         user=$1
@@ -506,10 +509,25 @@ while [[ $# > 0 ]]; do
     shift
 done
 
+## Validate 'realm'
+if [[ $realm == "Single-Factor Pulse Clients" ]]; then
+    true
+elif [[ $realm == "Dual-Factor Pulse Clients" ]]; then
+    true
+elif [[ $realm == "single" ]]; then
+    realm="Single-Factor Pulse Clients"
+elif [[ $realm == "dual" ]]; then
+    realm="Dual-Factor Pulse Clients"
+else
+    echo "ERROR: Unknown value on option --realm: $realm"
+    exit 1    
+fi
+
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
     mdebug "VPN server: $server"
+    mdebug "Realm: $realm"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
