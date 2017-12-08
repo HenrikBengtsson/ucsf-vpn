@@ -452,6 +452,7 @@ verbose=FALSE
 dryrun=FALSE
 realm="Single-Factor Pulse Clients"
 extras=
+play=FALSE
 
 ## User credentials
 user=
@@ -506,6 +507,8 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--pwd"; then
         shift
         pwd=$1
+    elif test "$1" == "--play"; then
+	play=TRUE
     else
         extras="$extras $1"
     fi
@@ -529,6 +532,7 @@ fi
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
+    mdebug "play: $play"
     mdebug "VPN server: $server"
     mdebug "Realm: $realm"
     mdebug "verbose: $verbose"
@@ -565,6 +569,18 @@ elif [[ $action == "details" ]]; then
 elif [[ $action == "start-gui" ]]; then
     start_gui
     res=$?
+    if [[ $res -ne 0 ]]; then exit $res; fi
+    if [[ $play == TRUE ]]; then
+       sleep 1
+       wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
+       if [[ -z $wid ]]; then
+           mecho "ERROR: Failed to locate the Pulse Secure GUI windows"
+	   exit 1
+       fi
+       mdebug "Pulse Secure Window ID: $wid"
+       mdebug "Attempting to click on 'Connect'"
+       xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+    fi
     exit $res
 elif [[ $action == "start" ]]; then
     start
