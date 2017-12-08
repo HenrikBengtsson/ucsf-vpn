@@ -47,7 +47,7 @@ RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
 Connect to and Disconnect from the UCSF VPN
 
 Usage:
- ucsf-vpn (start|restart|stop|toggle|status|details) [options]
+ ucsf-vpn <command> [options]
 
 Commands:
  start-gui        Open the Pulse Secure GUI
@@ -117,7 +117,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 2.2.0-9000
+Version: 2.3.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
