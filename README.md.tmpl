@@ -1,6 +1,7 @@
+{{ ANNOUNCEMENT }}
 # UCSF VPN client (Linux)
 
-The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](http://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
+The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
 ## Connect
 ```sh
@@ -44,6 +45,8 @@ RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
 
 ## Installation
 
+### `ucsf-vpn`
+
 The `ucsf-vpn` script is distributed under GPL (>= 2.1) and the source
 code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
 "install" it, just do
@@ -52,6 +55,8 @@ code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
 $ curl -O https://raw.githubusercontent.com/HenrikBengtsson/ucsf-vpn/master/bin/ucsf-vpn
 $ chmod ugo+x ucsf-vpn
 ```
+
+### Pulse Secure client
 
 Importantly, `ucsf-vpn` is just a convenient wrapper script around the Junos
 Pulse Secure client (Pulse Secure, LLC), which it expect to be available
@@ -66,7 +71,9 @@ Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
 
 ## OpenConnect?
 
-In August 2017, the UCSF VPN server was updated such that it no longer works with ~~the open-source OpenConnect client~~ OpenConnect (< 7.08).  For instance, uses on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connection with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this has been fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) from the Ubuntu 17.04 (Zesty) distribution to Ubuntu 16.04, but it is not sure whether it leaves the system in a stable state or not.
+In August 2017, the UCSF VPN server was updated such that it no longer works with OpenConnect (< 7.08).
+
+For instance, users on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this was fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnection 7.08 and Pulse Secure 5.3-3 installed at the same time.
 
 
 ## Privacy

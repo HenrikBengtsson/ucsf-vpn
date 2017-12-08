@@ -1,6 +1,20 @@
 ucsf-vpn
 ========
 
+Version 2.3.0 (2017-12-08)
+
+NEW FEATURES:
+
+ o Added 'ucsf-vpn log', which output the log file.
+ 
+ o Added 'ucsf-vpn troubleshoot', which reports on errors in the log file.
+
+BUG FIXES:
+
+ o Authentication credentials in ~/.netrc were not found on systems where
+   where awk does not support POSIX regular expressions.
+   
+
 Version 2.2.0 (2017-11-10)
 
 NEW FEATURES:

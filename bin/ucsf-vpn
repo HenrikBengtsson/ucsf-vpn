@@ -2,7 +2,7 @@
 ### Connect to and Disconnect from the UCSF VPN
 ###
 ### Usage:
-###  ucsf-vpn (start|restart|stop|toggle|status|details) [options]
+###  ucsf-vpn <command> [options]
 ###
 ### Commands:
 ###  start-gui        Open the Pulse Secure GUI
@@ -12,11 +12,14 @@
 ###  toggle           Connects to or disconnects from UCSF VPN
 ###  status           Displays UCSF VPN connection status
 ###  details          Displays connection details
+###  log              Displays the log file
+###  troubleshoot     Scan the log file for errors
 ###
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
 ###  --server <host>  VPN server (defaults to remote.ucsf.edu)
+###  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
 ###  --verbose        Verbose output
@@ -54,6 +57,10 @@
 ###   This should be your UCSF Active Directory ID (username); neither
 ###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 ### * Make sure ports 4242 & 443 are not used by other processes
+### * If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
+###   'https://remote.ucsf.edu/pulse' as the URL when adding a new
+###   connection.
+### * The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
 ###
 ### Useful resources:
 ### * UCSF VPN information:
@@ -61,11 +68,11 @@
 ### * UCSF Web-based VPN Interface:
 ###   - https://remote.ucsf.edu/
 ### * UCSF Two-Factory Authentication (2FA):
-###   - http://it.ucsf.edu/services/duo-two-factor-authentication
+###   - https://it.ucsf.edu/services/duo-two-factor-authentication
 ### * UCSF Active Directory Account Manager:
 ###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 2.2.0
+### Version: 2.3.0
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -140,7 +147,7 @@ function public_hostname() {
 function is_online() {
     mdebug "is_online()"
     ping -c 1 -W 1 8.8.8.8 > /dev/null
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -149,7 +156,7 @@ function is_online() {
 
 function is_running() {
     ps -C pulsesvc > /dev/null
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -162,7 +169,7 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
-    if [[ $? == 0 ]]; then
+    if [[ $? -eq 0 ]]; then
         echo TRUE
     else
         echo FALSE
@@ -243,17 +250,28 @@ function source_netrc() {
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
+    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
+    local pattern="^[ \t]*machine[ \t]+${machine}([ \t]+|$)"
+        
     if [[ $debug == TRUE ]]; then
         mdebug "- search: ${machine}"
+        mdebug "- search pattern: ${pattern}"
     fi
 
-    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    
     ## No such machine?
     grep -qE "${pattern}" "${rcfile}"
     if [[ $? -eq 1 ]]; then return; fi
 
-    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[[:space:]]/{flag=0} flag;" "${rcfile}")
+    if [[ $debug == TRUE ]]; then
+        mdebug "- found: ${machine}"
+    fi
+    
+    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
+    if [[ -z $bfr ]]; then
+        mecho "[INTERNAL ERROR] Failed to extract ${machine} credentials from ${rcfile}"
+	exit 1
+    fi
+    
     user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
@@ -353,7 +371,6 @@ function start() {
     ## Pulse Secure options
     opts="$extras"
     opts="$opts -h ${server}"
-    realm="Single-Factor Pulse Clients"
     
     if [[ -n $user ]]; then
         opts="-u $user $opts"
@@ -433,7 +450,7 @@ skip=FALSE
 debug=FALSE
 verbose=FALSE
 dryrun=FALSE
-authgroup="Single-Factor Pulse Clients"
+realm="Single-Factor Pulse Clients"
 extras=
 
 ## User credentials
@@ -463,6 +480,10 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "toggle"; then
         action=toggle
 	force=TRUE
+    elif test "$1" == "log"; then
+        action=log
+    elif test "$1" == "troubleshoot"; then
+        action=troubleshoot
     elif test "$1" == "--debug"; then
         debug=TRUE
     elif test "$1" == "--verbose"; then
@@ -476,6 +497,9 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--server"; then
         shift
         server=$1
+    elif test "$1" == "--realm"; then
+        shift
+        realm=$1
     elif test "$1" == "--user"; then
         shift
         user=$1
@@ -488,10 +512,25 @@ while [[ $# > 0 ]]; do
     shift
 done
 
+## Validate 'realm'
+if [[ $realm == "Single-Factor Pulse Clients" ]]; then
+    true
+elif [[ $realm == "Dual-Factor Pulse Clients" ]]; then
+    true
+elif [[ $realm == "single" ]]; then
+    realm="Single-Factor Pulse Clients"
+elif [[ $realm == "dual" ]]; then
+    realm="Dual-Factor Pulse Clients"
+else
+    echo "ERROR: Unknown value on option --realm: $realm"
+    exit 1    
+fi
+
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
     mdebug "VPN server: $server"
+    mdebug "Realm: $realm"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
@@ -566,4 +605,28 @@ elif [[ $action == "toggle" ]]; then
     online=$(is_online)
     result
     exit $res
+elif [[ $action == "log" ]]; then
+    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
+    mdebug "Displaying log file: $LOGFILE"
+    if [[ ! -f $LOGFILE ]]; then
+	mecho "[WARN] No such log file: $LOGFILE"
+	exit 1
+    fi
+    cat $LOGFILE
+elif [[ $action == "troubleshoot" ]]; then
+    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
+    mdebug "Scanning log file: $LOGFILE"
+    if [[ ! -f $LOGFILE ]]; then
+	mecho "[WARN] No such log file: $LOGFILE"
+	exit 1
+    fi
+    grep -q -F Error $LOGFILE &> /dev/null
+    if [[ $? -ne 0 ]]; then
+	mecho "[OK] No errors found: $LOGFILE"
+	exit 0
+    fi
+    
+    mecho "[ERROR] Errors found: $LOGFILE"
+    grep -F Error $LOGFILE | >&2 tail -3 
+    exit 1
 fi

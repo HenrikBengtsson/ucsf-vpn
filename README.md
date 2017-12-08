@@ -1,6 +1,12 @@
+2017-12-07: Two-factor authentication (2FA) is now required to connect to the UCSF VPN.  As it stands now, `ucsf-vpn start` no longer works and you need to use the GUI-version `ucsf-vpn start-gui` instead, which means enter your credentials (each time) and 2FA passcode in two different HTML popup windows.
+
+If anyone can figure out a solution for passing also the 2FA passcode via the Pulse command-line client, please drop a note in the [issue tracker](https://github.com/HenrikBengtsson/ucsf-vpn/issues).  Then we could do things such as `ucsf-vpn start <passcode>`.  Even just passing the user credentials and then enter the 2FA passcode in a HTML-popup panel would help.
+
+---
+
 # UCSF VPN client (Linux)
 
-The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](http://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
+The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
 ## Connect
 ```sh
@@ -41,7 +47,7 @@ RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
 Connect to and Disconnect from the UCSF VPN
 
 Usage:
- ucsf-vpn (start|restart|stop|toggle|status|details) [options]
+ ucsf-vpn <command> [options]
 
 Commands:
  start-gui        Open the Pulse Secure GUI
@@ -51,11 +57,14 @@ Commands:
  toggle           Connects to or disconnects from UCSF VPN
  status           Displays UCSF VPN connection status
  details          Displays connection details
+ log              Displays the log file
+ troubleshoot     Scan the log file for errors
 
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
  --server <host>  VPN server (defaults to remote.ucsf.edu)
+ --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
  --skip           If already fulfilled, skip command
  --force          Force running the command
  --verbose        Verbose output
@@ -83,7 +92,7 @@ the user / owner of the file.  If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
+* Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
 * Ports 4242 (UDP) and 443 (TCP)
 * `curl`
 * No need for sudo rights to run :)
@@ -93,6 +102,10 @@ Troubleshooting:
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 * Make sure ports 4242 & 443 are not used by other processes
+* If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
+  'https://remote.ucsf.edu/pulse' as the URL when adding a new
+  connection.
+* The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
 
 Useful resources:
 * UCSF VPN information:
@@ -100,11 +113,11 @@ Useful resources:
 * UCSF Web-based VPN Interface:
   - https://remote.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
-  - http://it.ucsf.edu/services/duo-two-factor-authentication
+  - https://it.ucsf.edu/services/duo-two-factor-authentication
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 2.2.0
+Version: 2.3.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -112,6 +125,8 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 
 ## Installation
+
+### `ucsf-vpn`
 
 The `ucsf-vpn` script is distributed under GPL (>= 2.1) and the source
 code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
@@ -121,6 +136,8 @@ code is available at https://github.com/HenrikBengtsson/ucsf-vpn/.  To
 $ curl -O https://raw.githubusercontent.com/HenrikBengtsson/ucsf-vpn/master/bin/ucsf-vpn
 $ chmod ugo+x ucsf-vpn
 ```
+
+### Pulse Secure client
 
 Importantly, `ucsf-vpn` is just a convenient wrapper script around the Junos
 Pulse Secure client (Pulse Secure, LLC), which it expect to be available
@@ -135,7 +152,9 @@ Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
 
 ## OpenConnect?
 
-In August 2017, the UCSF VPN server was updated such that it no longer works with ~~the open-source OpenConnect client~~ OpenConnect (< 7.08).  For instance, uses on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connection with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this has been fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) from the Ubuntu 17.04 (Zesty) distribution to Ubuntu 16.04, but it is not sure whether it leaves the system in a stable state or not.
+In August 2017, the UCSF VPN server was updated such that it no longer works with OpenConnect (< 7.08).
+
+For instance, users on Ubuntu 16.04 (Xenial) only gets OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  It has later been found that this was fixed in OpenConnect 7.08.  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnection 7.08 and Pulse Secure 5.3-3 installed at the same time.
 
 
 ## Privacy
