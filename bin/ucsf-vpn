@@ -571,15 +571,21 @@ elif [[ $action == "start-gui" ]]; then
     res=$?
     if [[ $res -ne 0 ]]; then exit $res; fi
     if [[ $play == TRUE ]]; then
-       sleep 1
-       wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
-       if [[ -z $wid ]]; then
-           mecho "ERROR: Failed to locate the Pulse Secure GUI windows"
-	   exit 1
-       fi
-       mdebug "Pulse Secure Window ID: $wid"
-       mdebug "Attempting to click on 'Connect'"
-       xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+        ## Check for 'xdotool'
+        which xdotool 2> /dev/null
+        if [[ $? -ne 0 ]]; then
+            mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
+	    exit 1
+	fi
+        sleep 1
+        wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
+        if [[ -z $wid ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI windows"
+	    exit 1
+        fi
+        mdebug "Pulse Secure Window ID: $wid"
+        mdebug "Attempting to click on 'Connect'"
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
     fi
     exit $res
 elif [[ $action == "start" ]]; then
