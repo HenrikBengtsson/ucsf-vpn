@@ -1,10 +1,12 @@
 ucsf-vpn
 ========
 
-Version 2.2.0-9000 (2017-11-15)
+Version 2.2.0-9000 (2017-12-08)
 
 NEW FEATURES:
 
+ o Added 'ucsf-vpn log', which output the log file.
+ 
  o Added 'ucsf-vpn troubleshoot', which reports on errors in the log file.
 
 BUG FIXES:

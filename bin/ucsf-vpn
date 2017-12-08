@@ -12,6 +12,7 @@
 ###  toggle           Connects to or disconnects from UCSF VPN
 ###  status           Displays UCSF VPN connection status
 ###  details          Displays connection details
+###  log              Displays the log file
 ###  troubleshoot     Scan the log file for errors
 ###
 ### Options:
@@ -479,6 +480,8 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "toggle"; then
         action=toggle
 	force=TRUE
+    elif test "$1" == "log"; then
+        action=log
     elif test "$1" == "troubleshoot"; then
         action=troubleshoot
     elif test "$1" == "--debug"; then
@@ -602,6 +605,14 @@ elif [[ $action == "toggle" ]]; then
     online=$(is_online)
     result
     exit $res
+elif [[ $action == "log" ]]; then
+    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
+    mdebug "Displaying log file: $LOGFILE"
+    if [[ ! -f $LOGFILE ]]; then
+	mecho "[WARN] No such log file: $LOGFILE"
+	exit 1
+    fi
+    cat $LOGFILE
 elif [[ $action == "troubleshoot" ]]; then
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
     mdebug "Scanning log file: $LOGFILE"

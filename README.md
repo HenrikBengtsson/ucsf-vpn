@@ -51,12 +51,14 @@ Commands:
  toggle           Connects to or disconnects from UCSF VPN
  status           Displays UCSF VPN connection status
  details          Displays connection details
+ log              Displays the log file
  troubleshoot     Scan the log file for errors
 
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
  --server <host>  VPN server (defaults to remote.ucsf.edu)
+ --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
  --skip           If already fulfilled, skip command
  --force          Force running the command
  --verbose        Verbose output
@@ -84,7 +86,7 @@ the user / owner of the file.  If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Junos Pulse Secure client (>= 5.3) (installed: 5.3-2-Build422)
+* Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
 * Ports 4242 (UDP) and 443 (TCP)
 * `curl`
 * No need for sudo rights to run :)
