@@ -22,9 +22,10 @@
 ###  --pwd <pwd>      UCSF Active Directory ID password
 ###  --token <token>  One-time two-factor authentication (2FA) token (Duo or
 ###                   YubiKey). If 'true' (default), user is prompted to enter
-###                   the token.  If 'phone', authenatication will be done via
-###                   by phone (approve by pressing any key). If 'false', 2FA
-###                   is not used.
+###                   the token.  If 'push', authentication is done via
+###                   Duo Push (approve and confirm in Duo app).  If 'phone',
+###                   authenatication is done via by phone ("press any key").
+###                   If 'false', 2FA is not used.
 ###                   NOTE: --no-gui ignores --token with a warning.
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
@@ -373,6 +374,10 @@ function is_token_valid() {
     ## Hardcoded methods
     if [[ ${token} == "phone" ]]; then
         mdebug "Will authenticate via a call-back phone call from Duo"
+        echo TRUE
+        return
+    elif [[ ${token} == "push" ]]; then
+        mdebug "Will authenticate via Duo Push (approve and confirm in Duo app)"
         echo TRUE
         return
     fi

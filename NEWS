@@ -5,8 +5,9 @@ Version 3.0.0-9000 (2017-12-09)
 
 NEW FEATURES:
 
- o Added support for --token=phone, which will do authentication via
-   a call-back phone call ("press any key").
+ o Added support for '--token push' and '--token phone', which will
+   authenticate via the Duo app (approve and confirm) and phone call
+   ("press any key"), respectively.
  
 
 Version 3.0.0 (2017-12-09)
