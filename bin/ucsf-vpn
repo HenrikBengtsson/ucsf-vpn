@@ -36,7 +36,7 @@
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --gui --user alice --pwd secrets --token prompt
+###  ucsf-vpn start --gui --user alice --pwd secrets --token true
 ###  ucsf-vpn stop
 ###
 ### User credentials:
