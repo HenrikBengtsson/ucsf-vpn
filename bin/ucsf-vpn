@@ -511,6 +511,14 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--passcode"; then
         shift
         passcode=$1
+	if [[ ${#passcode} -ne 6 ]]; then
+	    mecho "ERROR: The UCSF 2FA passcode (--passcode) must be exactly 6 digits"
+	    exit 1
+	fi
+	if [[ ! ${passcode} =~ ^[0-9]+$ ]]; then
+	    mecho "ERROR: The UCSF 2FA passcode (--passcode) must contain only digits"
+	    exit 1
+	fi
     elif test "$1" == "--play"; then
 	play=TRUE
     else
@@ -609,11 +617,11 @@ elif [[ $action == "start-gui" ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
 	    exit 1
         fi
-        mdebug "Click on 'Proceed'"
+        mdebug "Clicking on 'Proceed'"
         xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
 	sleep 1
 	
-        mdebug "Enter credentials"
+        mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync $wid2 type "$user"
         xdotool windowactivate --sync $wid2 key Tab type "$pwd"
         xdotool windowactivate --sync $wid2 key Tab Down Tab Return
@@ -622,17 +630,16 @@ elif [[ $action == "start-gui" ]]; then
 	sleep 3
 	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid3"
-	wid3=$(echo "$wid3" | grep -vF $wid | grep -vF $wid2)
-	wid3=$wid2
+	wid3=$(echo "$wid3" | grep -vF $wid)
         mdebug "Pulse Secure Popup Window ID: $wid3"
         if [[ -z $wid3 ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
 	    exit 1
         fi
-        mdebug "2FA passcode"
         if [[ -n $passcode ]]; then
-            xdotool windowactivate --sync $wid2 type "$passcode"
-            xdotool windowactivate --sync $wid2 key Return
+            mdebug "Entering 2FA passcode"
+            xdotool windowactivate --sync $wid3 type "$passcode"
+            xdotool windowactivate --sync $wid3 key Return
 	fi
     fi
     exit $res
