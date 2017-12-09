@@ -846,6 +846,6 @@ elif [[ $action == "troubleshoot" ]]; then
         exit 0
     fi
     
-    mecho "[ERROR] Below errors found in log:"
-    grep -F Error $LOGFILE | >&2 tail -3 
+    mecho "[ERROR] Detected the following errors in the log file:"
+    grep -F Error $LOGFILE | >&2 tail -3
 fi
