@@ -608,7 +608,7 @@ elif [[ $action == "start-gui" ]]; then
         mdebug "Attempting to click on 'Connect'"
         xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
 	
-	sleep 1
+	sleep 0.5
 	wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
 	wid2=$(echo "$wid2" | grep -vF $wid)
@@ -627,7 +627,7 @@ elif [[ $action == "start-gui" ]]; then
         xdotool windowactivate --sync $wid2 key Tab Down Tab Return
 
 	
-	sleep 3
+	sleep 2
 	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid3"
 	wid3=$(echo "$wid3" | grep -vF $wid)
