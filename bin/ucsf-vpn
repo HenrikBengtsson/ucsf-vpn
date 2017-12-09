@@ -477,7 +477,7 @@ function start() {
 	## Start Pulse Secure GUI?
         if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
         
-        sleep 1
+        sleepx 0.5
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
         if [[ -z $wid ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI window"
@@ -487,7 +487,7 @@ function start() {
         mdebug "Attempting to click on 'Connect'"
         xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
         
-        sleep 0.5
+        sleepx 0.5
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
         wid2=$(echo "$wid2" | grep -vF $wid)
@@ -501,7 +501,7 @@ function start() {
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
             xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-            sleep 0.5
+            sleepx 0.5
 	fi
         
         mdebug "Entering user credentials (username and password)"
@@ -512,7 +512,7 @@ function start() {
         if [[ ${token} != false ]]; then
             mdebug "Using two-factor authentication (2FA)"
 	    
-            sleep 2
+            sleepx 0.5
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
             wid3=$(echo "$wid3" | grep -vF $wid)
@@ -608,6 +608,15 @@ function result() {
     echo "RESULT: $(status $connected $ip)"
 }
 
+function sleepx() {
+    delay=$1
+    if [[ $speed != "1.0" ]]; then
+	delay=$(expr $delay/$speed | bc -l)
+    fi
+    mdebug "Sleeping $delay seconds"
+    sleep $delay
+}
+
 ## Actions
 action=help
 
@@ -625,6 +634,7 @@ realm="Single-Factor Pulse Clients"
 extras=
 gui=TRUE
 notification=TRUE
+speed=1.0
 
 ## User credentials
 user=
@@ -699,6 +709,13 @@ while [[ $# > 0 ]]; do
         notification=TRUE
     elif test "$1" == "--no-notification"; then
         notification=FALSE
+    elif test "$1" == "--speed"; then
+        shift
+        speed=$1
+        if [[ ! ${speed} =~ ^[.0-9]$ ]]; then
+            mecho "ERROR: Invalid --speed argument: $speed"
+	    exit 1
+	fi
     else
         extras="$extras $1"
     fi
@@ -723,6 +740,7 @@ if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
     mdebug "gui: $gui"
+    mdebug "speed: $speed"
     mdebug "VPN server: $server"
     mdebug "Realm: $realm"
     mdebug "verbose: $verbose"

@@ -25,7 +25,10 @@ NEW FEATURES:
    whether the USCF VPN login includes a "Pre Sign-In Notification" message
    that needs to be confirmed or not.
   
+ o Added '--speed <factor>' for adjusting the waiting times between
+   submitting information to the GUI.
 
+ 
 Version 2.3.0 (2017-12-08)
 
 NEW FEATURES:
