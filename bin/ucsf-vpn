@@ -107,7 +107,7 @@ function mdebug() {
     fi
 }
 function merror() {
-    mecho "[ERROR] $@";
+    mecho "ERROR: $@";
     exit 1
 }
 function vecho() {
@@ -207,8 +207,7 @@ function is_connected() {
 function status() {
     mdebug "status($*)"
     if [[ $online == FALSE ]]; then
-      echo "No internet connection"
-      exit 1
+      merror "No internet connection"
     fi
     connected=$1
     ip=$2
@@ -216,14 +215,14 @@ function status() {
       vecho "- Retrieving public IP"
       ip=$(public_ip $1)
       vecho "  => $ip"
-      mdebug ip=$ip
+      mdebug "ip=$ip"
     fi
     if [[ $connected == "" ]]; then
       vecho "- Testing if IP $ip is a registered UCSF IP number"
       connected=$(is_connected $ip)
       vecho "  => $connected"
-      mdebug ip=$ip
-      mdebug connected=$connected
+      mdebug "ip=$ip"
+      mdebug "connected=$connected"
     fi
     if [[ $connected == TRUE ]]; then
         echo "Connected to the UCSF network [$(public_hostname) ($(public_ip))]"
@@ -234,7 +233,7 @@ function status() {
 
 function start_gui() {
     if [[ $(is_pulseUi_running) == TRUE ]]; then
-        echo "SKIPPING: Pulse Secure GUI is already running"
+        mecho "SKIPPING: Pulse Secure GUI is already running"
         return
     fi
     
@@ -253,7 +252,7 @@ function open_gui() {
       connected=$(is_connected $ip)
       if [[ $connected == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
-              echo "SKIPPING: $(status $connected $ip)"
+              mecho "[SKIPPING]: $(status $connected $ip)"
               exit 0
           else
               merror "$(status $connected $ip)"
@@ -309,8 +308,7 @@ function source_netrc() {
     
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
     if [[ -z $bfr ]]; then
-        mecho "[INTERNAL ERROR] Failed to extract ${machine} credentials from ${rcfile}"
-        exit 1
+        merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
     fi
     
     user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
@@ -374,7 +372,7 @@ function prompt_pwd() {
         read -s pwd
         pwd=${pwd/ /}
     done
-    echo "<password>"
+    mecho "<password>"
 
     if [[ $debug == TRUE ]]; then
         if [[ -z "${pwd}" ]]; then
@@ -420,7 +418,7 @@ function prompt_token() {
             token=
         fi
     done
-    echo "<valid token>"
+    mecho "<valid token>"
 
     if [[ $debug == TRUE ]]; then
         if [[ -z "${token}" ]]; then
@@ -440,7 +438,7 @@ function start() {
       
       if [[ $connected == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
-              echo "SKIPPING: $(status $connected $ip)"
+              mecho "SKIPPING: $(status $connected $ip)"
               exit 0
           else
               merror "$(status $connected $ip)"
@@ -568,13 +566,13 @@ function start() {
 
 function stop() {
     if [[ $online == FALSE ]]; then
-      echo "WARNING: $(status $connected $ip)"
+      mecho "WARNING: $(status $connected $ip)"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)
       if [[ $connected == FALSE ]]; then
           if [[ $skip == TRUE ]]; then
-              echo "SKIPPING: $(status $connected $ip)"
+              mecho "[SKIPPING] $(status $connected $ip)"
               exit 0
           else
               merror "$(status $connected $ip)"
@@ -585,10 +583,10 @@ function stop() {
 
     ## "Kill any Pulse Secure GUI
     while [ $(is_pulseUi_running) == TRUE ]; do
-      echo "Killing Pulse Secure GUI"
+      mdebug "Killing Pulse Secure GUI"
       pkill -QUIT pulseUi
       if [[ $? -eq 0 ]]; then
-          echo "RESULT: Killed Pulse Secure GUI"
+          mecho "RESULT: Killed Pulse Secure GUI"
           break
       fi
       sleep 1
@@ -596,7 +594,7 @@ function stop() {
     
     ## "Kill all running ncsvc services"
     pulsesvc -Kill
-    echo "RESULT: Killed local VPN process"
+    mecho "RESULT: Killed local VPN process"
 }
 
 function result() {
@@ -850,5 +848,4 @@ elif [[ $action == "troubleshoot" ]]; then
     
     mecho "[ERROR] Below errors found in log:"
     grep -F Error $LOGFILE | >&2 tail -3 
-    exit 1
 fi
