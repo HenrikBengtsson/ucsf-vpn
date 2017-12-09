@@ -1,10 +1,14 @@
 ucsf-vpn
 ========
 
-Version 2.3.0-9000 (2017-12-09)
+Version 3.0.0 (2017-12-09)
 
 SIGNIFICANT CHANGES:
 
+ o Two-factor authentication (2FA) is now supported by sending user credentials
+   and 2FA tokens via the Pulse Secure GUI by utilizing xdotool (automated
+   mouse clicks and key presses over X11).  It's not perfect, but it works.
+ 
  o Now 'ucsf-vpn start --gui' is the default.
 
  o 'ucsf-vpn start-gui' was renamed to 'ucsf-vpn open-gui'.
