@@ -23,6 +23,7 @@
 ###  --token <token>  One-time two-factor authentication (2FA) token (Duo or
 ###                   YubiKey). If 'true' (default), user is prompted to enter
 ###                   the token.  If 'false', 2FA is not used.
+###                   NOTE: --no-gui ignores --token with a warning.
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -454,26 +455,17 @@ function start() {
     prompt_user ${user}
     prompt_pwd ${pwd}
 
-    if [[ $res -ne 0 ]]; then exit $res; fi
     if [[ $gui == TRUE ]]; then
         ## Check for 'xdotool'
         which xdotool &> /dev/null
         if [[ $? -ne 0 ]]; then
             merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
         fi
-        
-        ## Load user credentials from file?
-        source_netrc ${server}
-        source_ucsfvpnrc  ## deprecated
-    
-        ## Prompt for username and password, if missing
-        prompt_user ${user}
-        prompt_pwd ${pwd}
 
         ## Prompt for one-time token, if requested
         prompt_token ${token}
-
-	## Start Pulse Secure GUI?
+        
+        ## Start Pulse Secure GUI?
         if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
         
         sleepx 0.5
@@ -494,12 +486,12 @@ function start() {
             merror "Failed to locate the Pulse Secure GUI popup window"
         fi
 
-	## Click-through UCSF announcement messsage?
+        ## Click-through UCSF announcement messsage?
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
             xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
             sleepx 0.5
-	fi
+        fi
         
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync $wid2 type "$user"
@@ -508,7 +500,7 @@ function start() {
 
         if [[ ${token} != false ]]; then
             mdebug "Using two-factor authentication (2FA)"
-	    
+            
             sleepx 0.5
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
@@ -517,12 +509,16 @@ function start() {
             if [[ -z $wid3 ]]; then
                 merror "Failed to locate the Pulse Secure GUI popup window"
             fi
-	    
+            
             mdebug "Entering token"
             xdotool windowactivate --sync $wid3 type "$token"
             xdotool windowactivate --sync $wid3 key Return
-	fi
+        fi
     else
+      if [ -n ${token} ] && [ ${token} != false ]; then
+          mecho "WARNING: Option --token is ignored because two-factor authentication (2FA) is currently not supported when using --no-gui"
+      fi
+
       ## Pulse Secure options
       opts="$extras"
       opts="$opts -h ${server}"
@@ -606,7 +602,7 @@ function result() {
 function sleepx() {
     delay=$1
     if [[ $speed != "1.0" ]]; then
-	delay=$(expr $delay/$speed | bc -l)
+        delay=$(expr $delay/$speed | bc -l)
     fi
     mdebug "Sleeping $delay seconds"
     sleep $delay
@@ -634,7 +630,7 @@ speed=1.0
 ## User credentials
 user=
 pwd=
-token=true
+token=default
 
 # Parse command-line options
 while [[ $# > 0 ]]; do
@@ -709,12 +705,20 @@ while [[ $# > 0 ]]; do
         speed=$1
         if [[ ! ${speed} =~ ^[.0-9]$ ]]; then
             merror "Invalid --speed argument: $speed"
-	fi
+        fi
     else
         extras="$extras $1"
     fi
     shift
 done
+
+if [[ $token == default ]]; then
+    if [[ $gui == TRUE ]]; then
+	token=true
+    else
+	token=false
+    fi
+fi
 
 ## Validate 'realm'
 if [[ $realm == "Single-Factor Pulse Clients" ]]; then
@@ -829,7 +833,7 @@ elif [[ $action == "troubleshoot" ]]; then
     mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     res=$(which pulsesvc)
     if [[ $? -ne 0 ]]; then 
-	merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
+        merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
     fi
     
     mecho "[INFO] Pulse Secure software: $res"
