@@ -20,7 +20,8 @@
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --code <code>    One-time Duo two-factor authentication code (6 digits)
+###  --code <code>    One-time authentication code
+###                   (Duo: 6 digits, YubiKey: 44 letters)
 ###
 ###  --gui            Connect to VPN via the Pulse Secure GUI
 ###
@@ -58,6 +59,13 @@
 ### * `curl`
 ### * `xdotool` (when using 'ucsf-vpn start --gui')
 ### * No need for sudo rights to run :)
+###
+### Pulse Secure GUI configuration:
+### To add a new connection to the Pulse Secure GUI ('ucsf-vpn open-gui'),
+### click '+' and enter:
+###  - Name: ucsf
+###  - URL: https://remote.ucsf.edu/pulse
+### The name can be whatever you'd like.
 ###
 ### Troubleshooting:
 ### * Verify your username and password at https://remote.ucsf.edu/.
@@ -614,12 +622,14 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--code"; then
         shift
         code=$1
-        if [[ ${#code} -ne 6 ]]; then
-            mecho "ERROR: The UCSF 2FA code (--code) must be exactly 6 digits"
-            exit 1
-        fi
-        if [[ ! ${code} =~ ^[0-9]+$ ]]; then
-            mecho "ERROR: The UCSF 2FA code (--code) must contain only digits"
+        if [[ ${#code} -eq 44 ]] && [[ ${code} =~ ^[a-z]+$ ]]; then
+	    ## (a) YubiKey token (44 lower-case letters)
+            mdebug "YubiKey token detected"
+        elif [[ ${#code} -eq 6 ]] && [[ ${code} =~ ^[0-9]+$ ]]; then
+            ## (b) Duo 6-digit token
+            mdebug "Duo token detected"
+	else
+            mecho "ERROR: The UCSF 2FA code (--code) must contain 6 digits (Duo) or a 44 letters (YubiKey)"
             exit 1
         fi
     elif test "$1" == "--gui"; then
