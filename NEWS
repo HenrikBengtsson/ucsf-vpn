@@ -32,7 +32,11 @@ NEW FEATURES:
 
  o Use environment variable PULSEPATH to override the default location
    (/usr/local/pulse/) of the Pulse Secure software and libraries.
-   
+
+DEPRECATED & DEFUNCT:
+
+ o Credentials in ~/.ucsfvpnrc are defunct. Use ~/.netrc instead.
+
  
 Version 2.3.0 (2017-12-08)
 
@@ -64,7 +68,7 @@ SIGNIFICANT CHANGES:
 
 DEPRECATED & DEFUNCT:
 
- o Credentials in ~/.ucsfvpnrc is deprecated. Use ~/.netrc instead.
+ o Credentials in ~/.ucsfvpnrc are deprecated. Use ~/.netrc instead.
 
 
 Version 2.0.0 (2017-11-03)

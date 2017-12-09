@@ -328,26 +328,7 @@ function source_netrc() {
 function source_ucsfvpnrc() {
     local rcfile=~/.ucsfvpnrc
     if [[ ! -f "${rcfile}" ]]; then return; fi
-
-    mecho "DEPRECATED: The use of '${rcfile}' is deprecated. Please put credentials in '~/.netrc'.";
-    
-    if [[ $debug == TRUE ]]; then
-        mdebug "rcfile: ${rcfile}"
-    fi
-    
-    ## Force file to be accessible only by user
-    chmod go-rwx "${rcfile}"
-    
-    source "${rcfile}"
-    
-    if [[ $debug == TRUE ]]; then
-        mdebug "- user=${user}"
-        if [[ -z "${pwd}" ]]; then
-            mdebug "- pwd=<missing>"
-        else
-            mdebug "- pwd=<hidden>"
-        fi
-    fi
+    merror "The use of '${rcfile}' is defunct. Please put credentials in '~/.netrc'."
 }
 
 function prompt_user() {
