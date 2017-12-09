@@ -20,7 +20,9 @@
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --token <token>  One-time authentication token (Duo or YubiKey)
+###  --token <token>  One-time two-factor authentication (2FA) token (Duo or
+###                   YubiKey). If 'true' (default), user is prompted to enter
+###                   the token.  If 'false', 2FA is not used.
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -368,6 +370,8 @@ function prompt_pwd() {
         read -s pwd
         pwd=${pwd/ /}
     done
+    echo "<password>"
+
     if [[ $debug == TRUE ]]; then
         if [[ -z "${pwd}" ]]; then
             mdebug "- pwd=<missing>"
@@ -412,6 +416,7 @@ function prompt_token() {
             token=
         fi
     done
+    echo "<valid token>"
 
     if [[ $debug == TRUE ]]; then
         if [[ -z "${token}" ]]; then
@@ -468,8 +473,9 @@ function start() {
 
         ## Prompt for one-time token, if requested
         prompt_token ${token}
-        
-        start_gui
+
+	## Start Pulse Secure GUI?
+        if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
         
         sleep 1
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
@@ -499,21 +505,23 @@ function start() {
         xdotool windowactivate --sync $wid2 key Tab type "$pwd"
         xdotool windowactivate --sync $wid2 key Tab Down Tab Return
 
-        
-        sleep 2
-        wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-        mdebug "Pulse Secure Window IDs: $wid3"
-        wid3=$(echo "$wid3" | grep -vF $wid)
-        mdebug "Pulse Secure Popup Window ID: $wid3"
-        if [[ -z $wid3 ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-            exit 1
-        fi
-        if [[ -n $token ]]; then
-            mdebug "Entering 2FA token"
+        if [[ ${token} != false ]]; then
+            mdebug "Using two-factor authentication (2FA)"
+	    
+            sleep 2
+            wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+            mdebug "Pulse Secure Window IDs: $wid3"
+            wid3=$(echo "$wid3" | grep -vF $wid)
+            mdebug "Pulse Secure Popup Window ID: $wid3"
+            if [[ -z $wid3 ]]; then
+                mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
+                exit 1
+            fi
+	    
+            mdebug "Entering token"
             xdotool windowactivate --sync $wid3 type "$token"
             xdotool windowactivate --sync $wid3 key Return
-        fi
+	fi
     else
       ## Pulse Secure options
       opts="$extras"
@@ -616,7 +624,7 @@ gui=TRUE
 ## User credentials
 user=
 pwd=
-token=
+token=true
 
 # Parse command-line options
 while [[ $# > 0 ]]; do
@@ -671,7 +679,9 @@ while [[ $# > 0 ]]; do
         shift
         token=$1
         if [[ ${token} == "true" ]]; then
-            mdebug "Will prompt user for token"
+            mdebug "Will prompt user for 2FA token"
+        elif [[ ${token} == "false" ]]; then
+            mdebug "Will not use 2FA authenatication"
         elif [[ $(is_token_valid $token) == FALSE ]]; then
             mecho "ERROR: The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
             exit 1

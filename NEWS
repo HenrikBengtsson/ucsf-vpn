@@ -17,7 +17,9 @@ NEW FEATURES:
  o Added --gui (default) and --no-gui to control whether 'ucsf-vpn start'
    should the Pulse Secure GUI or the CLI.
 
- o Added --token <token> to specify one-time token.
+ o Added --token <token> to specify the one-time two-factor authentication
+   (2FA) token, where '--token true' (default) will prompt user to enter
+   token, and '--token false' will try to connect without 2FA.
 
 
 Version 2.3.0 (2017-12-08)
