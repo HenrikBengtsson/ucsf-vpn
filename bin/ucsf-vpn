@@ -22,7 +22,8 @@
 ###  --pwd <pwd>      UCSF Active Directory ID password
 ###  --token <token>  One-time authentication token (Duo or YubiKey)
 ###
-###  --gui            Connect to VPN via the Pulse Secure GUI
+###  --gui            Connect to VPN via Pulse Secure GUI (default)
+###  --no-gui         Connect to VPN via Pulse Secure CLI
 ###
 ###  --server <host>  VPN server (defaults to remote.ucsf.edu)
 ###  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
@@ -36,7 +37,7 @@
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --gui --user alice --pwd secrets --token true
+###  ucsf-vpn start --user alice --pwd secrets --token true
 ###  ucsf-vpn stop
 ###
 ### User credentials:
@@ -610,7 +611,7 @@ verbose=FALSE
 dryrun=FALSE
 realm="Single-Factor Pulse Clients"
 extras=
-gui=FALSE
+gui=TRUE
 
 ## User credentials
 user=
@@ -677,6 +678,8 @@ while [[ $# > 0 ]]; do
         fi
     elif test "$1" == "--gui"; then
         gui=TRUE
+    elif test "$1" == "--no-gui"; then
+        gui=FALSE
     else
         extras="$extras $1"
     fi

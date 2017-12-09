@@ -1,10 +1,24 @@
 ucsf-vpn
 ========
 
-Version 2.3.0-9000 (2017-12-08)
+Version 2.3.0-9000 (2017-12-09)
 
- o ...
- 
+SIGNIFICANT CHANGES:
+
+ o Now 'ucsf-vpn start --gui' is the default.
+
+ o 'ucsf-vpn start-gui' was renamed to 'ucsf-vpn open-gui'.
+
+NEW FEATURES:
+
+ o Now 'ucsf-vpn start' (with default --gui) connects to the UCSF VPN
+   via the Pulse Secure GUI (by sending mouse and key sequences).
+
+ o Added --gui (default) and --no-gui to control whether 'ucsf-vpn start'
+   should the Pulse Secure GUI or the CLI.
+
+ o Added --token <token> to specify one-time token.
+
 
 Version 2.3.0 (2017-12-08)
 
