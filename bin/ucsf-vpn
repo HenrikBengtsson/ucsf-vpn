@@ -20,8 +20,7 @@
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --code <code>    One-time authentication code
-###                   (Duo: 6 digits, YubiKey: 44 letters)
+###  --token <token>  One-time authentication token (Duo or YubiKey)
 ###
 ###  --gui            Connect to VPN via the Pulse Secure GUI
 ###
@@ -37,7 +36,7 @@
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --gui --user alice --pwd secrets --code=123456
+###  ucsf-vpn start --gui --user alice --pwd secrets --token prompt
 ###  ucsf-vpn stop
 ###
 ### User credentials:
@@ -347,10 +346,11 @@ function source_ucsfvpnrc() {
 
 function prompt_user() {
     user=$1
+    if [[ ${user} == "prompt" ]]; then user=; fi
     if [[ -n ${user} ]]; then return; fi
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z ${user} ]; do
-        printf "Username: " 1>&2;
+        printf "Enter username: " 1>&2;
         read user
         user=${user/ /}
     done
@@ -361,10 +361,11 @@ function prompt_user() {
 
 function prompt_pwd() {
     pwd=$1
+    if [[ ${pwd} == "prompt" ]]; then pwd=; fi
     if [[ -n ${pwd} ]]; then return; fi
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z ${pwd} ]; do
-        printf "Password: " 1>&2;
+        printf "Enter password: " 1>&2;
         read -s pwd
         pwd=${pwd/ /}
     done
@@ -373,6 +374,51 @@ function prompt_pwd() {
             mdebug "- pwd=<missing>"
         else
             mdebug "- pwd=<hidden>"
+        fi
+    fi
+}
+
+function is_token_valid() {
+    token=$1
+    
+    ## YubiKey token (44 lower-case letters)
+    if [[ ${#token} -eq 44 ]] && [[ ${token} =~ ^[a-z]+$ ]]; then
+        mdebug "YubiKey token detected"
+        echo TRUE
+        return
+    fi
+    
+    ## Duo 6-digit token
+    if [[ ${#token} -eq 6 ]] && [[ ${token} =~ ^[0-9]+$ ]]; then
+        mdebug "Duo token detected"
+        echo TRUE
+        return
+    fi
+
+    echo FALSE
+}
+
+function prompt_token() {
+    token=$1
+    if [[ ${token} == "prompt" ]]; then token=; fi
+    if [[ -n ${token} ]]; then return; fi
+  
+    mdebug "PROMPT: Asking user to enter one-time token:"
+    while [ -z ${token} ]; do
+        printf "Enter 6-digit Duo token or press your YubiKey: " 1>&2;
+        read -s token
+        token=${token/ /}
+        if [[ $(is_token_valid $token) == FALSE ]]; then
+            printf "\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\n"
+            token=
+        fi
+    done
+
+    if [[ $debug == TRUE ]]; then
+        if [[ -z "${token}" ]]; then
+            mdebug "- token=<missing>"
+        else
+            mdebug "- token=<hidden>"
         fi
     fi
 }
@@ -421,6 +467,9 @@ function start() {
         prompt_user ${user}
         prompt_pwd ${pwd}
 
+        ## Prompt for one-time token, if requested
+        prompt_token ${token}
+        
         start_gui
         
         sleep 1
@@ -461,9 +510,9 @@ function start() {
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
             exit 1
         fi
-        if [[ -n $code ]]; then
-            mdebug "Entering 2FA code"
-            xdotool windowactivate --sync $wid3 type "$code"
+        if [[ -n $token ]]; then
+            mdebug "Entering 2FA token"
+            xdotool windowactivate --sync $wid3 type "$token"
             xdotool windowactivate --sync $wid3 key Return
         fi
     else
@@ -532,7 +581,7 @@ function stop() {
       pkill -QUIT pulseUi
       if [[ $? -eq 0 ]]; then
           echo "RESULT: Killed Pulse Secure GUI"
-	  break
+          break
       fi
       sleep 1
     done
@@ -568,7 +617,7 @@ gui=FALSE
 ## User credentials
 user=
 pwd=
-code=
+token=
 
 # Parse command-line options
 while [[ $# > 0 ]]; do
@@ -619,17 +668,13 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--pwd"; then
         shift
         pwd=$1
-    elif test "$1" == "--code"; then
+    elif test "$1" == "--token"; then
         shift
-        code=$1
-        if [[ ${#code} -eq 44 ]] && [[ ${code} =~ ^[a-z]+$ ]]; then
-	    ## (a) YubiKey token (44 lower-case letters)
-            mdebug "YubiKey token detected"
-        elif [[ ${#code} -eq 6 ]] && [[ ${code} =~ ^[0-9]+$ ]]; then
-            ## (b) Duo 6-digit token
-            mdebug "Duo token detected"
-	else
-            mecho "ERROR: The UCSF 2FA code (--code) must contain 6 digits (Duo) or a 44 letters (YubiKey)"
+        token=$1
+        if [[ ${token} == "prompt" ]]; then
+            mdebug "Will prompt user for token"
+        elif [[ $(is_token_valid $token) == FALSE ]]; then
+            mecho "ERROR: The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
             exit 1
         fi
     elif test "$1" == "--gui"; then
@@ -670,6 +715,13 @@ if [[ $debug == TRUE ]]; then
         mdebug "pwd=<missing>"
     else
         mdebug "pwd=<hidden>"
+    fi
+    if [[ -z "${token}" ]]; then
+        mdebug "token=<missing>"
+    elif [[ "${token}" == "prompt" ]]; then
+        mdebug "token=<prompt>"
+    else
+        mdebug "token=<hidden>"
     fi
 fi
 
