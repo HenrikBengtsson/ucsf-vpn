@@ -346,7 +346,6 @@ function source_ucsfvpnrc() {
 
 function prompt_user() {
     user=$1
-    if [[ ${user} == "prompt" ]]; then user=; fi
     if [[ -n ${user} ]]; then return; fi
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z ${user} ]; do
@@ -361,7 +360,6 @@ function prompt_user() {
 
 function prompt_pwd() {
     pwd=$1
-    if [[ ${pwd} == "prompt" ]]; then pwd=; fi
     if [[ -n ${pwd} ]]; then return; fi
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z ${pwd} ]; do
@@ -400,7 +398,7 @@ function is_token_valid() {
 
 function prompt_token() {
     token=$1
-    if [[ ${token} == "prompt" ]]; then token=; fi
+    if [[ ${token} == "true" ]]; then token=; fi
     if [[ -n ${token} ]]; then return; fi
   
     mdebug "PROMPT: Asking user to enter one-time token:"
@@ -671,7 +669,7 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--token"; then
         shift
         token=$1
-        if [[ ${token} == "prompt" ]]; then
+        if [[ ${token} == "true" ]]; then
             mdebug "Will prompt user for token"
         elif [[ $(is_token_valid $token) == FALSE ]]; then
             mecho "ERROR: The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
@@ -718,7 +716,7 @@ if [[ $debug == TRUE ]]; then
     fi
     if [[ -z "${token}" ]]; then
         mdebug "token=<missing>"
-    elif [[ "${token}" == "prompt" ]]; then
+    elif [[ "${token}" == "true" ]]; then
         mdebug "token=<prompt>"
     else
         mdebug "token=<hidden>"
