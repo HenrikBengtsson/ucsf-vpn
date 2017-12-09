@@ -95,9 +95,9 @@
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
 
-export PULSEDIR=/usr/local/pulse
-export PATH="${PULSEDIR}:${PATH}"
-export LD_LIBRARY_PATH="${PULSEDIR}:${LD_LIBRARY_PATH}"
+export PULSEPATH=${PULSEPATH:-/usr/local/pulse}
+export PATH="${PULSEPATH}:${PATH}"
+export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 export PUBLIC_INFO=
 
 function mecho() { echo "$@" 1>&2; }
@@ -826,18 +826,17 @@ elif [[ $action == "log" ]]; then
     fi
     cat $LOGFILE
 elif [[ $action == "troubleshoot" ]]; then
+    mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     res=$(which pulsesvc)
     if [[ $? -ne 0 ]]; then 
-	mecho "[INFO] Pulse Secure software: 'pulsesvc' is not in your PATH."
-	exit 1
+	merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
     fi
     
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
     if [[ ! -f $LOGFILE ]]; then
-        mecho "[WARN] No such log file: $LOGFILE"
-        exit 1
+        merror "No log file: $LOGFILE"
     fi
     mecho "[INFO] Log file: $LOGFILE"
     grep -q -F Error $LOGFILE &> /dev/null

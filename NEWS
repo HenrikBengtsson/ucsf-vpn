@@ -30,6 +30,9 @@ NEW FEATURES:
 
  o Now 'ucsf-vpn troubleshoot' also reports on 'pulsesvc --version'.
 
+ o Use environment variable PULSEPATH to override the default location
+   (/usr/local/pulse/) of the Pulse Secure software and libraries.
+   
  
 Version 2.3.0 (2017-12-08)
 
