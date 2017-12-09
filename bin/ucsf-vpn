@@ -20,7 +20,7 @@
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --code <code>    Duo Two-Factor Authentication Code (6 digits)
+###  --code <code>    One-time Duo two-factor authentication code (6 digits)
 ###
 ###  --gui            Connect to VPN via the Pulse Secure GUI
 ###
@@ -40,10 +40,9 @@
 ###  ucsf-vpn stop
 ###
 ### User credentials:
-### If --user and/or --pwd are not specified, then the user will be
-### prompted to enter them.  Furthermore, the default values for --user
-### and --pwd can be specified in your ~/.netrc file (or according to
-### environment variable NETRC).  For example:
+### If user credentials (--user and --pwd) are neither specified nor given
+### in ~/.netrc, then you will be prompted to enter them.  To specify them
+### in ~/.netrc file, use the following:
 ###
 ###   machine remote.ucsf.edu
 ###       login alice
@@ -57,6 +56,7 @@
 ### * Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
 ### * Ports 4242 (UDP) and 443 (TCP)
 ### * `curl`
+### * `xdotool` (when using 'ucsf-vpn start --gui')
 ### * No need for sudo rights to run :)
 ###
 ### Troubleshooting:
@@ -64,7 +64,7 @@
 ###   This should be your UCSF Active Directory ID (username); neither
 ###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 ### * Make sure ports 4242 & 443 are not used by other processes
-### * If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
+### * If you are using the Pulse Secure GUI (`ucsf-vpn open-gui`), use
 ###   'https://remote.ucsf.edu/pulse' as the URL when adding a new
 ###   connection.
 ### * The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
@@ -161,8 +161,17 @@ function is_online() {
     fi
 }
 
-function is_running() {
+function is_pulsesvc_running() {
     ps -C pulsesvc > /dev/null
+    if [[ $? -eq 0 ]]; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
+
+function is_pulseUi_running() {
+    ps -C pulseUi > /dev/null
     if [[ $? -eq 0 ]]; then
         echo TRUE
     else
@@ -211,6 +220,16 @@ function status() {
 }
 
 function start_gui() {
+    if [[ $(is_pulseUi_running) == TRUE ]]; then
+        echo "SKIPPING: Pulse Secure GUI is already running"
+        return
+    fi
+    
+    ## Start the Pulse Secure GUI
+    pulseUi &
+}
+
+function open_gui() {
     if [[ $online == FALSE ]]; then
       echo "ERROR: $(status $connected $ip)"
       exit 1
@@ -236,8 +255,9 @@ function start_gui() {
     if [[ $dryrun == TRUE ]]; then
         exit 0
     fi
-    
-    pulseUi &
+
+    ## Start the Pulse Secure GUI
+    start_gui
 }
 
 function source_netrc() {
@@ -379,7 +399,7 @@ function start() {
     if [[ $res -ne 0 ]]; then exit $res; fi
     if [[ $gui == TRUE ]]; then
         ## Check for 'xdotool'
-        which xdotool 2> /dev/null
+        which xdotool &> /dev/null
         if [[ $? -ne 0 ]]; then
             mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
             exit 1
@@ -498,6 +518,17 @@ function stop() {
       mdebug "Public IP (before): $ip"
     fi
 
+    ## "Kill any Pulse Secure GUI
+    while [ $(is_pulseUi_running) == TRUE ]; do
+      echo "Killing Pulse Secure GUI"
+      pkill -QUIT pulseUi
+      if [[ $? -eq 0 ]]; then
+          echo "RESULT: Killed Pulse Secure GUI"
+	  break
+      fi
+      sleep 1
+    done
+    
     ## "Kill all running ncsvc services"
     pulsesvc -Kill
     echo "RESULT: Killed local VPN process"
@@ -538,8 +569,8 @@ while [[ $# > 0 ]]; do
         action=help
     elif test "$1" == "--version"; then
         action=version
-    elif test "$1" == "start-gui"; then
-        action=start-gui
+    elif test "$1" == "open-gui"; then
+        action=open-gui
     elif test "$1" == "start"; then
         action=start
     elif test "$1" == "status"; then
@@ -650,8 +681,8 @@ if [[ $action == "status" ]]; then
 elif [[ $action == "details" ]]; then
     connection_details
     exit $?
-elif [[ $action == "start-gui" ]]; then
-    start_gui
+elif [[ $action == "open-gui" ]]; then
+    open_gui
     res=$?
     exit $res
 elif [[ $action == "start" ]]; then
