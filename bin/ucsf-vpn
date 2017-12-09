@@ -5,38 +5,38 @@
 ###  ucsf-vpn <command> [options]
 ###
 ### Commands:
-###  start              Connect to UCSF VPN
-###  stop               Disconnect from UCSF VPN
-###  restart            Disconnect and reconnect to UCSF VPN
-###  toggle             Connect to or disconnect from UCSF VPN
+###  start            Connect to UCSF VPN
+###  stop             Disconnect from UCSF VPN
+###  restart          Disconnect and reconnect to UCSF VPN
+###  toggle           Connect to or disconnect from UCSF VPN
 ###
-###  status             Display UCSF VPN connection status
-###  details            Display connection details
-###  log                Display the log file
-###  troubleshoot       Scan the log file for errors
+###  status           Display UCSF VPN connection status
+###  details          Display connection details
+###  log              Display the log file
+###  troubleshoot     Scan the log file for errors
 ###
-###  open-gui           Open the Pulse Secure GUI
+###  open-gui         Open the Pulse Secure GUI
 ###
 ### Options:
-###  --user <user>      UCSF Active Directory ID (username)
-###  --pwd <pwd>        UCSF Active Directory ID password
-###  --passcode <code>  Duo Two-Factor Authentication Code (6 digits)
+###  --user <user>    UCSF Active Directory ID (username)
+###  --pwd <pwd>      UCSF Active Directory ID password
+###  --code <code>    Duo Two-Factor Authentication Code (6 digits)
 ###
-###  --gui              Connect to VPN via the Pulse Secure GUI
+###  --gui            Connect to VPN via the Pulse Secure GUI
 ###
-###  --server <host>    VPN server (defaults to remote.ucsf.edu)
-###  --realm <realm>    VPN server (defaults to 'Single-Factor Pulse Clients')
+###  --server <host>  VPN server (defaults to remote.ucsf.edu)
+###  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
 ###
-###  --skip             If already fulfilled, skip command
-###  --force            Force running the command
-###  --verbose          Verbose output
-###  --help             This help
-###  --version          Display version
+###  --skip           If already fulfilled, skip command
+###  --force          Force running the command
+###  --verbose        Verbose output
+###  --help           This help
+###  --version        Display version
 ###
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --gui --user alice --pwd secrets --passcode=123456
+###  ucsf-vpn start --gui --user alice --pwd secrets --code=123456
 ###  ucsf-vpn stop
 ###
 ### User credentials:
@@ -432,9 +432,9 @@ function start() {
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
 	    exit 1
         fi
-        if [[ -n $passcode ]]; then
-            mdebug "Entering 2FA passcode"
-            xdotool windowactivate --sync $wid3 type "$passcode"
+        if [[ -n $code ]]; then
+            mdebug "Entering 2FA code"
+            xdotool windowactivate --sync $wid3 type "$code"
             xdotool windowactivate --sync $wid3 key Return
 	fi
     else
@@ -528,7 +528,7 @@ gui=FALSE
 ## User credentials
 user=
 pwd=
-passcode=
+code=
 
 # Parse command-line options
 while [[ $# > 0 ]]; do
@@ -579,15 +579,15 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--pwd"; then
         shift
         pwd=$1
-    elif test "$1" == "--passcode"; then
+    elif test "$1" == "--code"; then
         shift
-        passcode=$1
-	if [[ ${#passcode} -ne 6 ]]; then
-	    mecho "ERROR: The UCSF 2FA passcode (--passcode) must be exactly 6 digits"
+        code=$1
+	if [[ ${#code} -ne 6 ]]; then
+	    mecho "ERROR: The UCSF 2FA code (--code) must be exactly 6 digits"
 	    exit 1
 	fi
-	if [[ ! ${passcode} =~ ^[0-9]+$ ]]; then
-	    mecho "ERROR: The UCSF 2FA passcode (--passcode) must contain only digits"
+	if [[ ! ${code} =~ ^[0-9]+$ ]]; then
+	    mecho "ERROR: The UCSF 2FA code (--code) must contain only digits"
 	    exit 1
 	fi
     elif test "$1" == "--gui"; then
