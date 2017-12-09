@@ -5,26 +5,33 @@
 ###  ucsf-vpn <command> [options]
 ###
 ### Commands:
-###  start-gui        Open the Pulse Secure GUI
-###  start            Connects to UCSF VPN
-###  stop             Disconnects from UCSF VPN
-###  restart          Disconnects and reconnects to UCSF VPN
-###  toggle           Connects to or disconnects from UCSF VPN
-###  status           Displays UCSF VPN connection status
-###  details          Displays connection details
-###  log              Displays the log file
-###  troubleshoot     Scan the log file for errors
+###  start              Connects to UCSF VPN
+###  stop               Disconnects from UCSF VPN
+###  restart            Disconnects and reconnects to UCSF VPN
+###  toggle             Connects to or disconnects from UCSF VPN
+###
+###  status             Displays UCSF VPN connection status
+###  details            Displays connection details
+###  log                Displays the log file
+###  troubleshoot       Scan the log file for errors
+###
+###  open-gui           Opens the Pulse Secure GUI
 ###
 ### Options:
-###  --user <user>    UCSF Active Directory ID (username)
-###  --pwd <pwd>      UCSF Active Directory ID password
-###  --server <host>  VPN server (defaults to remote.ucsf.edu)
-###  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
-###  --skip           If already fulfilled, skip command
-###  --force          Force running the command
-###  --verbose        Verbose output
-###  --help           This help
-###  --version        Display version
+###  --user <user>      UCSF Active Directory ID (username)
+###  --pwd <pwd>        UCSF Active Directory ID password
+###  --passcode <code>  Duo Two-Factor Authentication Code (6 digits)
+###
+###  --gui              Connects to VPN via the Pulse Secure GUI
+###
+###  --server <host>    VPN server (defaults to remote.ucsf.edu)
+###  --realm <realm>    VPN server (defaults to 'Single-Factor Pulse Clients')
+###
+###  --skip             If already fulfilled, skip command
+###  --force            Force running the command
+###  --verbose          Verbose output
+###  --help             This help
+###  --version          Display version
 ###
 ### Any other options are passed to Pulse Secure as is.
 ###
@@ -367,44 +374,108 @@ function start() {
     ## Prompt for username and password, if missing
     prompt_user ${user}
     prompt_pwd ${pwd}
-    
-    ## Pulse Secure options
-    opts="$extras"
-    opts="$opts -h ${server}"
-    
-    if [[ -n $user ]]; then
-        opts="-u $user $opts"
-    fi
-    
-    if [[ ! $verbose == TRUE ]]; then
-        opts="-log-level 5 $opts"
-    fi
 
-    if [[ $debug == TRUE ]]; then
-        mdebug "call: $call"
-        mdebug "user: $user"
-        if [[ -n $pwd ]]; then
-            mdebug "pwd: <hidden>"
-        else
-            mdebug "pwd: <not specified>"
-        fi
-        mdebug "opts: $opts"
-        mdebug "call: pulsesvc $opts -r \"${realm}\""
-    fi
-    
-    if [[ $dryrun == TRUE ]]; then
-        if [[ -n $pwd ]]; then
-            echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
-	else
-            echo "pulsesvc $opts -r \"${realm}\" &"
+    if [[ $res -ne 0 ]]; then exit $res; fi
+    if [[ $gui == TRUE ]]; then
+        ## Check for 'xdotool'
+        which xdotool 2> /dev/null
+        if [[ $? -ne 0 ]]; then
+            mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
+	    exit 1
 	fi
-        exit 0
-    fi
+	
+        ## Load user credentials from file?
+        source_netrc ${server}
+        source_ucsfvpnrc  ## deprecated
     
-    if [[ -n $pwd ]]; then
-        echo "$pwd" | pulsesvc $opts -r "${realm}" | grep -viF password &
+        ## Prompt for username and password, if missing
+        prompt_user ${user}
+        prompt_pwd ${pwd}
+
+        start_gui
+	
+        sleep 1
+        wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
+        if [[ -z $wid ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI window"
+	    exit 1
+        fi
+        mdebug "Pulse Secure Window ID: $wid"
+        mdebug "Attempting to click on 'Connect'"
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
+	
+	sleep 0.5
+	wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        mdebug "Pulse Secure Window IDs: $wid2"
+	wid2=$(echo "$wid2" | grep -vF $wid)
+        mdebug "Pulse Secure Popup Window ID: $wid2"
+        if [[ -z $wid2 ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
+	    exit 1
+        fi
+        mdebug "Clicking on 'Proceed'"
+        xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
+	sleep 1
+	
+        mdebug "Entering user credentials (username and password)"
+        xdotool windowactivate --sync $wid2 type "$user"
+        xdotool windowactivate --sync $wid2 key Tab type "$pwd"
+        xdotool windowactivate --sync $wid2 key Tab Down Tab Return
+
+	
+	sleep 2
+	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        mdebug "Pulse Secure Window IDs: $wid3"
+	wid3=$(echo "$wid3" | grep -vF $wid)
+        mdebug "Pulse Secure Popup Window ID: $wid3"
+        if [[ -z $wid3 ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
+	    exit 1
+        fi
+        if [[ -n $passcode ]]; then
+            mdebug "Entering 2FA passcode"
+            xdotool windowactivate --sync $wid3 type "$passcode"
+            xdotool windowactivate --sync $wid3 key Return
+	fi
     else
-        pulsesvc $opts -r "${realm}" &
+      ## Pulse Secure options
+      opts="$extras"
+      opts="$opts -h ${server}"
+      
+      if [[ -n $user ]]; then
+          opts="-u $user $opts"
+      fi
+      
+      if [[ ! $verbose == TRUE ]]; then
+          opts="-log-level 5 $opts"
+      fi
+  
+      if [[ $debug == TRUE ]]; then
+          mdebug "call: $call"
+          mdebug "user: $user"
+          if [[ -n $pwd ]]; then
+              mdebug "pwd: <hidden>"
+          else
+              mdebug "pwd: <not specified>"
+          fi
+          mdebug "opts: $opts"
+          mdebug "call: pulsesvc $opts -r \"${realm}\""
+      fi
+      
+      if [[ $dryrun == TRUE ]]; then
+          if [[ -n $pwd ]]; then
+              echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
+  	else
+              echo "pulsesvc $opts -r \"${realm}\" &"
+  	fi
+          exit 0
+      fi
+      
+      if [[ -n $pwd ]]; then
+          echo "$pwd" | pulsesvc $opts -r "${realm}" | grep -viF password &
+      else
+          pulsesvc $opts -r "${realm}" &
+      fi
     fi
 }
 
@@ -452,7 +523,7 @@ verbose=FALSE
 dryrun=FALSE
 realm="Single-Factor Pulse Clients"
 extras=
-play=FALSE
+gui=FALSE
 
 ## User credentials
 user=
@@ -519,8 +590,8 @@ while [[ $# > 0 ]]; do
 	    mecho "ERROR: The UCSF 2FA passcode (--passcode) must contain only digits"
 	    exit 1
 	fi
-    elif test "$1" == "--play"; then
-	play=TRUE
+    elif test "$1" == "--gui"; then
+	gui=TRUE
     else
         extras="$extras $1"
     fi
@@ -544,7 +615,7 @@ fi
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
-    mdebug "play: $play"
+    mdebug "gui: $gui"
     mdebug "VPN server: $server"
     mdebug "Realm: $realm"
     mdebug "verbose: $verbose"
@@ -581,67 +652,6 @@ elif [[ $action == "details" ]]; then
 elif [[ $action == "start-gui" ]]; then
     start_gui
     res=$?
-    if [[ $res -ne 0 ]]; then exit $res; fi
-    if [[ $play == TRUE ]]; then
-        ## Check for 'xdotool'
-        which xdotool 2> /dev/null
-        if [[ $? -ne 0 ]]; then
-            mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
-	    exit 1
-	fi
-
-        ## Load user credentials from file?
-        source_netrc ${server}
-        source_ucsfvpnrc  ## deprecated
-    
-        ## Prompt for username and password, if missing
-        prompt_user ${user}
-        prompt_pwd ${pwd}
-	
-        sleep 1
-        wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
-        if [[ -z $wid ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI window"
-	    exit 1
-        fi
-        mdebug "Pulse Secure Window ID: $wid"
-        mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
-	
-	sleep 0.5
-	wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-        mdebug "Pulse Secure Window IDs: $wid2"
-	wid2=$(echo "$wid2" | grep -vF $wid)
-        mdebug "Pulse Secure Popup Window ID: $wid2"
-        if [[ -z $wid2 ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-	    exit 1
-        fi
-        mdebug "Clicking on 'Proceed'"
-        xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-	sleep 1
-	
-        mdebug "Entering user credentials (username and password)"
-        xdotool windowactivate --sync $wid2 type "$user"
-        xdotool windowactivate --sync $wid2 key Tab type "$pwd"
-        xdotool windowactivate --sync $wid2 key Tab Down Tab Return
-
-	
-	sleep 2
-	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-        mdebug "Pulse Secure Window IDs: $wid3"
-	wid3=$(echo "$wid3" | grep -vF $wid)
-        mdebug "Pulse Secure Popup Window ID: $wid3"
-        if [[ -z $wid3 ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-	    exit 1
-        fi
-        if [[ -n $passcode ]]; then
-            mdebug "Entering 2FA passcode"
-            xdotool windowactivate --sync $wid3 type "$passcode"
-            xdotool windowactivate --sync $wid3 key Return
-	fi
-    fi
     exit $res
 elif [[ $action == "start" ]]; then
     start
