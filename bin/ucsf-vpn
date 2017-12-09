@@ -457,6 +457,7 @@ play=FALSE
 ## User credentials
 user=
 pwd=
+passcode=
 
 # Parse command-line options
 while [[ $# > 0 ]]; do
@@ -507,6 +508,9 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--pwd"; then
         shift
         pwd=$1
+    elif test "$1" == "--passcode"; then
+        shift
+        passcode=$1
     elif test "$1" == "--play"; then
 	play=TRUE
     else
@@ -577,15 +581,59 @@ elif [[ $action == "start-gui" ]]; then
             mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
 	    exit 1
 	fi
+
+        ## Load user credentials from file?
+        source_netrc ${server}
+        source_ucsfvpnrc  ## deprecated
+    
+        ## Prompt for username and password, if missing
+        prompt_user ${user}
+        prompt_pwd ${pwd}
+	
         sleep 1
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
         if [[ -z $wid ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI windows"
+            mecho "ERROR: Failed to locate the Pulse Secure GUI window"
 	    exit 1
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
+	
+	sleep 1
+	wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        mdebug "Pulse Secure Window IDs: $wid2"
+	wid2=$(echo "$wid2" | grep -vF $wid)
+        mdebug "Pulse Secure Popup Window ID: $wid2"
+        if [[ -z $wid2 ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
+	    exit 1
+        fi
+        mdebug "Click on 'Proceed'"
+        xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
+	sleep 1
+	
+        mdebug "Enter credentials"
+        xdotool windowactivate --sync $wid2 type "$user"
+        xdotool windowactivate --sync $wid2 key Tab type "$pwd"
+        xdotool windowactivate --sync $wid2 key Tab Down Tab Return
+
+	
+	sleep 3
+	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        mdebug "Pulse Secure Window IDs: $wid3"
+	wid3=$(echo "$wid3" | grep -vF $wid | grep -vF $wid2)
+	wid3=$wid2
+        mdebug "Pulse Secure Popup Window ID: $wid3"
+        if [[ -z $wid3 ]]; then
+            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
+	    exit 1
+        fi
+        mdebug "2FA passcode"
+        if [[ -n $passcode ]]; then
+            xdotool windowactivate --sync $wid2 type "$passcode"
+            xdotool windowactivate --sync $wid2 key Return
+	fi
     fi
     exit $res
 elif [[ $action == "start" ]]; then
