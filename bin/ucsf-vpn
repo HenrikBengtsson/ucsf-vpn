@@ -109,7 +109,7 @@ function version() {
 function pulsesvc_version() {
     res=$(pulsesvc --version 2> /dev/null)
     if [[ $? -ne 0 ]]; then
-	echo "<PLEASE INSTALL>"
+        echo "<PLEASE INSTALL>"
     else
         printf '%s\n' "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
     fi
@@ -132,7 +132,7 @@ function connection_details() {
     mdebug "Public connection information: $PUBLIC_INFO"
     if [[ -z ${PUBLIC_INFO} ]]; then
         mdebug "ERROR: Failed to infer public IP information"
-	exit 1
+        exit 1
     fi
     echo "$PUBLIC_INFO"
 }
@@ -216,15 +216,15 @@ function start_gui() {
       exit 1
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)	
+      connected=$(is_connected $ip)
       if [[ $connected == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
               echo "SKIPPING: $(status $connected $ip)"
               exit 0
-	  else
+          else
               echo "ERROR: $(status $connected $ip)"
               exit 1
-	  fi
+          fi
       fi
     fi
 
@@ -249,7 +249,7 @@ function source_netrc() {
         if [[ $debug == TRUE ]]; then
             mdebug "No .netrc file: $rcfile"
         fi
-	return;
+        return;
     fi
     if [[ $debug == TRUE ]]; then
         mdebug "Detected .netrc file: $rcfile"
@@ -276,19 +276,19 @@ function source_netrc() {
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
     if [[ -z $bfr ]]; then
         mecho "[INTERNAL ERROR] Failed to extract ${machine} credentials from ${rcfile}"
-	exit 1
+        exit 1
     fi
     
     user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
     if [[ $debug == TRUE ]]; then
-	mdebug "- user=${user}"
-	if [[ -z "${pwd}" ]]; then
+        mdebug "- user=${user}"
+        if [[ -z "${pwd}" ]]; then
             mdebug "- pwd=<missing>"
-	else
+        else
             mdebug "- pwd=<hidden>"
-	fi
+        fi
     fi
 }
 
@@ -308,12 +308,12 @@ function source_ucsfvpnrc() {
     source "${rcfile}"
     
     if [[ $debug == TRUE ]]; then
-	mdebug "- user=${user}"
-	if [[ -z "${pwd}" ]]; then
+        mdebug "- user=${user}"
+        if [[ -z "${pwd}" ]]; then
             mdebug "- pwd=<missing>"
-	else
+        else
             mdebug "- pwd=<hidden>"
-	fi
+        fi
     fi
 }
 
@@ -323,11 +323,11 @@ function prompt_user() {
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z ${user} ]; do
         printf "Username: " 1>&2;
-	read user
-	user=${user/ /}
+        read user
+        user=${user/ /}
     done
     if [[ $debug == TRUE ]]; then
-	mdebug "- user=${user}"
+        mdebug "- user=${user}"
     fi
 }
 
@@ -337,15 +337,15 @@ function prompt_pwd() {
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z ${pwd} ]; do
         printf "Password: " 1>&2;
-	read -s pwd
-	pwd=${pwd/ /}
+        read -s pwd
+        pwd=${pwd/ /}
     done
     if [[ $debug == TRUE ]]; then
-	if [[ -z "${pwd}" ]]; then
+        if [[ -z "${pwd}" ]]; then
             mdebug "- pwd=<missing>"
-	else
+        else
             mdebug "- pwd=<hidden>"
-	fi
+        fi
     fi
 }
 
@@ -355,15 +355,16 @@ function start() {
       exit 1
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)	
+      connected=$(is_connected $ip)
+      
       if [[ $connected == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
               echo "SKIPPING: $(status $connected $ip)"
               exit 0
-	  else
+          else
               echo "ERROR: $(status $connected $ip)"
               exit 1
-	  fi
+          fi
       fi
     fi
 
@@ -381,9 +382,9 @@ function start() {
         which xdotool 2> /dev/null
         if [[ $? -ne 0 ]]; then
             mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
-	    exit 1
-	fi
-	
+            exit 1
+        fi
+        
         ## Load user credentials from file?
         source_netrc ${server}
         source_ucsfvpnrc  ## deprecated
@@ -393,50 +394,50 @@ function start() {
         prompt_pwd ${pwd}
 
         start_gui
-	
+        
         sleep 1
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
         if [[ -z $wid ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI window"
-	    exit 1
+            exit 1
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
         xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
-	
-	sleep 0.5
-	wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        
+        sleep 0.5
+        wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
-	wid2=$(echo "$wid2" | grep -vF $wid)
+        wid2=$(echo "$wid2" | grep -vF $wid)
         mdebug "Pulse Secure Popup Window ID: $wid2"
         if [[ -z $wid2 ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-	    exit 1
+            exit 1
         fi
         mdebug "Clicking on 'Proceed'"
         xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-	sleep 1
-	
+        sleep 1
+        
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync $wid2 type "$user"
         xdotool windowactivate --sync $wid2 key Tab type "$pwd"
         xdotool windowactivate --sync $wid2 key Tab Down Tab Return
 
-	
-	sleep 2
-	wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+        
+        sleep 2
+        wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid3"
-	wid3=$(echo "$wid3" | grep -vF $wid)
+        wid3=$(echo "$wid3" | grep -vF $wid)
         mdebug "Pulse Secure Popup Window ID: $wid3"
         if [[ -z $wid3 ]]; then
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-	    exit 1
+            exit 1
         fi
         if [[ -n $code ]]; then
             mdebug "Entering 2FA code"
             xdotool windowactivate --sync $wid3 type "$code"
             xdotool windowactivate --sync $wid3 key Return
-	fi
+        fi
     else
       ## Pulse Secure options
       opts="$extras"
@@ -465,9 +466,9 @@ function start() {
       if [[ $dryrun == TRUE ]]; then
           if [[ -n $pwd ]]; then
               echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
-  	else
+          else
               echo "pulsesvc $opts -r \"${realm}\" &"
-  	fi
+          fi
           exit 0
       fi
       
@@ -504,7 +505,7 @@ function stop() {
 
 function result() {
     ip=$(public_ip)
-    connected=$(is_connected $ip)	
+    connected=$(is_connected $ip)
     echo "RESULT: $(status $connected $ip)"
 }
 
@@ -549,10 +550,10 @@ while [[ $# > 0 ]]; do
         action=stop
     elif test "$1" == "restart"; then
         action=restart
-	force=TRUE
+        force=TRUE
     elif test "$1" == "toggle"; then
         action=toggle
-	force=TRUE
+        force=TRUE
     elif test "$1" == "log"; then
         action=log
     elif test "$1" == "troubleshoot"; then
@@ -582,16 +583,16 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--code"; then
         shift
         code=$1
-	if [[ ${#code} -ne 6 ]]; then
-	    mecho "ERROR: The UCSF 2FA code (--code) must be exactly 6 digits"
-	    exit 1
-	fi
-	if [[ ! ${code} =~ ^[0-9]+$ ]]; then
-	    mecho "ERROR: The UCSF 2FA code (--code) must contain only digits"
-	    exit 1
-	fi
+        if [[ ${#code} -ne 6 ]]; then
+            mecho "ERROR: The UCSF 2FA code (--code) must be exactly 6 digits"
+            exit 1
+        fi
+        if [[ ! ${code} =~ ^[0-9]+$ ]]; then
+            mecho "ERROR: The UCSF 2FA code (--code) must contain only digits"
+            exit 1
+        fi
     elif test "$1" == "--gui"; then
-	gui=TRUE
+        gui=TRUE
     else
         extras="$extras $1"
     fi
@@ -696,21 +697,21 @@ elif [[ $action == "log" ]]; then
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
     mdebug "Displaying log file: $LOGFILE"
     if [[ ! -f $LOGFILE ]]; then
-	mecho "[WARN] No such log file: $LOGFILE"
-	exit 1
+        mecho "[WARN] No such log file: $LOGFILE"
+        exit 1
     fi
     cat $LOGFILE
 elif [[ $action == "troubleshoot" ]]; then
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
     mdebug "Scanning log file: $LOGFILE"
     if [[ ! -f $LOGFILE ]]; then
-	mecho "[WARN] No such log file: $LOGFILE"
-	exit 1
+        mecho "[WARN] No such log file: $LOGFILE"
+        exit 1
     fi
     grep -q -F Error $LOGFILE &> /dev/null
     if [[ $? -ne 0 ]]; then
-	mecho "[OK] No errors found: $LOGFILE"
-	exit 0
+        mecho "[OK] No errors found: $LOGFILE"
+        exit 0
     fi
     
     mecho "[ERROR] Errors found: $LOGFILE"
