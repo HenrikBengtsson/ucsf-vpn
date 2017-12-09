@@ -836,19 +836,27 @@ elif [[ $action == "log" ]]; then
     fi
     cat $LOGFILE
 elif [[ $action == "troubleshoot" ]]; then
+    res=$(which pulsesvc)
+    if [[ $? -ne 0 ]]; then 
+	mecho "[INFO] Pulse Secure software: 'pulsesvc' is not in your PATH."
+	exit 1
+    fi
+    
+    mecho "[INFO] Pulse Secure software: $res"
+    pulsesvc --version
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-    mdebug "Scanning log file: $LOGFILE"
     if [[ ! -f $LOGFILE ]]; then
         mecho "[WARN] No such log file: $LOGFILE"
         exit 1
     fi
+    mecho "[INFO] Log file: $LOGFILE"
     grep -q -F Error $LOGFILE &> /dev/null
     if [[ $? -ne 0 ]]; then
         mecho "[OK] No errors found: $LOGFILE"
         exit 0
     fi
     
-    mecho "[ERROR] Errors found: $LOGFILE"
+    mecho "[ERROR] Below errors found in log:"
     grep -F Error $LOGFILE | >&2 tail -3 
     exit 1
 fi

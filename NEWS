@@ -28,6 +28,8 @@ NEW FEATURES:
  o Added '--speed <factor>' for adjusting the waiting times between
    submitting information to the GUI.
 
+ o Now 'ucsf-vpn troubleshoot' also reports on 'pulsesvc --version'.
+
  
 Version 2.3.0 (2017-12-08)
 
