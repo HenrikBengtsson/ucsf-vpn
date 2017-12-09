@@ -1,6 +1,8 @@
-2017-12-07: Two-factor authentication (2FA) is now required to connect to the UCSF VPN.  As it stands now, `ucsf-vpn start` no longer works and you need to use the GUI-version `ucsf-vpn start-gui` instead, which means enter your credentials (each time) and 2FA passcode in two different HTML popup windows.
+2017-12-07: Two-factor authentication (2FA) is now required in order to connect to the UCSF VPN.
 
-If anyone can figure out a solution for passing also the 2FA passcode via the Pulse command-line client, please drop a note in the [issue tracker](https://github.com/HenrikBengtsson/ucsf-vpn/issues).  Then we could do things such as `ucsf-vpn start <passcode>`.  Even just passing the user credentials and then enter the 2FA passcode in a HTML-popup panel would help.
+2017-12-09: `ucsf-vpn start` will now prompt for the 2FA token (Duo or YubiKey) and then submit user credentials and the 2FA token via the Pulse Secure GUI.
+
+If anyone can figure out a solution for passing also the 2FA passcode via the Pulse command-line client, please drop a note in the [issue tracker](https://github.com/HenrikBengtsson/ucsf-vpn/issues).
 
 ---
 
@@ -11,6 +13,7 @@ The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting f
 ## Connect
 ```sh
 $ ucsf-vpn start --user alice --pwd secrets
+Enter 6-digit Duo token or press your YubiKey: <valid token>
 RESULT: Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 
 $ ucsf-vpn status
@@ -50,21 +53,32 @@ Usage:
  ucsf-vpn <command> [options]
 
 Commands:
- start-gui        Open the Pulse Secure GUI
- start            Connects to UCSF VPN
- stop             Disconnects from UCSF VPN
- restart          Disconnects and reconnects to UCSF VPN
- toggle           Connects to or disconnects from UCSF VPN
- status           Displays UCSF VPN connection status
- details          Displays connection details
- log              Displays the log file
+ start            Connect to UCSF VPN
+ stop             Disconnect from UCSF VPN
+ restart          Disconnect and reconnect to UCSF VPN
+ toggle           Connect to or disconnect from UCSF VPN
+
+ status           Display UCSF VPN connection status
+ details          Display connection details
+ log              Display the log file
  troubleshoot     Scan the log file for errors
+
+ open-gui         Open the Pulse Secure GUI
 
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
+ --token <token>  One-time two-factor authentication (2FA) token (Duo or
+                  YubiKey). If 'true' (default), user is prompted to enter
+                  the token.  If 'false', 2FA is not used.
+                  NOTE: --no-gui ignores --token with a warning.
+
+ --gui            Connect to VPN via Pulse Secure GUI (default)
+ --no-gui         Connect to VPN via Pulse Secure CLI
+
  --server <host>  VPN server (defaults to remote.ucsf.edu)
  --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
+
  --skip           If already fulfilled, skip command
  --force          Force running the command
  --verbose        Verbose output
@@ -74,14 +88,13 @@ Options:
 Any other options are passed to Pulse Secure as is.
 
 Example:
- ucsf-vpn start --user alice --pwd secrets
+ ucsf-vpn start --user alice --pwd secrets --token true
  ucsf-vpn stop
 
 User credentials:
-If --user and/or --pwd are not specified, then the user will be
-prompted to enter them.  Furthermore, the default values for --user
-and --pwd can be specified in your ~/.netrc file (or according to
-environment variable NETRC).  For example:
+If user credentials (--user and --pwd) are neither specified nor given
+in ~/.netrc, then you will be prompted to enter them.  To specify them
+in ~/.netrc file, use the following:
 
   machine remote.ucsf.edu
       login alice
@@ -95,14 +108,22 @@ Requirements:
 * Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
 * Ports 4242 (UDP) and 443 (TCP)
 * `curl`
+* `xdotool` (when using 'ucsf-vpn start --gui')
 * No need for sudo rights to run :)
+
+Pulse Secure GUI configuration:
+To add a new connection to the Pulse Secure GUI ('ucsf-vpn open-gui'),
+click '+' and enter:
+ - Name: ucsf
+ - URL: https://remote.ucsf.edu/pulse
+The name can be whatever you'd like.
 
 Troubleshooting:
 * Verify your username and password at https://remote.ucsf.edu/.
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 * Make sure ports 4242 & 443 are not used by other processes
-* If you are using the Pulse Secure GUI (`ucsf-vpn start-gui`), use
+* If you are using the Pulse Secure GUI (`ucsf-vpn open-gui`), use
   'https://remote.ucsf.edu/pulse' as the URL when adding a new
   connection.
 * The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
@@ -117,7 +138,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 2.3.0
+Version: 3.0.0
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

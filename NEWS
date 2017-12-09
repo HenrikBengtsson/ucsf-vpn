@@ -1,6 +1,47 @@
 ucsf-vpn
 ========
 
+Version 3.0.0 (2017-12-09)
+
+SIGNIFICANT CHANGES:
+
+ o Two-factor authentication (2FA) is now supported by sending user credentials
+   and 2FA tokens via the Pulse Secure GUI by utilizing xdotool (automated
+   mouse clicks and key presses over X11).  It's not perfect, but it works.
+ 
+ o Now 'ucsf-vpn start --gui' is the default.
+
+ o 'ucsf-vpn start-gui' was renamed to 'ucsf-vpn open-gui'.
+
+NEW FEATURES:
+
+ o Now 'ucsf-vpn start' (with default --gui) connects to the UCSF VPN
+   via the Pulse Secure GUI (by sending mouse and key sequences).
+
+ o Added --gui (default) and --no-gui to control whether 'ucsf-vpn start'
+   should the Pulse Secure GUI or the CLI.
+
+ o Added --token <token> to specify the one-time two-factor authentication
+   (2FA) token, where '--token true' (default) will prompt user to enter
+   token, and '--token false' will try to connect without 2FA.
+
+ o Added '--notification' (default) and '--no-notification' to indicate
+   whether the USCF VPN login includes a "Pre Sign-In Notification" message
+   that needs to be confirmed or not.
+  
+ o Added '--speed <factor>' for adjusting the waiting times between
+   submitting information to the GUI.
+
+ o Now 'ucsf-vpn troubleshoot' also reports on 'pulsesvc --version'.
+
+ o Use environment variable PULSEPATH to override the default location
+   (/usr/local/pulse/) of the Pulse Secure software and libraries.
+
+DEPRECATED & DEFUNCT:
+
+ o Credentials in ~/.ucsfvpnrc are defunct. Use ~/.netrc instead.
+
+ 
 Version 2.3.0 (2017-12-08)
 
 NEW FEATURES:
@@ -31,7 +72,7 @@ SIGNIFICANT CHANGES:
 
 DEPRECATED & DEFUNCT:
 
- o Credentials in ~/.ucsfvpnrc is deprecated. Use ~/.netrc instead.
+ o Credentials in ~/.ucsfvpnrc are deprecated. Use ~/.netrc instead.
 
 
 Version 2.0.0 (2017-11-03)
