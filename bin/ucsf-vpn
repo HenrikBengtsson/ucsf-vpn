@@ -236,7 +236,10 @@ function start_gui() {
     fi
     
     ## Start the Pulse Secure GUI
-    pulseUi &
+    ## NOTE: Sending stderr to dev null to silence warnings on
+    ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
+    ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
+    pulseUi 2> /dev/null &
 }
 
 function open_gui() {
