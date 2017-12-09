@@ -5,24 +5,24 @@
 ###  ucsf-vpn <command> [options]
 ###
 ### Commands:
-###  start              Connects to UCSF VPN
-###  stop               Disconnects from UCSF VPN
-###  restart            Disconnects and reconnects to UCSF VPN
-###  toggle             Connects to or disconnects from UCSF VPN
+###  start              Connect to UCSF VPN
+###  stop               Disconnect from UCSF VPN
+###  restart            Disconnect and reconnect to UCSF VPN
+###  toggle             Connect to or disconnect from UCSF VPN
 ###
-###  status             Displays UCSF VPN connection status
-###  details            Displays connection details
-###  log                Displays the log file
+###  status             Display UCSF VPN connection status
+###  details            Display connection details
+###  log                Display the log file
 ###  troubleshoot       Scan the log file for errors
 ###
-###  open-gui           Opens the Pulse Secure GUI
+###  open-gui           Open the Pulse Secure GUI
 ###
 ### Options:
 ###  --user <user>      UCSF Active Directory ID (username)
 ###  --pwd <pwd>        UCSF Active Directory ID password
 ###  --passcode <code>  Duo Two-Factor Authentication Code (6 digits)
 ###
-###  --gui              Connects to VPN via the Pulse Secure GUI
+###  --gui              Connect to VPN via the Pulse Secure GUI
 ###
 ###  --server <host>    VPN server (defaults to remote.ucsf.edu)
 ###  --realm <realm>    VPN server (defaults to 'Single-Factor Pulse Clients')
@@ -36,7 +36,7 @@
 ### Any other options are passed to Pulse Secure as is.
 ###
 ### Example:
-###  ucsf-vpn start --user alice --pwd secrets
+###  ucsf-vpn start --gui --user alice --pwd secrets --passcode=123456
 ###  ucsf-vpn stop
 ###
 ### User credentials:
