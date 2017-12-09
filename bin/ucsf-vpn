@@ -586,7 +586,7 @@ function stop() {
       mdebug "Killing Pulse Secure GUI"
       pkill -QUIT pulseUi
       if [[ $? -eq 0 ]]; then
-          mecho "RESULT: Killed Pulse Secure GUI"
+          mdebug "Killed Pulse Secure GUI"
           break
       fi
       sleep 1
@@ -594,7 +594,7 @@ function stop() {
     
     ## "Kill all running ncsvc services"
     pulsesvc -Kill
-    mecho "RESULT: Killed local VPN process"
+    mdebug "Killed local VPN process"
 }
 
 function result() {
