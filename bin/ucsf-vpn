@@ -106,6 +106,10 @@ function mdebug() {
         mecho "[DEBUG] $@";
     fi
 }
+function merror() {
+    mecho "[ERROR] $@";
+    exit 1
+}
 function vecho() {
     if [[ $verbose == TRUE ]]; then
         echo "$@";
@@ -141,8 +145,7 @@ function connection_details() {
     fi
     mdebug "Public connection information: $PUBLIC_INFO"
     if [[ -z ${PUBLIC_INFO} ]]; then
-        mdebug "ERROR: Failed to infer public IP information"
-        exit 1
+        merror "Failed to infer public IP information"
     fi
     echo "$PUBLIC_INFO"
 }
@@ -244,8 +247,7 @@ function start_gui() {
 
 function open_gui() {
     if [[ $online == FALSE ]]; then
-      echo "ERROR: $(status $connected $ip)"
-      exit 1
+      merror "$(status $connected $ip)"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)
@@ -254,8 +256,7 @@ function open_gui() {
               echo "SKIPPING: $(status $connected $ip)"
               exit 0
           else
-              echo "ERROR: $(status $connected $ip)"
-              exit 1
+              merror "$(status $connected $ip)"
           fi
       fi
     fi
@@ -432,8 +433,7 @@ function prompt_token() {
 
 function start() {
     if [[ $online == FALSE ]]; then
-      echo "ERROR: $(status $connected $ip)"
-      exit 1
+      merror "$(status $connected $ip)"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
       connected=$(is_connected $ip)
@@ -443,8 +443,7 @@ function start() {
               echo "SKIPPING: $(status $connected $ip)"
               exit 0
           else
-              echo "ERROR: $(status $connected $ip)"
-              exit 1
+              merror "$(status $connected $ip)"
           fi
       fi
     fi
@@ -462,8 +461,7 @@ function start() {
         ## Check for 'xdotool'
         which xdotool &> /dev/null
         if [[ $? -ne 0 ]]; then
-            mecho "ERROR: Cannot enter credentials in GUI, because 'xdotool' could not be located."
-            exit 1
+            merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
         fi
         
         ## Load user credentials from file?
@@ -483,8 +481,7 @@ function start() {
         sleepx 0.5
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
         if [[ -z $wid ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI window"
-            exit 1
+            merror "Failed to locate the Pulse Secure GUI window"
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
@@ -496,8 +493,7 @@ function start() {
         wid2=$(echo "$wid2" | grep -vF $wid)
         mdebug "Pulse Secure Popup Window ID: $wid2"
         if [[ -z $wid2 ]]; then
-            mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-            exit 1
+            merror "Failed to locate the Pulse Secure GUI popup window"
         fi
 
 	## Click-through UCSF announcement messsage?
@@ -521,8 +517,7 @@ function start() {
             wid3=$(echo "$wid3" | grep -vF $wid)
             mdebug "Pulse Secure Popup Window ID: $wid3"
             if [[ -z $wid3 ]]; then
-                mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
-                exit 1
+                merror "Failed to locate the Pulse Secure GUI popup window"
             fi
 	    
             mdebug "Entering token"
@@ -582,8 +577,7 @@ function stop() {
               echo "SKIPPING: $(status $connected $ip)"
               exit 0
           else
-              echo "ERROR: $(status $connected $ip)"
-              exit 1
+              merror "$(status $connected $ip)"
           fi
       fi
       mdebug "Public IP (before): $ip"
@@ -701,7 +695,7 @@ while [[ $# > 0 ]]; do
         elif [[ ${token} == "false" ]]; then
             mdebug "Will not use 2FA authenatication"
         elif [[ $(is_token_valid $token) == FALSE ]]; then
-            mecho "ERROR: The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
+            merror "The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
             exit 1
         fi
     elif test "$1" == "--gui"; then
@@ -716,8 +710,7 @@ while [[ $# > 0 ]]; do
         shift
         speed=$1
         if [[ ! ${speed} =~ ^[.0-9]$ ]]; then
-            mecho "ERROR: Invalid --speed argument: $speed"
-	    exit 1
+            merror "Invalid --speed argument: $speed"
 	fi
     else
         extras="$extras $1"
@@ -735,8 +728,7 @@ elif [[ $realm == "single" ]]; then
 elif [[ $realm == "dual" ]]; then
     realm="Dual-Factor Pulse Clients"
 else
-    echo "ERROR: Unknown value on option --realm: $realm"
-    exit 1    
+    merror "Unknown value on option --realm: $realm"
 fi
 
 if [[ $debug == TRUE ]]; then
