@@ -21,6 +21,10 @@ NEW FEATURES:
    (2FA) token, where '--token true' (default) will prompt user to enter
    token, and '--token false' will try to connect without 2FA.
 
+ o Added '--notification' (default) and '--no-notification' to indicate
+   whether the USCF VPN login includes a "Pre Sign-In Notification" message
+   that needs to be confirmed or not.
+  
 
 Version 2.3.0 (2017-12-08)
 

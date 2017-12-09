@@ -496,9 +496,13 @@ function start() {
             mecho "ERROR: Failed to locate the Pulse Secure GUI popup window"
             exit 1
         fi
-        mdebug "Clicking on 'Proceed'"
-        xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-        sleep 1
+
+	## Click-through UCSF announcement messsage?
+        if [[ ${notification} == TRUE ]]; then
+            mdebug "Clicking on 'Proceed'"
+            xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
+            sleep 0.5
+	fi
         
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync $wid2 type "$user"
@@ -620,6 +624,7 @@ dryrun=FALSE
 realm="Single-Factor Pulse Clients"
 extras=
 gui=TRUE
+notification=TRUE
 
 ## User credentials
 user=
@@ -690,6 +695,10 @@ while [[ $# > 0 ]]; do
         gui=TRUE
     elif test "$1" == "--no-gui"; then
         gui=FALSE
+    elif test "$1" == "--notification"; then
+        notification=TRUE
+    elif test "$1" == "--no-notification"; then
+        notification=FALSE
     else
         extras="$extras $1"
     fi
