@@ -64,20 +64,24 @@ Commands:
  troubleshoot     Scan the log file for errors
 
  open-gui         Open the Pulse Secure GUI
+ close-gui        Close the Pulse Secure GUI (and any VPN connections)
 
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
  --token <token>  One-time two-factor authentication (2FA) token (Duo or
                   YubiKey). If 'true' (default), user is prompted to enter
-                  the token.  If 'false', 2FA is not used.
+                  the token. If 'push', authentication is done via
+                  Duo Push (approve and confirm in Duo app). If 'phone',
+                  authenatication is done by a phone call ("press any key").
+                  If 'false', 2FA is not used.
                   NOTE: --no-gui ignores --token with a warning.
 
  --gui            Connect to VPN via Pulse Secure GUI (default)
  --no-gui         Connect to VPN via Pulse Secure CLI
 
- --server <host>  VPN server (defaults to remote.ucsf.edu)
- --realm <realm>  VPN server (defaults to 'Single-Factor Pulse Clients')
+ --server <host>  VPN server (default is remote.ucsf.edu)
+ --realm <realm>  VPN server (default is 'Single-Factor Pulse Clients')
 
  --skip           If already fulfilled, skip command
  --force          Force running the command
@@ -85,15 +89,18 @@ Options:
  --help           This help
  --version        Display version
 
-Any other options are passed to Pulse Secure as is.
+Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 
-Example:
+Examples:
+ ucsf-vpn start --user alice --token push
  ucsf-vpn start --user alice --pwd secrets --token true
+ ucsf-vpn start --token phone
+ ucsf-vpn start
  ucsf-vpn stop
 
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given
-in ~/.netrc, then you will be prompted to enter them.  To specify them
+in ~/.netrc, then you will be prompted to enter them. To specify them
 in ~/.netrc file, use the following:
 
   machine remote.ucsf.edu
@@ -101,7 +108,7 @@ in ~/.netrc file, use the following:
       password secrets
 
 For security, the ~/.netrc file should be readable only by
-the user / owner of the file.  If not, then 'ucsf-vpn start' will
+the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
