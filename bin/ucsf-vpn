@@ -294,7 +294,19 @@ function close_gui() {
         fi
     fi
 }
- 
+
+function wait_for_pulse_window_to_close() {
+    wid=$1		
+    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
+    while true; do
+       wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+       echo "$wids" | grep -q $wid
+       if [[ $? -ne 0 ]]; then break; fi
+       sleep 0.2
+    done
+    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
+}
+
 function source_netrc() {
     local machine=$1
 
@@ -391,10 +403,10 @@ function is_token_valid() {
 
     ## Hardcoded methods
     if [[ ${token} =~ ^phone[1-9]*$ ]]; then
-	## Tested with 'phone' and 'phone2', but for some reason
-	## the same phone number is called although I've got two
-	## different registered.  Also 'phone1' and 'phone3' gives
-	## an error.
+        ## Tested with 'phone' and 'phone2', but for some reason
+        ## the same phone number is called although I've got two
+        ## different registered.  Also 'phone1' and 'phone3' gives
+        ## an error.
         mdebug "Will authenticate via a phone call from Duo"
         echo TRUE
         return
@@ -537,6 +549,12 @@ function start() {
             mdebug "Entering token"
             xdotool windowactivate --sync $wid3 type "$token"
             xdotool windowactivate --sync $wid3 key Return
+
+            ## Wait for popup window to close
+	    wait_for_pulse_window_to_close $wid3
+	else
+            ## Wait for popup window to close
+	    wait_for_pulse_window_to_close $wid2
         fi
     else
       if [ -n ${token} ] && [ ${token} != false ]; then
@@ -591,6 +609,9 @@ function stop() {
       ip=$(public_ip)
       connected=$(is_connected $ip)
       if [[ $connected == FALSE ]]; then
+          ## Close/kill the Pulse Secure GUI
+          close_gui
+    
           if [[ $skip == TRUE ]]; then
               mecho "[SKIPPING] $(status $connected $ip)"
               exit 0
@@ -731,9 +752,9 @@ done
 
 if [[ $token == default ]]; then
     if [[ $gui == TRUE ]]; then
-	token=true
+        token=true
     else
-	token=false
+        token=false
     fi
 fi
 
