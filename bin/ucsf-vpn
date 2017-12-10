@@ -478,7 +478,7 @@ function start() {
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
 
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize $wid

@@ -13,6 +13,11 @@ NEW FEATURES:
  o Now 'ucsf-vpn start --gui' minimizes the main Pulse Secure GUI window
    as soon as it is no longer needed.
 
+BUG FIXES:
+
+ o 'ucsf-vpn start --gui' would not works if Pulse Secure GUI was already
+   open but minimized.
+
 
 Version 3.0.0 (2017-12-09)
 
