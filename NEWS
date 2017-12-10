@@ -18,6 +18,8 @@ BUG FIXES:
  o 'ucsf-vpn start --gui' would not works if Pulse Secure GUI was already
    open but minimized.
 
+ o 'ucsf-vpn stop' failed to close the Pulse Secure GUI window.
+
 
 Version 3.0.0 (2017-12-09)
 

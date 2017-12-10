@@ -16,6 +16,7 @@
 ###  troubleshoot     Scan the log file for errors
 ###
 ###  open-gui         Open the Pulse Secure GUI
+###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
 ###
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
@@ -277,6 +278,23 @@ function open_gui() {
     start_gui
 }
 
+function close_gui() {
+    if [[ $(is_pulseUi_running) == FALSE ]]; then return; fi
+
+    mdebug "Closing Pulse Secure GUI"
+
+    ## Try with 'xdotool'?
+    which xdotool &> /dev/null
+    if [[ $? -eq 0 ]]; then
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowkill
+    else
+        pkill -QUIT pulseUi
+        if [[ $? -eq 0 ]]; then
+            mdebug "Killed Pulse Secure GUI"
+        fi
+    fi
+}
+ 
 function source_netrc() {
     local machine=$1
 
@@ -583,18 +601,10 @@ function stop() {
       mdebug "Public IP (before): $ip"
     fi
 
-    ## "Kill any Pulse Secure GUI
-    while [ $(is_pulseUi_running) == TRUE ]; do
-      mdebug "Killing Pulse Secure GUI"
-      pkill -QUIT pulseUi
-      if [[ $? -eq 0 ]]; then
-          mdebug "Killed Pulse Secure GUI"
-          break
-      fi
-      sleep 1
-    done
+    ## Close/kill the Pulse Secure GUI
+    close_gui
     
-    ## "Kill all running ncsvc services"
+    ## Kill any running pulsesvc processes
     pulsesvc -Kill
     mdebug "Killed local VPN process"
 }
@@ -646,6 +656,8 @@ while [[ $# > 0 ]]; do
         action=version
     elif test "$1" == "open-gui"; then
         action=open-gui
+    elif test "$1" == "close-gui"; then
+        action=close-gui
     elif test "$1" == "start"; then
         action=start
     elif test "$1" == "status"; then
@@ -785,6 +797,10 @@ elif [[ $action == "details" ]]; then
     exit $?
 elif [[ $action == "open-gui" ]]; then
     open_gui
+    res=$?
+    exit $res
+elif [[ $action == "close-gui" ]]; then
+    close_gui
     res=$?
     exit $res
 elif [[ $action == "start" ]]; then
