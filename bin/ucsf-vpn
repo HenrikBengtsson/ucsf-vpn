@@ -471,16 +471,16 @@ function start() {
         ## Start Pulse Secure GUI?
         if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
         
-        sleepx 0.5
+        sleep $(div 0.5 $speed)
         wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
         if [[ -z $wid ]]; then
             merror "Failed to locate the Pulse Secure GUI window"
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return sleep 2 key --delay 100 --repeat 2 Tab
+        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
         
-        sleepx 0.5
+        sleep $(div 1 $speed)
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
         wid2=$(echo "$wid2" | grep -vF $wid)
@@ -493,7 +493,7 @@ function start() {
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
             xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-            sleepx 0.5
+            sleep $(div 1.0 $speed)
         fi
         
         mdebug "Entering user credentials (username and password)"
@@ -504,7 +504,7 @@ function start() {
         if [[ ${token} != false ]]; then
             mdebug "Using two-factor authentication (2FA)"
             
-            sleepx 0.5
+            sleep $(div 0.5 $speed)
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
             wid3=$(echo "$wid3" | grep -vF $wid)
@@ -602,13 +602,12 @@ function result() {
     echo "RESULT: $(status $connected $ip)"
 }
 
-function sleepx() {
-    delay=$1
-    if [[ $speed != "1.0" ]]; then
-        delay=$(expr $delay/$speed | bc -l)
+function div() {
+    if [ $2 == "1" ] || [ $2 == "1.0" ]; then
+        echo $1
+    else
+        expr $1/$2 | bc -l
     fi
-    mdebug "Sleeping $delay seconds"
-    sleep $delay
 }
 
 ## Actions
@@ -706,7 +705,7 @@ while [[ $# > 0 ]]; do
     elif test "$1" == "--speed"; then
         shift
         speed=$1
-        if [[ ! ${speed} =~ ^[.0-9]$ ]]; then
+        if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
             merror "Invalid --speed argument: $speed"
         fi
     else

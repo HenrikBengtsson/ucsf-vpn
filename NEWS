@@ -9,7 +9,7 @@ NEW FEATURES:
    authenticate via the Duo app (approve and confirm), and phone call
    ("press any key"), respectively.  Also, accepts '--token phone2',
    and '--token sms' but not sure the UCSF supports those.
- 
+
 
 Version 3.0.0 (2017-12-09)
 
