@@ -10,7 +10,8 @@ NEW FEATURES:
    ("press any key"), respectively.  Also, accepts '--token phone2',
    and '--token sms' but not sure the UCSF supports those.
 
- o Now 'ucsf-vpn start --gui' minimizes the Pulse Secure GUI at the end.
+ o Now 'ucsf-vpn start --gui' minimizes the main Pulse Secure GUI window
+   as soon as it is no longer needed.
 
 
 Version 3.0.0 (2017-12-09)
