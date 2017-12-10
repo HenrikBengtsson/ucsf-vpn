@@ -517,6 +517,9 @@ function start() {
             xdotool windowactivate --sync $wid3 type "$token"
             xdotool windowactivate --sync $wid3 key Return
         fi
+
+        mdebug "Minimizing Pulse Secure GUI"
+        xdotool windowminimize $wid
     else
       if [ -n ${token} ] && [ ${token} != false ]; then
           mecho "WARNING: Option --token is ignored because two-factor authentication (2FA) is currently not supported when using --no-gui"
