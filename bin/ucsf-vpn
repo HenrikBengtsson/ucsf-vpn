@@ -148,8 +148,8 @@ function help() {
 }
 
 function connection_details() {
-    mdebug "connection_details($*)"
-    if [[ -z ${PUBLIC_INFO} || "$1" == "--force" ]]; then
+    mdebug "connection_details()"
+    if [[ -z ${PUBLIC_INFO} ]]; then
       mdebug "Querying https://ipinfo.io/ip for public IP:"
       PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
       export PUBLIC_INFO
@@ -171,7 +171,7 @@ function public_ip() {
 }
 
 function public_hostname() {
-    mdebug "public_hostname($*)"
+    mdebug "public_hostname()"
     connection_details | grep -F "hostname" | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
