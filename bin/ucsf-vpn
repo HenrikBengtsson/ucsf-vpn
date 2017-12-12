@@ -368,7 +368,7 @@ function prompt_user() {
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z "${user}" ]; do
         printf "Enter username: " 1>&2;
-        read user
+        read -r user
         user=${user/ /}
     done
     if [[ $debug == TRUE ]]; then
@@ -382,7 +382,7 @@ function prompt_pwd() {
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z "${pwd}" ]; do
         printf "Enter password: " 1>&2;
-        read -s pwd
+        read -r -s pwd
         pwd=${pwd/ /}
     done
     mecho "<password>"
@@ -443,7 +443,7 @@ function prompt_token() {
     mdebug "PROMPT: Asking user to enter one-time token:"
     while [ -z "${token}" ]; do
         printf "Enter 6-digit Duo token or press your YubiKey: " 1>&2;
-        read -s token
+        read -r -s token
         token=${token/ /}
         if [[ $(is_token_valid "$token") == FALSE ]]; then
             printf "\\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\\n"
