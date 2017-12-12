@@ -10,73 +10,78 @@
 ### Example:
 ###  ucsf vpn --help
 ###
-### Version: 0.2.0
+### Version: 0.2.0-9000
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 
-export UCSF_DIR=$(dirname "$(readlink -e "$0")")
+UCSF_DIR=$(dirname "$(readlink -e "$0")")
+export UCSF_DIR
 export UCSF_TOOLS=true
 
 ## Always search the same directory first
 PATH="$UCSF_DIR:$PATH"
 
 function mecho {
-    >&2 echo "$*"
+    >&2 echo "$@"
 }
 
 function mcat {
-    >&2 cat $*
+    >&2 cat "$@"
 }
 
 function list_tools {
     tools=
     for path in $(echo -e "${PATH//:/\\n}" | sort -u); do
-	tools="$tools $(ls $path/ucsf-* 2> /dev/null | grep -vE '~$' | sed 's|.*/ucsf-||')"
+	# shellcheck disable=SC2010
+	tools="$tools $(ls "$path/ucsf-*" 2> /dev/null | grep -vE '(^#|~$|#$)' | sed 's|.*/ucsf-||')"
     done
     echo -e "${tools// /\\n}" | sort -u | grep -vE "^$"
 }
 
 function whatis {
-    local pathname="$(which ucsf-$1)"
-    local res=$(grep -E "^### whatis: " "$pathname" | sed 's/^### whatis: //')
+    local pathname
+    pathname="$(which "ucsf-$1")"
+    local res
+    res=$(grep -E "^### whatis: " "$pathname" | sed 's/^### whatis: //')
     if [[ -z "${res}" ]]; then
         res=$(grep -E "^### " "$pathname" | head -1 | sed 's/^### //')
     fi
-    echo $res
+    echo "$res"
 }
 
 function table_of_tools {
     local cmd
     for cmd in $(list_tools); do
-        printf " %-8s  %s\n" $cmd "$(whatis $cmd)"
+        printf " %-8s  %s\\n" "$cmd" "$(whatis "$cmd")"
     done
 }
 
 version() {
-    grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
+    grep -E "^###[ ]*Version:[ ]*" "$0" | sed 's/###[ ]*Version:[ ]*//g'
 }
 
 help() {
-    local t=$(table_of_tools)
+    local t
+    t=$(table_of_tools)
     t=${t//$'\n'/\\n}
-    grep "^###" $0 | cut -b 5- | sed "s/{{table_of_tools}}/$t/"
+    grep "^###" "$0" | cut -b 5- | sed "s/{{table_of_tools}}/$t/"
 }
 
 main() {
     if [ $# -lt 1 ]; then
         help
         exit 1
-    elif [ $1 == "--help" ]; then
+    elif [ "$1" == "--help" ]; then
         help
         exit 1
-    elif [ $1 == "--version" ]; then
+    elif [ "$1" == "--version" ]; then
         version
         exit 1
-    elif [ $1 == "--tools" ]; then
+    elif [ "$1" == "--tools" ]; then
         list_tools
         exit 1
     elif [ "$2" == "--whatis" ]; then
-        whatis $1
+        whatis "$1"
         exit 1
     fi
     
@@ -87,7 +92,7 @@ main() {
         exit 1
     fi
 
-    $SUBCMD $*
+    $SUBCMD "$*"
 }
 
 main "$@"
