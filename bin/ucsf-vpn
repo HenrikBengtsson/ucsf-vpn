@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 ### Connect to and Disconnect from the UCSF VPN
 ###
 ### Usage:
@@ -97,7 +97,7 @@
 ### * UCSF Active Directory Account Manager:
 ###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 3.1.0
+### Version: 3.1.1
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -111,11 +111,11 @@ export PUBLIC_INFO=
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
     if [[ $debug == TRUE ]]; then
-        mecho "[DEBUG] $@";
+        mecho "[DEBUG] $*";
     fi
 }
 function merror() {
-    mecho "ERROR: $@";
+    mecho "ERROR: $*";
     exit 1
 }
 function vecho() {
@@ -125,31 +125,34 @@ function vecho() {
 }
 
 function version() {
-    grep -E "^###[ ]*Version:[ ]*" $0 | sed 's/###[ ]*Version:[ ]*//g'
+    grep -E "^###[ ]*Version:[ ]*" "$0" | sed 's/###[ ]*Version:[ ]*//g'
 }
 
 function pulsesvc_version() {
     res=$(pulsesvc --version 2> /dev/null)
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf '%s\n' "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
+        printf "%s\\n" "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
     fi
 }
 
 function help() {
-    local res=$(grep "^###" $0 | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
+    local res=
+    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
-        res=$(printf '%s\n' "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
+        res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
-    printf '%s\n' "${res[@]}"
+    printf "%s\\n" "${res[@]}"
 }
 
 function connection_details() {
-    mdebug "connection_details($*)"
-    if [[ -z ${PUBLIC_INFO} || "$1" == "--force" ]]; then
+    mdebug "connection_details()"
+    if [[ -z ${PUBLIC_INFO} ]]; then
       mdebug "Querying https://ipinfo.io/ip for public IP:"
-      export PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
+      PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
+      export PUBLIC_INFO
     fi
     mdebug "Public connection information: $PUBLIC_INFO"
     if [[ -z ${PUBLIC_INFO} ]]; then
@@ -163,19 +166,18 @@ function public_ip() {
     if [[ $1 == "" ]]; then
         connection_details | grep -F "ip" | sed -E 's/[ ",]//g' | cut -d : -f 2
     else
-        echo $1
+        echo "$1"
     fi
 }
 
 function public_hostname() {
-    mdebug "public_hostname($*)"
+    mdebug "public_hostname()"
     connection_details | grep -F "hostname" | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
 function is_online() {
     mdebug "is_online()"
-    ping -c 1 -W 1 8.8.8.8 > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -183,8 +185,7 @@ function is_online() {
 }
 
 function is_pulsesvc_running() {
-    ps -C pulsesvc > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ps -C pulsesvc > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -192,8 +193,7 @@ function is_pulsesvc_running() {
 }
 
 function is_pulseUi_running() {
-    ps -C pulseUi > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ps -C pulseUi > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -206,6 +206,7 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
+    # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
         echo TRUE
     else
@@ -221,18 +222,18 @@ function status() {
     ip=$2
     if [[ $ip == "" ]]; then
       vecho "- Retrieving public IP"
-      ip=$(public_ip $1)
+      ip=$(public_ip "$1")
       vecho "  => $ip"
       mdebug "ip=$ip"
     fi
-    if [[ $connected == "" ]]; then
+    if [[ "$connected" == "" ]]; then
       vecho "- Testing if IP $ip is a registered UCSF IP number"
-      connected=$(is_connected $ip)
+      connected=$(is_connected "$ip")
       vecho "  => $connected"
       mdebug "ip=$ip"
       mdebug "connected=$connected"
     fi
-    if [[ $connected == TRUE ]]; then
+    if [[ "$connected" == TRUE ]]; then
         echo "Connected to the UCSF network [$(public_hostname) ($(public_ip))]"
     else
         echo "Not connected to the UCSF network [$(public_hostname) ($(public_ip))]"
@@ -254,16 +255,16 @@ function start_gui() {
 
 function open_gui() {
     if [[ $online == FALSE ]]; then
-      merror "$(status $connected $ip)"
+      merror "$(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)
-      if [[ $connected == TRUE ]]; then
+      connected=$(is_connected "$ip")
+      if [[ "$connected" == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
-              mecho "[SKIPPING]: $(status $connected $ip)"
+              mecho "[SKIPPING]: $(status "$connected" "$ip")"
               exit 0
           else
-              merror "$(status $connected $ip)"
+              merror "$(status "$connected" "$ip")"
           fi
       fi
     fi
@@ -287,14 +288,10 @@ function close_gui() {
     mdebug "Closing Pulse Secure GUI"
 
     ## Try with 'xdotool'?
-    which xdotool &> /dev/null
-    if [[ $? -eq 0 ]]; then
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowkill
+    if which xdotool &> /dev/null; then
+        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
     else
-        pkill -QUIT pulseUi
-        if [[ $? -eq 0 ]]; then
-            mdebug "Killed Pulse Secure GUI"
-        fi
+        pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
     fi
 }
 
@@ -303,8 +300,7 @@ function wait_for_pulse_window_to_close() {
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
     while true; do
        wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-       echo "$wids" | grep -q $wid
-       if [[ $? -ne 0 ]]; then break; fi
+       echo "$wids" | grep -q "$wid" && break
        sleep 0.2
     done
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
@@ -328,7 +324,7 @@ function source_netrc() {
     chmod go-rwx "${rcfile}"
 
     local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    local pattern="^[ \t]*machine[ \t]+${machine}([ \t]+|$)"
+    local pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
         
     if [[ $debug == TRUE ]]; then
         mdebug "- search: ${machine}"
@@ -336,20 +332,20 @@ function source_netrc() {
     fi
 
     ## No such machine?
-    grep -qE "${pattern}" "${rcfile}"
-    if [[ $? -eq 1 ]]; then return; fi
-
-    if [[ $debug == TRUE ]]; then
+    grep -q -E "${pattern}" "${rcfile}"
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+	mdebug "- no such machine: $machine"
+	return 0
+    elif [[ $debug == TRUE ]]; then
         mdebug "- found: ${machine}"
     fi
     
-    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
-    if [[ -z $bfr ]]; then
-        merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
-    fi
+    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
     
-    user=$(echo ${bfr} | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
-    pwd=$(echo ${bfr} | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
     
     if [[ $debug == TRUE ]]; then
         mdebug "- user=${user}"
@@ -369,11 +365,11 @@ function source_ucsfvpnrc() {
 
 function prompt_user() {
     user=$1
-    if [[ -n ${user} ]]; then return; fi
+    if [[ -n "${user}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter username:"
-    while [ -z ${user} ]; do
+    while [ -z "${user}" ]; do
         printf "Enter username: " 1>&2;
-        read user
+        read -r user
         user=${user/ /}
     done
     if [[ $debug == TRUE ]]; then
@@ -383,11 +379,11 @@ function prompt_user() {
 
 function prompt_pwd() {
     pwd=$1
-    if [[ -n ${pwd} ]]; then return; fi
+    if [[ -n "${pwd}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter password:"
-    while [ -z ${pwd} ]; do
+    while [ -z "${pwd}" ]; do
         printf "Enter password: " 1>&2;
-        read -s pwd
+        read -r -s pwd
         pwd=${pwd/ /}
     done
     mecho "<password>"
@@ -443,15 +439,15 @@ function is_token_valid() {
 function prompt_token() {
     token=$1
     if [[ ${token} == "true" ]]; then token=; fi
-    if [[ -n ${token} ]]; then return; fi
+    if [[ -n "${token}" ]]; then return; fi
   
     mdebug "PROMPT: Asking user to enter one-time token:"
-    while [ -z ${token} ]; do
+    while [ -z "${token}" ]; do
         printf "Enter 6-digit Duo token or press your YubiKey: " 1>&2;
-        read -s token
+        read -r -s token
         token=${token/ /}
-        if [[ $(is_token_valid $token) == FALSE ]]; then
-            printf "\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\n"
+        if [[ $(is_token_valid "$token") == FALSE ]]; then
+            printf "\\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\\n"
             token=
         fi
     done
@@ -468,99 +464,97 @@ function prompt_token() {
 
 function start() {
     if [[ $online == FALSE ]]; then
-      merror "$(status $connected $ip)"
+      merror "$(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)
+      connected=$(is_connected "$ip")
       
-      if [[ $connected == TRUE ]]; then
+      if [[ "$connected" == TRUE ]]; then
           if [[ $skip == TRUE ]]; then
-              mecho "SKIPPING: $(status $connected $ip)"
+              mecho "SKIPPING: $(status "$connected" "$ip")"
               exit 0
           else
-              merror "$(status $connected $ip)"
+              merror "$(status "$connected" "$ip")"
           fi
       fi
     fi
 
     ## Load user credentials from file?
-    source_netrc ${server}
+    source_netrc "${server}"
     source_ucsfvpnrc  ## deprecated
 
     ## Prompt for username and password, if missing
-    prompt_user ${user}
-    prompt_pwd ${pwd}
+    prompt_user "${user}"
+    prompt_pwd "${pwd}"
 
     if [[ $gui == TRUE ]]; then
         ## Check for 'xdotool'
-        which xdotool &> /dev/null
-        if [[ $? -ne 0 ]]; then
-            merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
-        fi
+        
+        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Prompt for one-time token, if requested
-        prompt_token ${token}
+        prompt_token "${token}"
         
         ## Start Pulse Secure GUI?
         if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
         
-        sleep $(div 0.5 $speed)
-        wid=$(xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure")
-        if [[ -z $wid ]]; then
+        sleep "$(div 0.5 "$speed")"
+        wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
+        if [[ -z "$wid" ]]; then
             merror "Failed to locate the Pulse Secure GUI window"
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
 
         mdebug "Minimizing Pulse Secure GUI"
-        xdotool windowminimize $wid
+        xdotool windowminimize "$wid"
         
-        sleep $(div 1 $speed)
+        sleep "$(div 1.0 "$speed")"
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
-        wid2=$(echo "$wid2" | grep -vF $wid)
+        wid2=$(echo "$wid2" | grep -vF "$wid")
         mdebug "Pulse Secure Popup Window ID: $wid2"
-        if [[ -z $wid2 ]]; then
+        if [[ -z "$wid2" ]]; then
             merror "Failed to locate the Pulse Secure GUI popup window"
         fi
 
         ## Click-through UCSF announcement messsage?
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
-            xdotool windowactivate --sync $wid2 key --repeat 2 Tab key Return
-            sleep $(div 1.0 $speed)
+            xdotool windowactivate --sync "$wid2" key --repeat 2 Tab key Return
+            sleep "$(div 1.0 "$speed")"
         fi
         
         mdebug "Entering user credentials (username and password)"
-        xdotool windowactivate --sync $wid2 type "$user"
-        xdotool windowactivate --sync $wid2 key Tab type "$pwd"
-        xdotool windowactivate --sync $wid2 key Tab Down Tab Return
+        xdotool windowactivate --sync "$wid2" type "$user"
+        xdotool windowactivate --sync "$wid2" key Tab type "$pwd"
+        xdotool windowactivate --sync "$wid2" key Tab Down Tab Return
 
         if [[ ${token} != false ]]; then
             mdebug "Using two-factor authentication (2FA)"
             
-            sleep $(div 0.5 $speed)
+            sleep "$(div 0.5 "$speed")"
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
-            wid3=$(echo "$wid3" | grep -vF $wid)
+            wid3=$(echo "$wid3" | grep -vF "$wid")
             mdebug "Pulse Secure Popup Window ID: $wid3"
-            if [[ -z $wid3 ]]; then
+            if [[ -z "$wid3" ]]; then
                 merror "Failed to locate the Pulse Secure GUI popup window"
             fi
             
             mdebug "Entering token"
-            xdotool windowactivate --sync $wid3 type "$token"
-            xdotool windowactivate --sync $wid3 key Return
+            xdotool windowactivate --sync "$wid3" type "$token"
+            xdotool windowactivate --sync "$wid3" key Return
 
             ## Wait for popup window to close
-	    wait_for_pulse_window_to_close $wid3
+	    wait_for_pulse_window_to_close "$wid3"
 	else
             ## Wait for popup window to close
-	    wait_for_pulse_window_to_close $wid2
+	    wait_for_pulse_window_to_close "$wid2"
         fi
     else
-      if [ -n ${token} ] && [ ${token} != false ]; then
+      if [ -n "${token}" ] && [ ${token} != false ]; then
           mecho "WARNING: Option --token is ignored because two-factor authentication (2FA) is currently not supported when using --no-gui"
       fi
 
@@ -598,28 +592,28 @@ function start() {
       fi
       
       if [[ -n $pwd ]]; then
-          echo "$pwd" | pulsesvc $opts -r "${realm}" | grep -viF password &
+          echo "$pwd" | pulsesvc "$opts" -r "${realm}" | grep -viF password &
       else
-          pulsesvc $opts -r "${realm}" &
+          pulsesvc "$opts" -r "${realm}" &
       fi
     fi
 }
 
 function stop() {
     if [[ $online == FALSE ]]; then
-      mecho "WARNING: $(status $connected $ip)"
+      mecho "WARNING: $(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
       ip=$(public_ip)
-      connected=$(is_connected $ip)
-      if [[ $connected == FALSE ]]; then
+      connected=$(is_connected "$ip")
+      if [[ "$connected" == FALSE ]]; then
           ## Close/kill the Pulse Secure GUI
           close_gui
     
           if [[ $skip == TRUE ]]; then
-              mecho "[SKIPPING] $(status $connected $ip)"
+              mecho "[SKIPPING] $(status "$connected" "$ip")"
               exit 0
           else
-              merror "$(status $connected $ip)"
+              merror "$(status "$connected" "$ip")"
           fi
       fi
       mdebug "Public IP (before): $ip"
@@ -635,15 +629,16 @@ function stop() {
 
 function result() {
     ip=$(public_ip)
-    connected=$(is_connected $ip)
-    echo "RESULT: $(status $connected $ip)"
+    connected=$(is_connected "$ip")
+    echo "RESULT: $(status "$connected" "$ip")"
 }
 
 function div() {
-    if [ $2 == "1" ] || [ $2 == "1.0" ]; then
-        echo $1
+    if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
+        echo "$1"
     else
-        expr $1/$2 | bc -l
+	# shellcheck disable=SC2003
+        expr "$1/$2" | bc -l
     fi
 }
 
@@ -672,8 +667,7 @@ pwd=
 token=default
 
 # Parse command-line options
-while [[ $# > 0 ]]; do
-    opt=$1
+while [[ $# -gt 0 ]]; do
     if test "$1" == "--help"; then
         action=help
     elif test "$1" == "--version"; then
@@ -729,7 +723,7 @@ while [[ $# > 0 ]]; do
             mdebug "Will prompt user for 2FA token"
         elif [[ ${token} == "false" ]]; then
             mdebug "Will not use 2FA authenatication"
-        elif [[ $(is_token_valid $token) == FALSE ]]; then
+        elif [[ $(is_token_valid "$token") == FALSE ]]; then
             merror "The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
             exit 1
         fi
@@ -852,9 +846,9 @@ elif [[ $action == "restart" ]]; then
     result
     exit $res
 elif [[ $action == "toggle" ]]; then
-    connected=$(is_connected $ip)
+    connected=$(is_connected "$ip")
     mdebug "connected: $connected"
-    if [[ $connected == FALSE ]]; then
+    if [[ "$connected" == FALSE ]]; then
       start
       sleep 4
       res=$?
@@ -873,27 +867,20 @@ elif [[ $action == "log" ]]; then
         mecho "[WARN] No such log file: $LOGFILE"
         exit 1
     fi
-    cat $LOGFILE
+    cat "$LOGFILE"
 elif [[ $action == "troubleshoot" ]]; then
     mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    res=$(which pulsesvc)
-    if [[ $? -ne 0 ]]; then 
-        merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
-    fi
+    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
     
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
     LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-    if [[ ! -f $LOGFILE ]]; then
+    if [[ ! -f "$LOGFILE" ]]; then
         merror "No log file: $LOGFILE"
     fi
     mecho "[INFO] Log file: $LOGFILE"
-    grep -q -F Error $LOGFILE &> /dev/null
-    if [[ $? -ne 0 ]]; then
-        mecho "[OK] No errors found: $LOGFILE"
-        exit 0
-    fi
+    grep -q -F Error "$LOGFILE" &> /dev/null || { mecho "[OK] No errors found: $LOGFILE"; exit 0; }
     
     mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error $LOGFILE | >&2 tail -3
+    grep -F Error "$LOGFILE" | >&2 tail -3
 fi

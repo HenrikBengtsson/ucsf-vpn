@@ -6,6 +6,9 @@ If anyone can figure out a solution for passing also the 2FA passcode via the Pu
 
 ---
 
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5f0f89e2b8cc4f0b83b22ab78ec1d687)](https://www.codacy.com/app/HenrikBengtsson/ucsf-vpn?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=HenrikBengtsson/ucsf-vpn&amp;utm_campaign=Badge_Grade)
+
 # UCSF VPN client (Linux)
 
 The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
@@ -145,7 +148,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 3.1.0
+Version: 3.1.1
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
