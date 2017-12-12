@@ -1,9 +1,13 @@
 ucsf-vpn
 ========
 
-Version 3.1.0-9000 (2017-12-09)
+Version 3.1.0-9000 (2017-12-11)
 
  o ...
+ 
+SOFTWARE QUALITY:
+
+ o Fixed Bash code according to ShellCheck suggestions.
  
 
 Version 3.1.0 (2017-12-09)
