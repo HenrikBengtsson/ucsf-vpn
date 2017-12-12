@@ -637,6 +637,7 @@ function div() {
     if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
         echo "$1"
     else
+	# shellcheck disable=SC2003
         expr "$1/$2" | bc -l
     fi
 }
