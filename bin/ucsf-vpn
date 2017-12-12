@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 ### Connect to and Disconnect from the UCSF VPN
 ###
 ### Usage:
