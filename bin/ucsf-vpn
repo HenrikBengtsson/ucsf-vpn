@@ -133,7 +133,7 @@ function pulsesvc_version() {
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf '%s\n' "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
+        printf "%s\\n" "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
     fi
 }
 
@@ -141,7 +141,7 @@ function help() {
     local res=
     res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
-        res=$(printf '%s\n' "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
+        res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
     printf "%s\\n" "${res[@]}"
 }
@@ -329,7 +329,7 @@ function source_netrc() {
     chmod go-rwx "${rcfile}"
 
     local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    local pattern="^[ \t]*machine[ \t]+${machine}([ \t]+|$)"
+    local pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
         
     if [[ $debug == TRUE ]]; then
         mdebug "- search: ${machine}"
@@ -344,7 +344,7 @@ function source_netrc() {
         mdebug "- found: ${machine}"
     fi
     
-    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \t]/{flag=0} flag;" "${rcfile}")
+    bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
     if [[ -z $bfr ]]; then
         merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
     fi
@@ -452,7 +452,7 @@ function prompt_token() {
         read -s token
         token=${token/ /}
         if [[ $(is_token_valid "$token") == FALSE ]]; then
-            printf "\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\n"
+            printf "\\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\\n"
             token=
         fi
     done

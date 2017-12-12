@@ -11,6 +11,6 @@ README.md: README.md.tmpl announcement.md bin/ucsf-vpn
 
 .PHONY: test
 
-test:
+check:
 	shellcheck bin/ucsf-vpn
 #	shellcheck -x ucsf
