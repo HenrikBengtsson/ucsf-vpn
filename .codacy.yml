@@ -1,6 +1,0 @@
----
-engines:
- shellcheck:
- enabled: true
- base_sub_dir: bin
- 
