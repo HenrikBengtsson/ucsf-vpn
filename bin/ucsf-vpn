@@ -130,6 +130,7 @@ function version() {
 
 function pulsesvc_version() {
     res=$(pulsesvc --version 2> /dev/null)
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
@@ -175,8 +176,7 @@ function public_hostname() {
 
 function is_online() {
     mdebug "is_online()"
-    ping -c 1 -W 1 8.8.8.8 > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -184,8 +184,7 @@ function is_online() {
 }
 
 function is_pulsesvc_running() {
-    ps -C pulsesvc > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ps -C pulsesvc > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -193,8 +192,7 @@ function is_pulsesvc_running() {
 }
 
 function is_pulseUi_running() {
-    ps -C pulseUi > /dev/null
-    if [[ $? -eq 0 ]]; then
+    if ps -C pulseUi > /dev/null; then
         echo TRUE
     else
         echo FALSE
@@ -207,6 +205,7 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
+    # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
         echo TRUE
     else
@@ -288,14 +287,10 @@ function close_gui() {
     mdebug "Closing Pulse Secure GUI"
 
     ## Try with 'xdotool'?
-    which xdotool &> /dev/null
-    if [[ $? -eq 0 ]]; then
+    if which xdotool &> /dev/null; then
         xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
     else
-        pkill -QUIT pulseUi
-        if [[ $? -eq 0 ]]; then
-            mdebug "Killed Pulse Secure GUI"
-        fi
+        pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
     fi
 }
 
@@ -304,8 +299,7 @@ function wait_for_pulse_window_to_close() {
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
     while true; do
        wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-       echo "$wids" | grep -q "$wid"
-       if [[ $? -ne 0 ]]; then break; fi
+       echo "$wids" | grep -q "$wid" && break
        sleep 0.2
     done
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
@@ -337,17 +331,17 @@ function source_netrc() {
     fi
 
     ## No such machine?
-    grep -qE "${pattern}" "${rcfile}"
-    if [[ $? -eq 1 ]]; then return; fi
-
-    if [[ $debug == TRUE ]]; then
+    grep -q -E "${pattern}" "${rcfile}"
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+	mdebug "- no such machine: $machine"
+	return 0
+    elif [[ $debug == TRUE ]]; then
         mdebug "- found: ${machine}"
     fi
     
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
-    if [[ -z $bfr ]]; then
-        merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
-    fi
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
     
     user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
@@ -494,10 +488,8 @@ function start() {
 
     if [[ $gui == TRUE ]]; then
         ## Check for 'xdotool'
-        which xdotool &> /dev/null
-        if [[ $? -ne 0 ]]; then
-            merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
-        fi
+        
+        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Prompt for one-time token, if requested
         prompt_token "${token}"
@@ -876,10 +868,7 @@ elif [[ $action == "log" ]]; then
     cat "$LOGFILE"
 elif [[ $action == "troubleshoot" ]]; then
     mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    res=$(which pulsesvc)
-    if [[ $? -ne 0 ]]; then 
-        merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
-    fi
+    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
     
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
@@ -888,11 +877,7 @@ elif [[ $action == "troubleshoot" ]]; then
         merror "No log file: $LOGFILE"
     fi
     mecho "[INFO] Log file: $LOGFILE"
-    grep -q -F Error "$LOGFILE" &> /dev/null
-    if [[ $? -ne 0 ]]; then
-        mecho "[OK] No errors found: $LOGFILE"
-        exit 0
-    fi
+    grep -q -F Error "$LOGFILE" &> /dev/null || { mecho "[OK] No errors found: $LOGFILE"; exit 0; }
     
     mecho "[ERROR] Detected the following errors in the log file:"
     grep -F Error "$LOGFILE" | >&2 tail -3
