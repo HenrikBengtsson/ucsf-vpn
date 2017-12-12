@@ -6,6 +6,8 @@ Version 3.1.1 (2017-12-12)
 SOFTWARE QUALITY:
 
  o Fixed Bash code according to ShellCheck suggestions.
+
+ o Running ShellCheck code analysis via Travis CI.
  
 
 Version 3.1.0 (2017-12-09)
