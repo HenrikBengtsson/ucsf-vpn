@@ -151,7 +151,8 @@ function connection_details() {
     mdebug "connection_details($*)"
     if [[ -z ${PUBLIC_INFO} || "$1" == "--force" ]]; then
       mdebug "Querying https://ipinfo.io/ip for public IP:"
-      export PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
+      PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
+      export PUBLIC_INFO
     fi
     mdebug "Public connection information: $PUBLIC_INFO"
     if [[ -z ${PUBLIC_INFO} ]]; then
