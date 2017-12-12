@@ -1,0 +1,10 @@
+language: bash
+
+before_script:
+  - bash --version
+  - shellcheck --version
+ 
+script:
+  - make check
+
+   
