@@ -883,7 +883,7 @@ elif [[ $action == "troubleshoot" ]]; then
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mecho "[INFO] Pulse connections file: $confile"
     mecho "-- begin -----------------------------------------------"
-    >&2 cat $confile
+    >&2 cat "$confile"
     url="https://remote.ucsf.edu/pulse"
     grep -q -F "\"$url\"" "$confile" &> /dev/null || mecho "[WARN] Missing connection: $url"
     mecho "-- end -------------------------------------------------"
