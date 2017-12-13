@@ -882,11 +882,22 @@ elif [[ $action == "troubleshoot" ]]; then
     confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mecho "[INFO] Pulse connections file: $confile"
-    mecho "-- begin -----------------------------------------------"
-    >&2 cat "$confile"
+    # shellcheck disable=SC2207
+    cons=($(grep -E "^[[:space:]]*{.+}[[:space:]]*$" < "$confile" | sed 's/^[[:space:]]*//g' | sed 's/[[:space:]]*$//g'))
+    mecho "-- ${#cons[@]} connections -------------------------------"
     url="https://remote.ucsf.edu/pulse"
-    grep -q -F "\"$url\"" "$confile" &> /dev/null || mecho "[WARN] Missing connection: $url"
-    mecho "-- end -------------------------------------------------"
+    match=false
+    for ii in "${!cons[@]}"; do
+	con="${cons[$ii]}"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+	    prefix=">>>"
+	    match=true
+	else
+	    prefix="   "
+	fi
+        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "$con"
+    done
+    $match || mecho "[WARN] Missing connection: $url"
     
     logfile="$config_home/pulsesvc.log"
     [[ -f "$logfile" ]] || merror "No log file: $logfile"
