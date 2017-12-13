@@ -3,7 +3,11 @@ ucsf-vpn
 
 Version 3.1.1-9000 (2017-12-12)
 
- o ...
+NEW FEATURES:
+
+ o Now 'ucsf vpn troubleshoot' reports on the configured connections
+   available in the Pulse Secure GUI.  If a connection to the UCSF-specific
+   VPN URL is missing, then a warning is displayed.
  
 
 Version 3.1.1 (2017-12-12)

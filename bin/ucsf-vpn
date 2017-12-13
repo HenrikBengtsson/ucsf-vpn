@@ -874,13 +874,26 @@ elif [[ $action == "troubleshoot" ]]; then
     
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
-    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-    if [[ ! -f "$LOGFILE" ]]; then
-        merror "No log file: $LOGFILE"
-    fi
-    mecho "[INFO] Log file: $LOGFILE"
-    grep -q -F Error "$LOGFILE" &> /dev/null || { mecho "[OK] No errors found: $LOGFILE"; exit 0; }
+    
+    config_home=$HOME/.pulse_secure/pulse
+    [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
+    mecho "[INFO] Pulse user configuration folder: $config_home"
+
+    confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mecho "[INFO] Pulse connections file: $confile"
+    mecho "-- begin -----------------------------------------------"
+    >&2 cat $confile
+    url="https://remote.ucsf.edu/pulse"
+    grep -q -F "\"$url\"" "$confile" &> /dev/null || mecho "[WARN] Missing connection: $url"
+    mecho "-- end -------------------------------------------------"
+    
+    logfile="$config_home/pulsesvc.log"
+    [[ -f "$logfile" ]] || merror "No log file: $logfile"
+    
+    mecho "[INFO] Log file: $logfile"
+    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
     
     mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error "$LOGFILE" | >&2 tail -3
+    grep -F Error "$logfile" | >&2 tail -3
 fi
