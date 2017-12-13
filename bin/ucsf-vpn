@@ -875,7 +875,7 @@ elif [[ $action == "troubleshoot" ]]; then
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
     
-    config_home=$HOME/.pulse_secure/pulse
+    config_home="$HOME/.pulse_secure/pulse"
     [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
     mecho "[INFO] Pulse user configuration folder: $config_home"
 
@@ -883,19 +883,19 @@ elif [[ $action == "troubleshoot" ]]; then
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mecho "[INFO] Pulse connections file: $confile"
     # shellcheck disable=SC2207
-    cons=($(grep -E "^[[:space:]]*{.+}[[:space:]]*$" < "$confile" | sed 's/^[[:space:]]*//g' | sed 's/[[:space:]]*$//g'))
-    mecho "-- ${#cons[@]} connections -------------------------------"
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mecho "[INFO] Number of connections: ${#cons[@]}"
     url="https://remote.ucsf.edu/pulse"
     match=false
     for ii in "${!cons[@]}"; do
-	con="${cons[$ii]}"
+	con="${cons[$ii]/^ */}"
         if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
 	    prefix=">>>"
 	    match=true
 	else
 	    prefix="   "
 	fi
-        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "$con"
+        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
     done
     $match || mecho "[WARN] Missing connection: $url"
     
