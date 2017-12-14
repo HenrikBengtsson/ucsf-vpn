@@ -64,7 +64,7 @@ Commands:
  status           Display UCSF VPN connection status
  details          Display connection details
  log              Display the log file
- troubleshoot     Scan the log file for errors
+ troubleshoot     Scan the log file for errors and more.
 
  open-gui         Open the Pulse Secure GUI
  close-gui        Close the Pulse Secure GUI (and any VPN connections)
@@ -78,7 +78,6 @@ Options:
                   Duo Push (approve and confirm in Duo app). If 'phone',
                   authenatication is done by a phone call ("press any key").
                   If 'false', 2FA is not used.
-                  NOTE: --no-gui ignores --token with a warning.
 
  --gui            Connect to VPN via Pulse Secure GUI (default)
  --no-gui         Connect to VPN via Pulse Secure CLI

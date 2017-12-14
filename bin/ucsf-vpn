@@ -27,7 +27,6 @@
 ###                   Duo Push (approve and confirm in Duo app). If 'phone',
 ###                   authenatication is done by a phone call ("press any key").
 ###                   If 'false', 2FA is not used.
-###                   NOTE: --no-gui ignores --token with a warning.
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -564,13 +563,16 @@ function start() {
     prompt_user "${user}"
     prompt_pwd "${pwd}"
 
+    ## Prompt for 2FA token?
+    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+        ## Prompt for one-time token, if requested
+        prompt_token "${token}"
+    fi
+
     if [[ $gui == TRUE ]]; then
         ## Check for 'xdotool'        
         which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
-        ## Prompt for one-time token, if requested
-        prompt_token "${token}"
-        
         ## Start Pulse Secure GUI
 	start_gui
         
@@ -837,14 +839,6 @@ done
 ## Use default URL?
 [[ -z "$url" ]] && url=https://${server}/pulse
 
-if [[ $token == default ]]; then
-    if [[ $gui == TRUE ]]; then
-        token=true
-    else
-        token=false
-    fi
-fi
-
 ## Validate 'realm'
 if [[ -z $realm ]]; then
     if [[ $gui == TRUE ]]; then
@@ -863,6 +857,14 @@ elif [[ $realm == "dual" ]]; then
     realm="Dual-Factor Pulse Clients"
 else
     merror "Unknown value on option --realm: $realm"
+fi
+
+if [[ $token == default ]]; then
+    if [[ $realm == "Dual-Factor Pulse Clients" ]]; then
+        token=true
+    else
+        token=false
+    fi
 fi
 
 if [[ $debug == TRUE ]]; then
