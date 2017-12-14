@@ -1,6 +1,28 @@
 ucsf-vpn
 ========
 
+Version 3.2.0 (2017-12-14)
+
+NEW FEATURES:
+
+ o Now 'ucsf vpn start --gui' looks in the Pulse Secure GUI config file
+   to identify which of several connections is for the target VPN URL.
+   If none matches, a proper connection is automatically added to the
+   settings.
+   
+ o Add option '--url <url>' for specifying the VPN URL.  Currently, only
+   used for validation.
+
+ o Now '--realm <realm>' is acknowledged also for --gui (though UCSF VPN
+   still only 'Dual Factor Pulse Clients').
+
+ o Now 'ucsf vpn troubleshoot' reports on the configured connections
+   available in the Pulse Secure GUI.  If a connection to the UCSF-specific
+   VPN URL is missing, then a warning is displayed.
+
+ o The default value for --token can be set via env var 'UCSF_VPN_TOKEN'.
+
+
 Version 3.1.1 (2017-12-12)
  
 SOFTWARE QUALITY:

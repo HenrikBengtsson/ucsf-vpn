@@ -10,7 +10,7 @@
 ### Example:
 ###  ucsf vpn --help
 ###
-### Version: 0.2.1
+### Version: 0.2.2
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 
@@ -32,8 +32,8 @@ function mcat {
 function list_tools {
     tools=
     for path in $(echo -e "${PATH//:/\\n}" | sort -u); do
-	# shellcheck disable=SC2010
-	tools="$tools $(ls "$path/ucsf-*" 2> /dev/null | grep -vE '(^#|~$|#$)' | sed 's|.*/ucsf-||')"
+	# shellcheck disable=SC2010,SC2086
+	tools="$tools $(ls $path/ucsf-* 2> /dev/null | grep -vE '(^#|~$|#$)' | sed 's|.*/ucsf-||')"
     done
     echo -e "${tools// /\\n}" | sort -u | grep -vE "^$"
 }
@@ -92,7 +92,7 @@ main() {
         exit 1
     fi
 
-    $SUBCMD "$*"
+    $SUBCMD "$@"
 }
 
 main "$@"

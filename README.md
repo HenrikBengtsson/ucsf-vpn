@@ -64,7 +64,7 @@ Commands:
  status           Display UCSF VPN connection status
  details          Display connection details
  log              Display the log file
- troubleshoot     Scan the log file for errors
+ troubleshoot     Scan the log file for errors and more.
 
  open-gui         Open the Pulse Secure GUI
  close-gui        Close the Pulse Secure GUI (and any VPN connections)
@@ -72,19 +72,22 @@ Commands:
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
- --token <token>  One-time two-factor authentication (2FA) token (Duo or
-                  YubiKey). If 'true' (default), user is prompted to enter
-                  the token. If 'push', authentication is done via
-                  Duo Push (approve and confirm in Duo app). If 'phone',
-                  authenatication is done by a phone call ("press any key").
-                  If 'false', 2FA is not used.
-                  NOTE: --no-gui ignores --token with a warning.
+ --token <token>  One-time two-factor authentication (2FA) token. If 'true'
+                  (default; overridden by env var 'UCSF_VPN_TOKEN'), user
+                  is prompted to enter the token.  Valid values are:
+                   - 'push' ("approve and confirm" in Duo app),
+                   - 'phone' (receive phone call and "press any key"),
+                   -  6-digit Duo token (from Duo app), or
+                   -  44 letter YubiKey token ("press YubiKey").
 
  --gui            Connect to VPN via Pulse Secure GUI (default)
  --no-gui         Connect to VPN via Pulse Secure CLI
+ --speed <factor> Control speed of --gui interactions (default is 1.0)
 
  --server <host>  VPN server (default is remote.ucsf.edu)
- --realm <realm>  VPN server (default is 'Single-Factor Pulse Clients')
+ --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
+ --url <url>      VPN URL (default is https://{{server}}/pulse)
+                  (only used with --gui)
 
  --skip           If already fulfilled, skip command
  --force          Force running the command
@@ -95,10 +98,10 @@ Options:
 Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 
 Examples:
+ ucsf-vpn start
  ucsf-vpn start --user alice --token push
  ucsf-vpn start --user alice --pwd secrets --token true
  ucsf-vpn start --token phone
- ucsf-vpn start
  ucsf-vpn stop
 
 User credentials:
@@ -122,11 +125,11 @@ Requirements:
 * No need for sudo rights to run :)
 
 Pulse Secure GUI configuration:
-To add a new connection to the Pulse Secure GUI ('ucsf-vpn open-gui'),
-click '+' and enter:
- - Name: ucsf
+Calling 'ucsf-vpn start --gui' will, if missing, automatically add a valid
+UCSF VPN connection to the Pulse Secure GUI with the following details:
+ - Name: UCSF
  - URL: https://remote.ucsf.edu/pulse
-The name can be whatever you'd like.
+You may change the name to you own liking.
 
 Troubleshooting:
 * Verify your username and password at https://remote.ucsf.edu/.
@@ -136,7 +139,7 @@ Troubleshooting:
 * If you are using the Pulse Secure GUI (`ucsf-vpn open-gui`), use
   'https://remote.ucsf.edu/pulse' as the URL when adding a new
   connection.
-* The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
+* Run 'ucsf-vpn troubleshoot' to inspect the Pulse Secure logs and more.
 
 Useful resources:
 * UCSF VPN information:
@@ -148,7 +151,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 3.1.1
+Version: 3.1.1-9000
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

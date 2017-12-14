@@ -13,7 +13,7 @@
 ###  status           Display UCSF VPN connection status
 ###  details          Display connection details
 ###  log              Display the log file
-###  troubleshoot     Scan the log file for errors
+###  troubleshoot     Scan the log file for errors and more.
 ###
 ###  open-gui         Open the Pulse Secure GUI
 ###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
@@ -21,19 +21,22 @@
 ### Options:
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --token <token>  One-time two-factor authentication (2FA) token (Duo or
-###                   YubiKey). If 'true' (default), user is prompted to enter
-###                   the token. If 'push', authentication is done via
-###                   Duo Push (approve and confirm in Duo app). If 'phone',
-###                   authenatication is done by a phone call ("press any key").
-###                   If 'false', 2FA is not used.
-###                   NOTE: --no-gui ignores --token with a warning.
+###  --token <token>  One-time two-factor authentication (2FA) token. If 'true'
+###                   (default; overridden by env var 'UCSF_VPN_TOKEN'), user
+###                   is prompted to enter the token.  Valid values are:
+###                    - 'push' ("approve and confirm" in Duo app),
+###                    - 'phone' (receive phone call and "press any key"),
+###                    -  6-digit Duo token (from Duo app), or
+###                    -  44 letter YubiKey token ("press YubiKey").
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
+###  --speed <factor> Control speed of --gui interactions (default is 1.0)
 ###
 ###  --server <host>  VPN server (default is remote.ucsf.edu)
-###  --realm <realm>  VPN server (default is 'Single-Factor Pulse Clients')
+###  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
+###  --url <url>      VPN URL (default is https://{{server}}/pulse)
+###                   (only used with --gui)
 ###
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
@@ -44,10 +47,10 @@
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 ###
 ### Examples:
+###  ucsf-vpn start
 ###  ucsf-vpn start --user alice --token push
 ###  ucsf-vpn start --user alice --pwd secrets --token true
 ###  ucsf-vpn start --token phone
-###  ucsf-vpn start
 ###  ucsf-vpn stop
 ###
 ### User credentials:
@@ -71,11 +74,11 @@
 ### * No need for sudo rights to run :)
 ###
 ### Pulse Secure GUI configuration:
-### To add a new connection to the Pulse Secure GUI ('ucsf-vpn open-gui'),
-### click '+' and enter:
-###  - Name: ucsf
+### Calling 'ucsf-vpn start --gui' will, if missing, automatically add a valid
+### UCSF VPN connection to the Pulse Secure GUI with the following details:
+###  - Name: UCSF
 ###  - URL: https://remote.ucsf.edu/pulse
-### The name can be whatever you'd like.
+### You may change the name to you own liking.
 ###
 ### Troubleshooting:
 ### * Verify your username and password at https://remote.ucsf.edu/.
@@ -85,7 +88,7 @@
 ### * If you are using the Pulse Secure GUI (`ucsf-vpn open-gui`), use
 ###   'https://remote.ucsf.edu/pulse' as the URL when adding a new
 ###   connection.
-### * The Pulse Secure log is at $HOME/.pulse_secure/pulse/pulsesvc.log.
+### * Run 'ucsf-vpn troubleshoot' to inspect the Pulse Secure logs and more.
 ###
 ### Useful resources:
 ### * UCSF VPN information:
@@ -97,7 +100,7 @@
 ### * UCSF Active Directory Account Manager:
 ###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 3.1.1
+### Version: 3.2.0
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -198,6 +201,45 @@ function is_pulseUi_running() {
     else
         echo FALSE
     fi
+}
+
+function pulseUi_find_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || pulseUi_add_connection
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mdebug "Pulse connections file: $confile"
+    mdebug "$(< "$confile")"
+       
+    # shellcheck disable=SC2207
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mdebug "Number of connections: ${#cons[@]}"
+    mdebug "Searching for VPN URL: $url"
+    
+    local idx=-1
+    for ii in "${!cons[@]}"; do
+	con="${cons[$ii]/^ */}"
+	mdebug "- connection $ii: $con"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+	    idx=$ii
+	    break
+	fi
+    done
+
+    mdebug "Index of connection found: $idx"
+    
+    echo "$idx"
+}
+
+function pulseUi_add_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    name="UCSF"
+    mdebug "Pulse connections file: $confile"
+    con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
+    mdebug "Appending connection: $con"
+    echo "$con" >> "$confile"
+    mecho "Appended missing '$name' connection: $url"
 }
 
 function is_connected() {
@@ -417,6 +459,10 @@ function is_token_valid() {
         mdebug "Will send token via SMS"
         echo TRUE
         return
+    elif [[ ${token} == "false" ]]; then
+        mdebug "Will not use token (in the form)"
+        echo TRUE
+        return
     fi
     
     ## YubiKey token (44 lower-case letters)
@@ -443,11 +489,11 @@ function prompt_token() {
   
     mdebug "PROMPT: Asking user to enter one-time token:"
     while [ -z "${token}" ]; do
-        printf "Enter 6-digit Duo token or press your YubiKey: " 1>&2;
+        printf "Enter 'push', 'phone', 'sms', a 6-digit Duo token, or press your YubiKey: " 1>&2;
         read -r -s token
         token=${token/ /}
         if [[ $(is_token_valid "$token") == FALSE ]]; then
-            printf "\\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\\n"
+            printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 digits or 'push', YubiKey: 44 letters)\\n"
             token=
         fi
     done
@@ -463,6 +509,22 @@ function prompt_token() {
 }
 
 function start() {
+    ## Validate request    
+    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+        if [[ $gui == FALSE ]]; then
+            merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
+	fi
+    elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
+        if [ -n "${token}" ] && [ ${token} != false ]; then
+            merror "Passing a --token '$token' with --realm '$realm' (two-factor authentication; 2FA) does not make sense"
+	fi
+    fi
+    if [ -n "${token}" ] && [ ${token} != false ]; then
+        if [[ $gui == FALSE ]]; then
+            merror "Using --token '$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
+        fi
+    fi
+    
     if [[ $online == FALSE ]]; then
       merror "$(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
@@ -479,6 +541,21 @@ function start() {
       fi
     fi
 
+    ## Check for valid connection in Pulse Secure GUI
+    local conidx=-1
+    if [[ $gui == TRUE ]]; then
+	## If Pulse Secure GUI is open, we need to close it
+	## before peeking at its connections config file.
+        if [[ $(is_pulseUi_running) == TRUE ]]; then
+	    close_gui
+            sleep "$(div 0.5 "$speed")"
+	fi
+        conidx=$(pulseUi_find_connection)	
+	[[ $conidx -eq -1 ]] && pulseUi_add_connection
+        conidx=$(pulseUi_find_connection)	
+	[[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
+    fi
+    
     ## Load user credentials from file?
     source_netrc "${server}"
     source_ucsfvpnrc  ## deprecated
@@ -487,30 +564,36 @@ function start() {
     prompt_user "${user}"
     prompt_pwd "${pwd}"
 
-    if [[ $gui == TRUE ]]; then
-        ## Check for 'xdotool'
-        
-        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
-
+    ## Prompt for 2FA token?
+    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
         ## Prompt for one-time token, if requested
         prompt_token "${token}"
+    fi
+
+    if [[ $gui == TRUE ]]; then
+        ## Check for 'xdotool'        
+        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
+
+        ## Start Pulse Secure GUI
+	start_gui
         
-        ## Start Pulse Secure GUI?
-        if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
-        
-        sleep "$(div 0.5 "$speed")"
+        sleep "$(div 1.0 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
         if [[ -z "$wid" ]]; then
             merror "Failed to locate the Pulse Secure GUI window"
         fi
+        mecho "Pulse Secure GUI automation:"
         mdebug "Pulse Secure Window ID: $wid"
-        mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
-
+        mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
+        cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
+        mdebug " - $cmd"
+        mecho " 1. selecting connection"
+	eval "$cmd"
+	
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
         
-        sleep "$(div 1.0 "$speed")"
+        sleep "$(div 2.0 "$speed")"
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
         wid2=$(echo "$wid2" | grep -vF "$wid")
@@ -519,22 +602,32 @@ function start() {
             merror "Failed to locate the Pulse Secure GUI popup window"
         fi
 
-        ## Click-through UCSF announcement messsage?
+        ## Click-through UCSF announcement message?
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
-            xdotool windowactivate --sync "$wid2" key --repeat 2 Tab key Return
-            sleep "$(div 1.0 "$speed")"
+            cmd="xdotool windowactivate --sync $wid2 key --delay 50 --repeat 2 Tab key Return"
+            mdebug " - $cmd"
+            eval "$cmd"
+            mecho " 2. clicking through UCSF notification popup window"
+            sleep "$(div 2.0 "$speed")"
         fi
         
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync "$wid2" type "$user"
-        xdotool windowactivate --sync "$wid2" key Tab type "$pwd"
-        xdotool windowactivate --sync "$wid2" key Tab Down Tab Return
+        xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
+	## Single- or Dual-Factor Pulse Clients?
+        local extra=
+	[[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
+        cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab $extra Tab Return"
+        mdebug " - $cmd"
+        eval "$cmd"
+        mecho " 3. entering user credentials and selecting realm"
+
 
         if [[ ${token} != false ]]; then
-            mdebug "Using two-factor authentication (2FA)"
+            mdebug "Using two-factor authentication (2FA) token"
             
-            sleep "$(div 0.5 "$speed")"
+            sleep "$(div 1.0 "$speed")"
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
             wid3=$(echo "$wid3" | grep -vF "$wid")
@@ -544,8 +637,13 @@ function start() {
             fi
             
             mdebug "Entering token"
-            xdotool windowactivate --sync "$wid3" type "$token"
-            xdotool windowactivate --sync "$wid3" key Return
+            mecho " 4. entering 2FA token"
+            cmd="xdotool windowactivate --sync $wid3 type $token"
+            mdebug " - $cmd"
+            eval "$cmd"
+            cmd="xdotool windowactivate --sync $wid3 key Return"
+            mdebug " - $cmd"
+            eval "$cmd"
 
             ## Wait for popup window to close
 	    wait_for_pulse_window_to_close "$wid3"
@@ -553,11 +651,14 @@ function start() {
             ## Wait for popup window to close
 	    wait_for_pulse_window_to_close "$wid2"
         fi
+        mecho " 5. connecting ..."
     else
-      if [ -n "${token}" ] && [ ${token} != false ]; then
-          mecho "WARNING: Option --token is ignored because two-factor authentication (2FA) is currently not supported when using --no-gui"
+      if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+          merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
       fi
-
+      if [ -n "${token}" ] && [ ${token} != false ]; then
+          merror "Using --token '$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
+      fi
       ## Pulse Secure options
       opts="$extras"
       opts="$opts -h ${server}"
@@ -650,12 +751,13 @@ online=TRUE
 
 ## Options
 server=remote.ucsf.edu
+url=
 force=FALSE
 skip=FALSE
 debug=FALSE
 verbose=FALSE
 dryrun=FALSE
-realm="Single-Factor Pulse Clients"
+realm=
 extras=
 gui=TRUE
 notification=TRUE
@@ -664,7 +766,7 @@ speed=1.0
 ## User credentials
 user=
 pwd=
-token=default
+token=${default:-$UCSF_VPN_TOKEN}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
@@ -704,6 +806,9 @@ while [[ $# -gt 0 ]]; do
         skip=TRUE
     elif test "$1" == "--dry-run"; then
         dryrun=TRUE
+    elif test "$1" == "--url"; then
+        shift
+        url=$1
     elif test "$1" == "--server"; then
         shift
         server=$1
@@ -747,15 +852,17 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ $token == default ]]; then
-    if [[ $gui == TRUE ]]; then
-        token=true
-    else
-        token=false
-    fi
-fi
+## Use default URL?
+[[ -z "$url" ]] && url=https://${server}/pulse
 
 ## Validate 'realm'
+if [[ -z $realm ]]; then
+    if [[ $gui == TRUE ]]; then
+        realm="Dual-Factor Pulse Clients"
+    else
+        realm="Single-Factor Pulse Clients"
+    fi
+fi
 if [[ $realm == "Single-Factor Pulse Clients" ]]; then
     true
 elif [[ $realm == "Dual-Factor Pulse Clients" ]]; then
@@ -768,13 +875,21 @@ else
     merror "Unknown value on option --realm: $realm"
 fi
 
+if [[ $token == default ]]; then
+    if [[ $realm == "Dual-Factor Pulse Clients" ]]; then
+        token=true
+    else
+        token=false
+    fi
+fi
+
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
     mdebug "gui: $gui"
     mdebug "speed: $speed"
     mdebug "VPN server: $server"
-    mdebug "Realm: $realm"
+    mdebug "Realm: '$realm'"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
@@ -824,23 +939,23 @@ elif [[ $action == "close-gui" ]]; then
 elif [[ $action == "start" ]]; then
     start
     res=$?
-    sleep 4
+    sleep "$(div 4.0 "$speed")"
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "stop" ]]; then
     stop
     res=$?
-    sleep 1
+    sleep "$(div 1.0 "$speed")"
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "restart" ]]; then
     stop
-    sleep 1
+    sleep "$(div 1.0 "$speed")"
     online=$(is_online)
     start
-    sleep 4
+    sleep "$(div 4.0 "$speed")"
     res=$?
     online=$(is_online)
     result
@@ -850,11 +965,11 @@ elif [[ $action == "toggle" ]]; then
     mdebug "connected: $connected"
     if [[ "$connected" == FALSE ]]; then
       start
-      sleep 4
+      sleep "$(div 4.0 "$speed")"
       res=$?
     else
       stop
-      sleep 1
+      sleep "$(div 1.0 "$speed")"
       res=$?
     fi
     online=$(is_online)
@@ -874,13 +989,40 @@ elif [[ $action == "troubleshoot" ]]; then
     
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
-    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-    if [[ ! -f "$LOGFILE" ]]; then
-        merror "No log file: $LOGFILE"
+    
+    config_home="$HOME/.pulse_secure/pulse"
+    [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
+    mecho "[INFO] Pulse user configuration folder: $config_home"
+
+    confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mecho "[INFO] Pulse connections file: $confile"
+    # shellcheck disable=SC2207
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mecho "[INFO] Number of connections: ${#cons[@]}"
+    match=false
+    for ii in "${!cons[@]}"; do
+	con="${cons[$ii]/^ */}"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+	    prefix=">>>"
+	    match=true
+	else
+	    prefix="   "
+	fi
+        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
+    done
+    if $match; then
+        mecho "[INFO] Found connection with URL of interest: $url"
+    else
+        mecho "[WARN] No connection with URL of interest: $url"
     fi
-    mecho "[INFO] Log file: $LOGFILE"
-    grep -q -F Error "$LOGFILE" &> /dev/null || { mecho "[OK] No errors found: $LOGFILE"; exit 0; }
+    
+    logfile="$config_home/pulsesvc.log"
+    [[ -f "$logfile" ]] || merror "No log file: $logfile"
+    
+    mecho "[INFO] Log file: $logfile"
+    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
     
     mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error "$LOGFILE" | >&2 tail -3
+    grep -F Error "$logfile" | >&2 tail -3
 fi
