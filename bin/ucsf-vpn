@@ -206,6 +206,7 @@ function pulseUi_find_connection() {
     local confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mdebug "Pulse connections file: $confile"
+    mdebug "$(< "$confile")"
        
     # shellcheck disable=SC2207
     IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
@@ -215,7 +216,7 @@ function pulseUi_find_connection() {
     local idx=-1
     for ii in "${!cons[@]}"; do
 	con="${cons[$ii]/^ */}"
-	mdebug "- connection $ii: $url"
+	mdebug "- connection $ii: $con"
         if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
 	    idx=$ii
 	    break
@@ -224,7 +225,7 @@ function pulseUi_find_connection() {
 
     mdebug "Index of connection found: $idx"
     
-    echo $idx
+    echo "$idx"
 }
  
 function is_connected() {
@@ -444,6 +445,10 @@ function is_token_valid() {
         mdebug "Will send token via SMS"
         echo TRUE
         return
+    elif [[ ${token} == "false" ]]; then
+        mdebug "Will not use token (in the form)"
+        echo TRUE
+        return
     fi
     
     ## YubiKey token (44 lower-case letters)
@@ -509,6 +514,12 @@ function start() {
     ## Check for valid connection in Pulse Secure GUI
     local conidx=-1
     if [[ $gui == TRUE ]]; then
+	## If Pulse Secure GUI is open, we need to close it
+	## before peeking at its connections config file.
+        if [[ $(is_pulseUi_running) == TRUE ]]; then
+	    close_gui
+            sleep "$(div 0.5 "$speed")"
+	fi
         conidx=$(pulseUi_find_connection)
 	[[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
     fi
@@ -528,8 +539,8 @@ function start() {
         ## Prompt for one-time token, if requested
         prompt_token "${token}"
         
-        ## Start Pulse Secure GUI?
-        if [[ $(is_pulseUi_running) == FALSE ]]; then start_gui; fi
+        ## Start Pulse Secure GUI
+	start_gui
         
         sleep "$(div 0.5 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
@@ -538,8 +549,24 @@ function start() {
         fi
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 7 Tab sleep 0.1 key Return
+        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 5 Tab
+#        xdotool windowactivate --sync "$wid"
+#	xdotool windowmap --sync "$wid"
+#	xdotool windowactivate --sync "$wid"
+#	xdotool windowfocus --sync "$wid"
+#	xdotool windowraise "$wid"
+#	xdotool mousemove --window "$wid" --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 5 Tab
 
+	## Skip to connection of interest
+	while [ "$conidx" -ge 0 ]; do
+            mdebug "conidx: $conidx"
+	    xdotool key --window "$wid" --delay 50 --repeat 2 Tab
+	    conidx=$((conidx - 1))
+	done
+
+	## Press 'Connect'
+        xdotool key --window "$wid" Return
+	
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
         

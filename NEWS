@@ -5,16 +5,17 @@ Version 3.1.1-9000 (2017-12-13)
 
 NEW FEATURES:
 
+ o Now 'ucsf vpn start --gui' looks in the Pulse Secure GUI settings to
+   asserts that there exists a UCSF VPN connection and if there is more
+   than one connect it makes sure it selects the correct one.
+   
+ o Add option '--url <url>' for specifying the VPN URL.  Currently, only
+   used for validation.
+
  o Now 'ucsf vpn troubleshoot' reports on the configured connections
    available in the Pulse Secure GUI.  If a connection to the UCSF-specific
    VPN URL is missing, then a warning is displayed.
 
- o Add option '--url <url>' for specifying the VPN URL.  Currently, only
-   used for validation.
-
- o Now 'ucsf vpn start --gui' asserts that there exists a VPN connection
-   in the Pulse Secure GUI that matched the VPN URL of interest.
-   
 
 Version 3.1.1 (2017-12-12)
  
