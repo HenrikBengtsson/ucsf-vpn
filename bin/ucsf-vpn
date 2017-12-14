@@ -617,7 +617,7 @@ function start() {
 	## Single- or Dual-Factor Pulse Clients?
         local extra=
 	[[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
-        cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab "$extra" Tab Return"
+        cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab $extra Tab Return"
         mdebug " - $cmd"
         eval "$cmd"
         mecho " 3. entering user credentials and selecting realm"
