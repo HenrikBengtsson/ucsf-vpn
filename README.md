@@ -72,12 +72,13 @@ Commands:
 Options:
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
- --token <token>  One-time two-factor authentication (2FA) token (Duo or
-                  YubiKey). If 'true' (default), user is prompted to enter
-                  the token. If 'push', authentication is done via
-                  Duo Push (approve and confirm in Duo app). If 'phone',
-                  authenatication is done by a phone call ("press any key").
-                  If 'false', 2FA is not used.
+ --token <token>  One-time two-factor authentication (2FA) token. If 'true'
+                  (default; overridden by env var 'UCSF_VPN_TOKEN'), user
+                  is prompted to enter the token.  Valid values are:
+                   - 'push' ("approve and confirm" in Duo app),
+                   - 'phone' (receive phone call and "press any key"),
+                   -  6-digit Duo token (from Duo app), or
+                   -  44 letter YubiKey token ("press YubiKey").
 
  --gui            Connect to VPN via Pulse Secure GUI (default)
  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -97,10 +98,10 @@ Options:
 Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 
 Examples:
+ ucsf-vpn start
  ucsf-vpn start --user alice --token push
  ucsf-vpn start --user alice --pwd secrets --token true
  ucsf-vpn start --token phone
- ucsf-vpn start
  ucsf-vpn stop
 
 User credentials:
