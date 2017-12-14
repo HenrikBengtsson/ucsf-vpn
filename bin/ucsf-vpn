@@ -46,10 +46,10 @@
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 ###
 ### Examples:
+###  ucsf-vpn start
 ###  ucsf-vpn start --user alice --token push
 ###  ucsf-vpn start --user alice --pwd secrets --token true
 ###  ucsf-vpn start --token phone
-###  ucsf-vpn start
 ###  ucsf-vpn stop
 ###
 ### User credentials:
@@ -586,7 +586,7 @@ function start() {
         mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
         cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
         mdebug " - $cmd"
-        mecho " 1. selecting connection and clicking 'Connect'"
+        mecho " 1. selecting connection"
 	eval "$cmd"
 	
         mdebug "Minimizing Pulse Secure GUI"
@@ -765,7 +765,7 @@ speed=1.0
 ## User credentials
 user=
 pwd=
-token=default
+token=${default:-$UCSF_VPN_TOKEN}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
