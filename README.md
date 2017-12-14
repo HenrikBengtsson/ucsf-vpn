@@ -84,7 +84,8 @@ Options:
  --no-gui         Connect to VPN via Pulse Secure CLI
 
  --server <host>  VPN server (default is remote.ucsf.edu)
- --realm <realm>  VPN server (default is 'Single-Factor Pulse Clients')
+ --url <url>      VPN URL (default is https://{{server}}/pulse)
+ --realm <realm>  VPN realm (default is 'Single-Factor Pulse Clients')
 
  --skip           If already fulfilled, skip command
  --force          Force running the command

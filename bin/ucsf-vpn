@@ -33,7 +33,8 @@
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
 ###
 ###  --server <host>  VPN server (default is remote.ucsf.edu)
-###  --realm <realm>  VPN server (default is 'Single-Factor Pulse Clients')
+###  --url <url>      VPN URL (default is https://{{server}}/pulse)
+###  --realm <realm>  VPN realm (default is 'Single-Factor Pulse Clients')
 ###
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
@@ -650,6 +651,7 @@ online=TRUE
 
 ## Options
 server=remote.ucsf.edu
+url=
 force=FALSE
 skip=FALSE
 debug=FALSE
@@ -704,6 +706,9 @@ while [[ $# -gt 0 ]]; do
         skip=TRUE
     elif test "$1" == "--dry-run"; then
         dryrun=TRUE
+    elif test "$1" == "--url"; then
+        shift
+        url=$1
     elif test "$1" == "--server"; then
         shift
         server=$1
@@ -746,6 +751,9 @@ while [[ $# -gt 0 ]]; do
     fi
     shift
 done
+
+## Use default URL?
+[[ -z "$url" ]] && url=https://${server}/pulse
 
 if [[ $token == default ]]; then
     if [[ $gui == TRUE ]]; then
@@ -885,7 +893,6 @@ elif [[ $action == "troubleshoot" ]]; then
     # shellcheck disable=SC2207
     IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
     mecho "[INFO] Number of connections: ${#cons[@]}"
-    url="https://remote.ucsf.edu/pulse"
     match=false
     for ii in "${!cons[@]}"; do
 	con="${cons[$ii]/^ */}"
@@ -897,7 +904,11 @@ elif [[ $action == "troubleshoot" ]]; then
 	fi
         >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
     done
-    $match || mecho "[WARN] Missing connection: $url"
+    if $match; then
+        mecho "[INFO] Found connection with URL of interest: $url"
+    else
+        mecho "[WARN] No connection with URL of interest: $url"
+    fi
     
     logfile="$config_home/pulsesvc.log"
     [[ -f "$logfile" ]] || merror "No log file: $logfile"
