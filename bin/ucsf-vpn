@@ -562,24 +562,10 @@ function start() {
             merror "Failed to locate the Pulse Secure GUI window"
         fi
         mdebug "Pulse Secure Window ID: $wid"
-        mdebug "Attempting to click on 'Connect'"
-        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 5 Tab
-#        xdotool windowactivate --sync "$wid"
-#	xdotool windowmap --sync "$wid"
-#	xdotool windowactivate --sync "$wid"
-#	xdotool windowfocus --sync "$wid"
-#	xdotool windowraise "$wid"
-#	xdotool mousemove --window "$wid" --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat 5 Tab
-
-	## Skip to connection of interest
-	while [ "$conidx" -ge 0 ]; do
-            mdebug "conidx: $conidx"
-	    xdotool key --window "$wid" --delay 50 --repeat 2 Tab
-	    conidx=$((conidx - 1))
-	done
-
-	## Press 'Connect'
-        xdotool key --window "$wid" Return
+        mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
+        cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
+        mdebug " - $cmd"
+	eval "$cmd"
 	
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
