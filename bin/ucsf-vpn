@@ -938,23 +938,23 @@ elif [[ $action == "close-gui" ]]; then
 elif [[ $action == "start" ]]; then
     start
     res=$?
-    sleep 4
+    sleep "$(div 4.0 "$speed")"
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "stop" ]]; then
     stop
     res=$?
-    sleep 1
+    sleep "$(div 1.0 "$speed")"
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "restart" ]]; then
     stop
-    sleep 1
+    sleep "$(div 1.0 "$speed")"
     online=$(is_online)
     start
-    sleep 4
+    sleep "$(div 4.0 "$speed")"
     res=$?
     online=$(is_online)
     result
@@ -964,11 +964,11 @@ elif [[ $action == "toggle" ]]; then
     mdebug "connected: $connected"
     if [[ "$connected" == FALSE ]]; then
       start
-      sleep 4
+      sleep "$(div 4.0 "$speed")"
       res=$?
     else
       stop
-      sleep 1
+      sleep "$(div 1.0 "$speed")"
       res=$?
     fi
     online=$(is_online)
