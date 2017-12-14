@@ -201,6 +201,32 @@ function is_pulseUi_running() {
     fi
 }
 
+function pulseUi_find_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mdebug "Pulse connections file: $confile"
+       
+    # shellcheck disable=SC2207
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mdebug "Number of connections: ${#cons[@]}"
+    mdebug "Searching for VPN URL: $url"
+    
+    local idx=-1
+    for ii in "${!cons[@]}"; do
+	con="${cons[$ii]/^ */}"
+	mdebug "- connection $ii: $url"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+	    idx=$ii
+	    break
+	fi
+    done
+
+    mdebug "Index of connection found: $idx"
+    
+    echo $idx
+}
+ 
 function is_connected() {
     mdebug "is_connected($*)"
     ## NOTE: It appears that field 'hostname' is not always returned, e.g. when
@@ -480,6 +506,13 @@ function start() {
       fi
     fi
 
+    ## Check for valid connection in Pulse Secure GUI
+    local conidx=-1
+    if [[ $gui == TRUE ]]; then
+        conidx=$(pulseUi_find_connection)
+	[[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
+    fi
+    
     ## Load user credentials from file?
     source_netrc "${server}"
     source_ucsfvpnrc  ## deprecated
@@ -489,8 +522,7 @@ function start() {
     prompt_pwd "${pwd}"
 
     if [[ $gui == TRUE ]]; then
-        ## Check for 'xdotool'
-        
+        ## Check for 'xdotool'        
         which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Prompt for one-time token, if requested

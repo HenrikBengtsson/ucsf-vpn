@@ -12,6 +12,9 @@ NEW FEATURES:
  o Add option '--url <url>' for specifying the VPN URL.  Currently, only
    used for validation.
 
+ o Now 'ucsf vpn start --gui' asserts that there exists a VPN connection
+   in the Pulse Secure GUI that matched the VPN URL of interest.
+   
 
 Version 3.1.1 (2017-12-12)
  
