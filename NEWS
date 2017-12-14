@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-Version 3.1.1-9000 (2017-12-13)
+Version 3.1.1-9000 (2017-12-14)
 
 NEW FEATURES:
 
@@ -12,6 +12,9 @@ NEW FEATURES:
    
  o Add option '--url <url>' for specifying the VPN URL.  Currently, only
    used for validation.
+
+ o Now '--realm <realm>' is acknowledged also for --gui (though UCSF VPN
+   still only 'Dual Factor Pulse Clients').
 
  o Now 'ucsf vpn troubleshoot' reports on the configured connections
    available in the Pulse Secure GUI.  If a connection to the UCSF-specific

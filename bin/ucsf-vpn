@@ -33,8 +33,9 @@
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
 ###
 ###  --server <host>  VPN server (default is remote.ucsf.edu)
+###  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url <url>      VPN URL (default is https://{{server}}/pulse)
-###  --realm <realm>  VPN realm (default is 'Single-Factor Pulse Clients')
+###                   (only used with --gui)
 ###
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
@@ -507,6 +508,22 @@ function prompt_token() {
 }
 
 function start() {
+    ## Validate request    
+    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+        if [[ $gui == FALSE ]]; then
+            merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
+	fi
+    elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
+        if [ -n "${token}" ] && [ ${token} != false ]; then
+            merror "Passing a --token '$token' with --realm '$realm' (two-factor authentication; 2FA) does not make sense"
+	fi
+    fi
+    if [ -n "${token}" ] && [ ${token} != false ]; then
+        if [[ $gui == FALSE ]]; then
+            merror "Using --token '$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
+        fi
+    fi
+    
     if [[ $online == FALSE ]]; then
       merror "$(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
@@ -589,7 +606,10 @@ function start() {
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync "$wid2" type "$user"
         xdotool windowactivate --sync "$wid2" key Tab type "$pwd"
-        xdotool windowactivate --sync "$wid2" key Tab Down Tab Return
+	## Single- or Dual-Factor Pulse Clients?
+        local extra=
+	[[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
+        xdotool windowactivate --sync "$wid2" key Tab "$extra" Tab Return
 
         if [[ ${token} != false ]]; then
             mdebug "Using two-factor authentication (2FA)"
@@ -614,10 +634,12 @@ function start() {
 	    wait_for_pulse_window_to_close "$wid2"
         fi
     else
-      if [ -n "${token}" ] && [ ${token} != false ]; then
-          mecho "WARNING: Option --token is ignored because two-factor authentication (2FA) is currently not supported when using --no-gui"
+      if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+          merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
       fi
-
+      if [ -n "${token}" ] && [ ${token} != false ]; then
+          merror "Using --token '$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
+      fi
       ## Pulse Secure options
       opts="$extras"
       opts="$opts -h ${server}"
@@ -716,7 +738,7 @@ skip=FALSE
 debug=FALSE
 verbose=FALSE
 dryrun=FALSE
-realm="Single-Factor Pulse Clients"
+realm=
 extras=
 gui=TRUE
 notification=TRUE
@@ -823,6 +845,13 @@ if [[ $token == default ]]; then
 fi
 
 ## Validate 'realm'
+if [[ -z $realm ]]; then
+    if [[ $gui == TRUE ]]; then
+        realm="Dual-Factor Pulse Clients"
+    else
+        realm="Single-Factor Pulse Clients"
+    fi
+fi
 if [[ $realm == "Single-Factor Pulse Clients" ]]; then
     true
 elif [[ $realm == "Dual-Factor Pulse Clients" ]]; then
@@ -841,7 +870,7 @@ if [[ $debug == TRUE ]]; then
     mdebug "gui: $gui"
     mdebug "speed: $speed"
     mdebug "VPN server: $server"
-    mdebug "Realm: $realm"
+    mdebug "Realm: '$realm'"
     mdebug "verbose: $verbose"
     mdebug "force: $force"
     mdebug "skip: $skip"
