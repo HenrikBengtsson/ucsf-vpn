@@ -576,21 +576,23 @@ function start() {
         ## Start Pulse Secure GUI
 	start_gui
         
-        sleep "$(div 0.5 "$speed")"
+        sleep "$(div 1.0 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
         if [[ -z "$wid" ]]; then
             merror "Failed to locate the Pulse Secure GUI window"
         fi
+        mecho "Pulse Secure GUI automation:"
         mdebug "Pulse Secure Window ID: $wid"
         mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
         cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
         mdebug " - $cmd"
+        mecho " 1. selecting connection and clicking 'Connect'"
 	eval "$cmd"
 	
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
         
-        sleep "$(div 1.0 "$speed")"
+        sleep "$(div 2.0 "$speed")"
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
         wid2=$(echo "$wid2" | grep -vF "$wid")
@@ -599,25 +601,32 @@ function start() {
             merror "Failed to locate the Pulse Secure GUI popup window"
         fi
 
-        ## Click-through UCSF announcement messsage?
+        ## Click-through UCSF announcement message?
         if [[ ${notification} == TRUE ]]; then
             mdebug "Clicking on 'Proceed'"
-            xdotool windowactivate --sync "$wid2" key --repeat 2 Tab key Return
-            sleep "$(div 1.0 "$speed")"
+            cmd="xdotool windowactivate --sync $wid2 key --delay 50 --repeat 2 Tab key Return"
+            mdebug " - $cmd"
+            eval "$cmd"
+            mecho " 2. clicking through UCSF notification popup window"
+            sleep "$(div 2.0 "$speed")"
         fi
         
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync "$wid2" type "$user"
-        xdotool windowactivate --sync "$wid2" key Tab type "$pwd"
+        xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
 	## Single- or Dual-Factor Pulse Clients?
         local extra=
 	[[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
-        xdotool windowactivate --sync "$wid2" key Tab "$extra" Tab Return
+        cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab "$extra" Tab Return"
+        mdebug " - $cmd"
+        eval "$cmd"
+        mecho " 3. entering user credentials and selecting realm"
+
 
         if [[ ${token} != false ]]; then
-            mdebug "Using two-factor authentication (2FA)"
+            mdebug "Using two-factor authentication (2FA) token"
             
-            sleep "$(div 0.5 "$speed")"
+            sleep "$(div 1.0 "$speed")"
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
             wid3=$(echo "$wid3" | grep -vF "$wid")
@@ -627,8 +636,13 @@ function start() {
             fi
             
             mdebug "Entering token"
-            xdotool windowactivate --sync "$wid3" type "$token"
-            xdotool windowactivate --sync "$wid3" key Return
+            mecho " 4. entering 2FA token"
+            cmd="xdotool windowactivate --sync $wid3 type $token"
+            mdebug " - $cmd"
+            eval "$cmd"
+            cmd="xdotool windowactivate --sync $wid3 key Return"
+            mdebug " - $cmd"
+            eval "$cmd"
 
             ## Wait for popup window to close
 	    wait_for_pulse_window_to_close "$wid3"
@@ -636,6 +650,7 @@ function start() {
             ## Wait for popup window to close
 	    wait_for_pulse_window_to_close "$wid2"
         fi
+        mecho " 5. connecting ..."
     else
       if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
           merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
