@@ -204,6 +204,7 @@ function is_pulseUi_running() {
 function pulseUi_find_connection() {
     local config_home="$HOME/.pulse_secure/pulse"
     local confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || pulseUi_add_connection
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mdebug "Pulse connections file: $confile"
     mdebug "$(< "$confile")"
@@ -227,7 +228,18 @@ function pulseUi_find_connection() {
     
     echo "$idx"
 }
- 
+
+function pulseUi_add_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    name="UCSF"
+    mdebug "Pulse connections file: $confile"
+    con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
+    mdebug "Appending connection: $con"
+    echo "$con" >> "$confile"
+    mecho "Appended missing '$name' connection: $url"
+}
+
 function is_connected() {
     mdebug "is_connected($*)"
     ## NOTE: It appears that field 'hostname' is not always returned, e.g. when
@@ -520,7 +532,9 @@ function start() {
 	    close_gui
             sleep "$(div 0.5 "$speed")"
 	fi
-        conidx=$(pulseUi_find_connection)
+        conidx=$(pulseUi_find_connection)	
+	[[ $conidx -eq -1 ]] && pulseUi_add_connection
+        conidx=$(pulseUi_find_connection)	
 	[[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
     fi
     
