@@ -487,11 +487,11 @@ function prompt_token() {
   
     mdebug "PROMPT: Asking user to enter one-time token:"
     while [ -z "${token}" ]; do
-        printf "Enter 6-digit Duo token or press your YubiKey: " 1>&2;
+        printf "Enter 'push', 'phone', 'sms', a 6-digit Duo token, or press your YubiKey: " 1>&2;
         read -r -s token
         token=${token/ /}
         if [[ $(is_token_valid "$token") == FALSE ]]; then
-            printf "\\nERROR: Not a valid token (Duo: 6 digits, YubiKey: 44 letters)\\n"
+            printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 digits or 'push', YubiKey: 44 letters)\\n"
             token=
         fi
     done
