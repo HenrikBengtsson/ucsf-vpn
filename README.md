@@ -16,7 +16,7 @@ The `ucsf-vpn` script is a Linux-only tool for connecting to and disconnecting f
 ## Connect
 ```sh
 $ ucsf-vpn start --user alice --pwd secrets
-Enter 6-digit Duo token or press your YubiKey: <valid token>
+Enter 'push', 'phone', 'sms', a 6-digit Duo token, or press your YubiKey: <valid token>
 RESULT: Connected to the UCSF network [otp477510ots.ucsf.edu (128.218.42.138)]
 
 $ ucsf-vpn status
@@ -78,7 +78,7 @@ Options:
                    - 'push' ("approve and confirm" in Duo app),
                    - 'phone' (receive phone call and "press any key"),
                    -  6-digit Duo token (from Duo app), or
-                   -  44 letter YubiKey token ("press YubiKey").
+                   -  44-letter YubiKey token ("press YubiKey").
 
  --gui            Connect to VPN via Pulse Secure GUI (default)
  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -151,7 +151,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 3.1.1-9000
+Version: 3.2.0-9000
 Copyright: Henrik Bengtsson (2016-2017)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

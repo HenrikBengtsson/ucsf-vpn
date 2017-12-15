@@ -27,7 +27,7 @@
 ###                    - 'push' ("approve and confirm" in Duo app),
 ###                    - 'phone' (receive phone call and "press any key"),
 ###                    -  6-digit Duo token (from Duo app), or
-###                    -  44 letter YubiKey token ("press YubiKey").
+###                    -  44-letter YubiKey token ("press YubiKey").
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
