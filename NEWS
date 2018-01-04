@@ -1,9 +1,16 @@
 ucsf-vpn
 ========
 
-Version 3.2.0-9000 (2017-12-14)
+Version 3.2.0-9000 (2018-01-04)
 
- o ...
+NEW FEATURES:
+
+ o Now 'ucsf vpn start --gui' gives more information about the steps
+   taken and how to force or skip a UCSF notification popup, if such
+   exists (which they add once in a while to notify users).
+
+ o Now 'ucsf vpn start --gui' defaults to --no-notification, since
+   UCSF has now removed the notification about the new 2FA requirements.
 
 
 Version 3.2.0 (2017-12-14)
