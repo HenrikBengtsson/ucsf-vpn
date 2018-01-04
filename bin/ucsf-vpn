@@ -27,7 +27,7 @@
 ###                    - 'push' ("approve and confirm" in Duo app),
 ###                    - 'phone' (receive phone call and "press any key"),
 ###                    -  6-digit Duo token (from Duo app), or
-###                    -  44 letter YubiKey token ("press YubiKey").
+###                    -  44-letter YubiKey token ("press YubiKey").
 ###
 ###  --gui            Connect to VPN via Pulse Secure GUI (default)
 ###  --no-gui         Connect to VPN via Pulse Secure CLI
@@ -100,7 +100,7 @@
 ### * UCSF Active Directory Account Manager:
 ###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 3.2.0
+### Version: 3.2.1
 ### Copyright: Henrik Bengtsson (2016-2017)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -218,12 +218,12 @@ function pulseUi_find_connection() {
     
     local idx=-1
     for ii in "${!cons[@]}"; do
-	con="${cons[$ii]/^ */}"
-	mdebug "- connection $ii: $con"
+        con="${cons[$ii]/^ */}"
+        mdebug "- connection $ii: $con"
         if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-	    idx=$ii
-	    break
-	fi
+            idx=$ii
+            break
+        fi
     done
 
     mdebug "Index of connection found: $idx"
@@ -338,7 +338,7 @@ function close_gui() {
 }
 
 function wait_for_pulse_window_to_close() {
-    wid=$1		
+    wid=$1
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
     while true; do
        wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
@@ -377,8 +377,8 @@ function source_netrc() {
     grep -q -E "${pattern}" "${rcfile}"
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
-	mdebug "- no such machine: $machine"
-	return 0
+        mdebug "- no such machine: $machine"
+        return 0
     elif [[ $debug == TRUE ]]; then
         mdebug "- found: ${machine}"
     fi
@@ -513,11 +513,11 @@ function start() {
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
         if [[ $gui == FALSE ]]; then
             merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
-	fi
+        fi
     elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
         if [ -n "${token}" ] && [ ${token} != false ]; then
             merror "Passing a --token '$token' with --realm '$realm' (two-factor authentication; 2FA) does not make sense"
-	fi
+        fi
     fi
     if [ -n "${token}" ] && [ ${token} != false ]; then
         if [[ $gui == FALSE ]]; then
@@ -544,16 +544,16 @@ function start() {
     ## Check for valid connection in Pulse Secure GUI
     local conidx=-1
     if [[ $gui == TRUE ]]; then
-	## If Pulse Secure GUI is open, we need to close it
-	## before peeking at its connections config file.
+        ## If Pulse Secure GUI is open, we need to close it
+        ## before peeking at its connections config file.
         if [[ $(is_pulseUi_running) == TRUE ]]; then
-	    close_gui
+            close_gui
             sleep "$(div 0.5 "$speed")"
-	fi
-        conidx=$(pulseUi_find_connection)	
-	[[ $conidx -eq -1 ]] && pulseUi_add_connection
-        conidx=$(pulseUi_find_connection)	
-	[[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
+        fi
+        conidx=$(pulseUi_find_connection)        
+        [[ $conidx -eq -1 ]] && pulseUi_add_connection
+        conidx=$(pulseUi_find_connection)        
+        [[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the UCSF VPN: $url"
     fi
     
     ## Load user credentials from file?
@@ -571,11 +571,13 @@ function start() {
     fi
 
     if [[ $gui == TRUE ]]; then
+        local step=1
+        
         ## Check for 'xdotool'        
         which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Start Pulse Secure GUI
-	start_gui
+        start_gui
         
         sleep "$(div 1.0 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
@@ -587,9 +589,10 @@ function start() {
         mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
         cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
         mdebug " - $cmd"
-        mecho " 1. selecting connection"
-	eval "$cmd"
-	
+        mecho " ${step}. selecting connection"
+        step=$((step + 1))
+        eval "$cmd"
+        
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
         
@@ -608,20 +611,25 @@ function start() {
             cmd="xdotool windowactivate --sync $wid2 key --delay 50 --repeat 2 Tab key Return"
             mdebug " - $cmd"
             eval "$cmd"
-            mecho " 2. clicking through UCSF notification popup window"
+            mecho " ${step}. clicking through UCSF notification popup window (--no-notification if it doesn't exist)"
+            step=$((step + 1))
             sleep "$(div 2.0 "$speed")"
+        else
+            mecho " ${step}. skipping UCSF notification popup window (--notification if it exists)"
+            step=$((step + 1))
         fi
         
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync "$wid2" type "$user"
         xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
-	## Single- or Dual-Factor Pulse Clients?
+        ## Single- or Dual-Factor Pulse Clients?
         local extra=
-	[[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
+        [[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
         cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab $extra Tab Return"
         mdebug " - $cmd"
         eval "$cmd"
-        mecho " 3. entering user credentials and selecting realm"
+        mecho " ${step}. entering user credentials and selecting realm"
+        step=$((step + 1))
 
 
         if [[ ${token} != false ]]; then
@@ -637,7 +645,8 @@ function start() {
             fi
             
             mdebug "Entering token"
-            mecho " 4. entering 2FA token"
+            mecho " ${step}. entering 2FA token"
+            step=$((step + 1))
             cmd="xdotool windowactivate --sync $wid3 type $token"
             mdebug " - $cmd"
             eval "$cmd"
@@ -646,12 +655,13 @@ function start() {
             eval "$cmd"
 
             ## Wait for popup window to close
-	    wait_for_pulse_window_to_close "$wid3"
-	else
+            wait_for_pulse_window_to_close "$wid3"
+        else
             ## Wait for popup window to close
-	    wait_for_pulse_window_to_close "$wid2"
+            wait_for_pulse_window_to_close "$wid2"
         fi
-        mecho " 5. connecting ..."
+        mecho " ${step}. connecting ..."
+        step=$((step + 1))
     else
       if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
           merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
@@ -738,7 +748,7 @@ function div() {
     if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
         echo "$1"
     else
-	# shellcheck disable=SC2003
+        # shellcheck disable=SC2003
         expr "$1/$2" | bc -l
     fi
 }
@@ -760,7 +770,7 @@ dryrun=FALSE
 realm=
 extras=
 gui=TRUE
-notification=TRUE
+notification=FALSE
 speed=1.0
 
 ## User credentials
@@ -1002,13 +1012,13 @@ elif [[ $action == "troubleshoot" ]]; then
     mecho "[INFO] Number of connections: ${#cons[@]}"
     match=false
     for ii in "${!cons[@]}"; do
-	con="${cons[$ii]/^ */}"
+        con="${cons[$ii]/^ */}"
         if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-	    prefix=">>>"
-	    match=true
-	else
-	    prefix="   "
-	fi
+            prefix=">>>"
+            match=true
+        else
+            prefix="   "
+        fi
         >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
     done
     if $match; then
