@@ -875,7 +875,7 @@ function openconnect_start() {
 
     ## openconnect options
     opts="$extras"
-    opts="$opts --juniper https://${server}/openconnect"
+    opts="$opts --juniper ${url}"
     opts="$opts --background"
     
     if [[ -n $user ]]; then
@@ -915,9 +915,11 @@ function openconnect_start() {
     fi
 
     if [[ -n $pwd && -n $token ]]; then
-        sudo printf "$pwd\n$token\n" | sudo openconnect "$opts" --authgroup="$realm"
+        # shellcheck disable=SC2086
+        sudo printf "$pwd\n$token\n" | sudo openconnect $opts --authgroup="$realm"
     else
-        sudo openconnect "$opts" --authgroup="$realm"
+        # shellcheck disable=SC2086
+        sudo openconnect $opts --authgroup="$realm"
     fi
 }
 
@@ -1060,6 +1062,9 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+## Use default URL?
+[[ -z "$url" ]] && url=https://${server}/pulse
+
 ## Validate 'method'
 if [[ ${method} == "openconnect" ]]; then
     mdebug "Method: $method"
@@ -1068,9 +1073,6 @@ elif [[ ${method} == "pulse" ]]; then
 else
     merror "Unknown value on option --method: '$method'"
 fi
-
-## Use default URL?
-[[ -z "$url" ]] && url=https://${server}/pulse
 
 ## Validate 'realm'
 if [[ -z $realm ]]; then
@@ -1162,7 +1164,7 @@ elif [[ $action == "close-gui" ]]; then
     exit $res
 elif [[ $action == "start" ]]; then
     if [[ $method == "openconnect" ]]; then
-	openconnect_start
+        openconnect_start
         res=$?
     elif [[ $method == "pulse" ]]; then
         pulse_start
