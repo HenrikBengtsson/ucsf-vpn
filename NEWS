@@ -6,7 +6,7 @@ Version 3.9.9-9000 (2018-07-30)
 SIGNIFICANT CHANGES:
 
  o The default VPN method is now OpenConnect ('--method openconnect').  The
-   previous method, Pulse Secure Client is available by using '--method pulse'.
+   previous method, Pulse Secure Client, is available by using '--method pulse'.
 
  o The default is now '--token push' (was '--token prompt').
    
