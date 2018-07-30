@@ -955,7 +955,7 @@ action=help
 online=TRUE
 
 ## VPN method: 'openconnect' or 'pulse' (default)
-method=${method:-$UCSF_VPN_METHOD}
+method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
 server=remote.ucsf.edu
@@ -974,7 +974,7 @@ speed=1.0
 ## User credentials
 user=
 pwd=
-token=${default:-$UCSF_VPN_TOKEN}
+token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
