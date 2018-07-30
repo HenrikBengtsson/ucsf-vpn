@@ -1,10 +1,24 @@
 ucsf-vpn
 ========
 
-Version 3.2.1-9000 (2018-01-04)
+Version 3.9.9-9000 (2018-07-30)
 
- o ...
+SIGNIFICANT CHANGES:
 
+NEW FEATURES:
+
+ o Added support to connect to the UCSF VPN using OpenConnect (>= 7.08),
+   which is available on recent Linux distributions such as Ubuntu 18.04.
+   The advantage of using OpenConnect rather that the Pulse Secure Client,
+   is in addition of not requiring a proprietary software, it is also more
+   stable because it does not operate by emulating key and mouse clicks in
+   a GUI.  The disadvantage is that it requires sudo, i.e. you need to have
+   admin rights.
+
+ o Added option --method to control whether to use OpenConnect ('openconnect')
+   or the Pulse Secure Client ('pulse').  The default, which is 'pulse', can
+   be controlled via environment variable 'UCSF_VPN_METHOD'.
+ 
 
 Version 3.2.1 (2018-01-04)
 
