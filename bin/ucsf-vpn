@@ -291,12 +291,6 @@ function source_netrc() {
     fi
 }
 
-function source_ucsfvpnrc() {
-    local rcfile=~/.ucsfvpnrc
-    if [[ ! -f "${rcfile}" ]]; then return; fi
-    merror "The use of '${rcfile}' is defunct. Please put credentials in '~/.netrc'."
-}
-
 function prompt_user() {
     user=$1
     if [[ -n "${user}" ]]; then return; fi
@@ -594,7 +588,6 @@ function pulse_start() {
     
     ## Load user credentials from file?
     source_netrc "${server}"
-    source_ucsfvpnrc  ## deprecated
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -862,7 +855,6 @@ function openconnect_start() {
 
     ## Load user credentials from file?
     source_netrc "${server}"
-    source_ucsfvpnrc  ## deprecated
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
