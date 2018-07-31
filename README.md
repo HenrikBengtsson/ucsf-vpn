@@ -68,28 +68,20 @@ Commands:
  log              Display the log file
  troubleshoot     Scan the log file for errors and more.
 
- open-gui         Open the Pulse Secure GUI
- close-gui        Close the Pulse Secure GUI (and any VPN connections)
-
 Options:
+ --method <mth>   Either 'openconnect' (default) or 'pulse'.
  --user <user>    UCSF Active Directory ID (username)
  --pwd <pwd>      UCSF Active Directory ID password
- --token <token>  One-time two-factor authentication (2FA) token. If 'true'
-                  (default; overridden by env var 'UCSF_VPN_TOKEN'), user
-                  is prompted to enter the token.  Valid values are:
-                   - 'push' ("approve and confirm" in Duo app),
+ --token <token>  One-time two-factor authentication (2FA) token or method:
+                   - 'prompt' (user is prompted to enter the token),
+                   - 'push' ("approve and confirm" in Duo app; default),
                    - 'phone' (receive phone call and "press any key"),
                    -  6-digit Duo token (from Duo app), or
                    -  44-letter YubiKey token ("press YubiKey").
 
- --gui            Connect to VPN via Pulse Secure GUI (default)
- --no-gui         Connect to VPN via Pulse Secure CLI
- --speed <factor> Control speed of --gui interactions (default is 1.0)
-
  --server <host>  VPN server (default is remote.ucsf.edu)
  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url <url>      VPN URL (default is https://{{server}}/pulse)
-                  (only used with --gui)
 
  --skip           If already fulfilled, skip command
  --force          Force running the command
@@ -97,12 +89,24 @@ Options:
  --help           This help
  --version        Display version
 
+Commands and Options for Pulse Security Client only (--method pulse):
+ open-gui         Open the Pulse Secure GUI
+ close-gui        Close the Pulse Secure GUI (and any VPN connections)
+
+ --gui            Connect to VPN via Pulse Secure GUI (default)
+ --no-gui         Connect to VPN via Pulse Secure CLI
+ --speed <factor> Control speed of --gui interactions (default is 1.0)
+
 Any other options are passed to Pulse Secure CLI as is (only --no-gui).
+
+Environment variables:
+ UCSF_VPN_METHOD  The default --method value ('openconnect').
+ UCSF_VPN_TOKEN   The default --token value ('push').
 
 Examples:
  ucsf-vpn start
  ucsf-vpn start --user alice --token push
- ucsf-vpn start --user alice --pwd secrets --token true
+ UCSF_VPN_TOKEN=prompt ucsf-vpn start --user alice --pwd secrets
  ucsf-vpn start --token phone
  ucsf-vpn stop
 
@@ -120,11 +124,15 @@ the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
-* Ports 4242 (UDP) and 443 (TCP)
-* `curl`
-* `xdotool` (when using 'ucsf-vpn start --gui')
-* No need for sudo rights to run :)
+* Requirements when using OpenConnect (CLI):
+  - OpenConnect (>= 7.08) (installed: 7.08-3)
+  - sudo
+* Requirements when using Junos Pulse Secure Client (GUI):
+  - Junos Pulse Secure client (>= 5.3) (installed: <PLEASE INSTALL>)
+  - Ports 4242 (UDP) and 443 (TCP)
+  - `curl`
+  - `xdotool` (when using 'ucsf-vpn start --gui')
+  - No need for sudo rights to run :)
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --gui' will, if missing, automatically add a valid
@@ -153,8 +161,8 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 3.2.1
-Copyright: Henrik Bengtsson (2016-2017)
+Version: 3.9.9-9000
+Copyright: Henrik Bengtsson (2016-2018)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
 ```

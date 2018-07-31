@@ -15,28 +15,20 @@
 ###  log              Display the log file
 ###  troubleshoot     Scan the log file for errors and more.
 ###
-###  open-gui         Open the Pulse Secure GUI
-###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
-###
 ### Options:
+###  --method <mth>   Either 'openconnect' (default) or 'pulse'.
 ###  --user <user>    UCSF Active Directory ID (username)
 ###  --pwd <pwd>      UCSF Active Directory ID password
-###  --token <token>  One-time two-factor authentication (2FA) token. If 'true'
-###                   (default; overridden by env var 'UCSF_VPN_TOKEN'), user
-###                   is prompted to enter the token.  Valid values are:
-###                    - 'push' ("approve and confirm" in Duo app),
+###  --token <token>  One-time two-factor authentication (2FA) token or method:
+###                    - 'prompt' (user is prompted to enter the token),
+###                    - 'push' ("approve and confirm" in Duo app; default),
 ###                    - 'phone' (receive phone call and "press any key"),
 ###                    -  6-digit Duo token (from Duo app), or
 ###                    -  44-letter YubiKey token ("press YubiKey").
 ###
-###  --gui            Connect to VPN via Pulse Secure GUI (default)
-###  --no-gui         Connect to VPN via Pulse Secure CLI
-###  --speed <factor> Control speed of --gui interactions (default is 1.0)
-###
 ###  --server <host>  VPN server (default is remote.ucsf.edu)
 ###  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url <url>      VPN URL (default is https://{{server}}/pulse)
-###                   (only used with --gui)
 ###
 ###  --skip           If already fulfilled, skip command
 ###  --force          Force running the command
@@ -44,12 +36,24 @@
 ###  --help           This help
 ###  --version        Display version
 ###
+### Commands and Options for Pulse Security Client only (--method pulse):
+###  open-gui         Open the Pulse Secure GUI
+###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
+###
+###  --gui            Connect to VPN via Pulse Secure GUI (default)
+###  --no-gui         Connect to VPN via Pulse Secure CLI
+###  --speed <factor> Control speed of --gui interactions (default is 1.0)
+###
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
+###
+### Environment variables:
+###  UCSF_VPN_METHOD  The default --method value ('openconnect').
+###  UCSF_VPN_TOKEN   The default --token value ('push').
 ###
 ### Examples:
 ###  ucsf-vpn start
 ###  ucsf-vpn start --user alice --token push
-###  ucsf-vpn start --user alice --pwd secrets --token true
+###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user alice --pwd secrets
 ###  ucsf-vpn start --token phone
 ###  ucsf-vpn stop
 ###
@@ -67,11 +71,15 @@
 ### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 ###
 ### Requirements:
-### * Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
-### * Ports 4242 (UDP) and 443 (TCP)
-### * `curl`
-### * `xdotool` (when using 'ucsf-vpn start --gui')
-### * No need for sudo rights to run :)
+### * Requirements when using OpenConnect (CLI):
+###   - OpenConnect (>= 7.08) (installed: {{openconnect_version}})
+###   - sudo
+### * Requirements when using Junos Pulse Secure Client (GUI):
+###   - Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
+###   - Ports 4242 (UDP) and 443 (TCP)
+###   - `curl`
+###   - `xdotool` (when using 'ucsf-vpn start --gui')
+###   - No need for sudo rights to run :)
 ###
 ### Pulse Secure GUI configuration:
 ### Calling 'ucsf-vpn start --gui' will, if missing, automatically add a valid
@@ -100,8 +108,8 @@
 ### * UCSF Active Directory Account Manager:
 ###   - https://pwmanage.ucsf.edu/pm/
 ###
-### Version: 3.2.1-9000
-### Copyright: Henrik Bengtsson (2016-2017)
+### Version: 3.9.9-9000
+### Copyright: Henrik Bengtsson (2016-2018)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -131,25 +139,19 @@ function version() {
     grep -E "^###[ ]*Version:[ ]*" "$0" | sed 's/###[ ]*Version:[ ]*//g'
 }
 
-function pulsesvc_version() {
-    res=$(pulsesvc --version 2> /dev/null)
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
-        echo "<PLEASE INSTALL>"
-    else
-        printf "%s\\n" "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
-    fi
-}
-
 function help() {
     local res=
-    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/")
+    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
     if [[ ${UCSF_TOOLS} == true ]]; then
         res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
     printf "%s\\n" "${res[@]}"
 }
 
+
+# -------------------------------------------------------------------------
+# Connection, e.g. checking whether connected to the VPN or not
+# -------------------------------------------------------------------------
 function connection_details() {
     mdebug "connection_details()"
     if [[ -z ${PUBLIC_INFO} ]]; then
@@ -187,61 +189,6 @@ function is_online() {
     fi
 }
 
-function is_pulsesvc_running() {
-    if ps -C pulsesvc > /dev/null; then
-        echo TRUE
-    else
-        echo FALSE
-    fi
-}
-
-function is_pulseUi_running() {
-    if ps -C pulseUi > /dev/null; then
-        echo TRUE
-    else
-        echo FALSE
-    fi
-}
-
-function pulseUi_find_connection() {
-    local config_home="$HOME/.pulse_secure/pulse"
-    local confile="$config_home/.pulse_Connections.txt"
-    [[ -f "$confile" ]] || pulseUi_add_connection
-    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    mdebug "Pulse connections file: $confile"
-    mdebug "$(< "$confile")"
-       
-    # shellcheck disable=SC2207
-    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    mdebug "Number of connections: ${#cons[@]}"
-    mdebug "Searching for VPN URL: $url"
-    
-    local idx=-1
-    for ii in "${!cons[@]}"; do
-        con="${cons[$ii]/^ */}"
-        mdebug "- connection $ii: $con"
-        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-            idx=$ii
-            break
-        fi
-    done
-
-    mdebug "Index of connection found: $idx"
-    
-    echo "$idx"
-}
-
-function pulseUi_add_connection() {
-    local config_home="$HOME/.pulse_secure/pulse"
-    local confile="$config_home/.pulse_Connections.txt"
-    name="UCSF"
-    mdebug "Pulse connections file: $confile"
-    con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
-    mdebug "Appending connection: $con"
-    echo "$con" >> "$confile"
-    mecho "Appended missing '$name' connection: $url"
-}
-
 function is_connected() {
     mdebug "is_connected($*)"
     ## NOTE: It appears that field 'hostname' is not always returned, e.g. when
@@ -255,6 +202,13 @@ function is_connected() {
         echo FALSE
     fi
 }
+
+function result() {
+    ip=$(public_ip)
+    connected=$(is_connected "$ip")
+    echo "RESULT: $(status "$connected" "$ip")"
+}
+
 function status() {
     mdebug "status($*)"
     if [[ $online == FALSE ]]; then
@@ -282,72 +236,10 @@ function status() {
     fi
 }
 
-function start_gui() {
-    if [[ $(is_pulseUi_running) == TRUE ]]; then
-        mecho "SKIPPING: Pulse Secure GUI is already running"
-        return
-    fi
-    
-    ## Start the Pulse Secure GUI
-    ## NOTE: Sending stderr to dev null to silence warnings on
-    ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
-    ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
-    pulseUi 2> /dev/null &
-}
 
-function open_gui() {
-    if [[ $online == FALSE ]]; then
-      merror "$(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      if [[ "$connected" == TRUE ]]; then
-          if [[ $skip == TRUE ]]; then
-              mecho "[SKIPPING]: $(status "$connected" "$ip")"
-              exit 0
-          else
-              merror "$(status "$connected" "$ip")"
-          fi
-      fi
-    fi
-
-    if [[ $debug == TRUE ]]; then
-        mdebug "call: $call"
-        mdebug "call: pulseUi"
-    fi
-    
-    if [[ $dryrun == TRUE ]]; then
-        exit 0
-    fi
-
-    ## Start the Pulse Secure GUI
-    start_gui
-}
-
-function close_gui() {
-    if [[ $(is_pulseUi_running) == FALSE ]]; then return; fi
-
-    mdebug "Closing Pulse Secure GUI"
-
-    ## Try with 'xdotool'?
-    if which xdotool &> /dev/null; then
-        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
-    else
-        pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
-    fi
-}
-
-function wait_for_pulse_window_to_close() {
-    wid=$1
-    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
-    while true; do
-       wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-       echo "$wids" | grep -q "$wid" && break
-       sleep 0.2
-    done
-    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
-}
-
+# -------------------------------------------------------------------------
+# Credentials, e.g. .netrc, prompting for password etc.
+# -------------------------------------------------------------------------
 function source_netrc() {
     local machine=$1
 
@@ -397,12 +289,6 @@ function source_netrc() {
             mdebug "- pwd=<hidden>"
         fi
     fi
-}
-
-function source_ucsfvpnrc() {
-    local rcfile=~/.ucsfvpnrc
-    if [[ ! -f "${rcfile}" ]]; then return; fi
-    merror "The use of '${rcfile}' is defunct. Please put credentials in '~/.netrc'."
 }
 
 function prompt_user() {
@@ -484,7 +370,7 @@ function is_token_valid() {
 
 function prompt_token() {
     token=$1
-    if [[ ${token} == "true" ]]; then token=; fi
+    if [[ ${token} == "prompt" || ${token} == "true" ]]; then token=; fi
     if [[ -n "${token}" ]]; then return; fi
   
     mdebug "PROMPT: Asking user to enter one-time token:"
@@ -508,7 +394,151 @@ function prompt_token() {
     fi
 }
 
-function start() {
+
+# -------------------------------------------------------------------------
+# Pulse Secure Client
+# -------------------------------------------------------------------------
+function div() {
+    if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
+        echo "$1"
+    else
+        # shellcheck disable=SC2003
+        expr "$1/$2" | bc -l
+    fi
+}
+
+function pulsesvc_version() {
+    res=$(pulsesvc --version 2> /dev/null)
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+        echo "<PLEASE INSTALL>"
+    else
+        printf "%s\\n" "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
+    fi
+}
+
+function is_pulsesvc_running() {
+    if ps -C pulsesvc > /dev/null; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
+
+function is_pulseUi_running() {
+    if ps -C pulseUi > /dev/null; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
+
+function pulseUi_find_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || pulseUi_add_connection
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mdebug "Pulse connections file: $confile"
+    mdebug "$(< "$confile")"
+       
+    # shellcheck disable=SC2207
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mdebug "Number of connections: ${#cons[@]}"
+    mdebug "Searching for VPN URL: $url"
+    
+    local idx=-1
+    for ii in "${!cons[@]}"; do
+        con="${cons[$ii]/^ */}"
+        mdebug "- connection $ii: $con"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+            idx=$ii
+            break
+        fi
+    done
+
+    mdebug "Index of connection found: $idx"
+    
+    echo "$idx"
+}
+
+function pulseUi_add_connection() {
+    local config_home="$HOME/.pulse_secure/pulse"
+    local confile="$config_home/.pulse_Connections.txt"
+    name="UCSF"
+    mdebug "Pulse connections file: $confile"
+    con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
+    mdebug "Appending connection: $con"
+    echo "$con" >> "$confile"
+    mecho "Appended missing '$name' connection: $url"
+}
+
+function pulse_start_gui() {
+    if [[ $(is_pulseUi_running) == TRUE ]]; then
+        mecho "SKIPPING: Pulse Secure GUI is already running"
+        return
+    fi
+    
+    ## Start the Pulse Secure GUI
+    ## NOTE: Sending stderr to dev null to silence warnings on
+    ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
+    ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
+    pulseUi 2> /dev/null &
+}
+
+function pulse_open_gui() {
+    if [[ $online == FALSE ]]; then
+      merror "$(status "$connected" "$ip")"
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected "$ip")
+      if [[ "$connected" == TRUE ]]; then
+          if [[ $skip == TRUE ]]; then
+              mecho "[SKIPPING]: $(status "$connected" "$ip")"
+              exit 0
+          else
+              merror "$(status "$connected" "$ip")"
+          fi
+      fi
+    fi
+
+    if [[ $debug == TRUE ]]; then
+        mdebug "call: $call"
+        mdebug "call: pulseUi"
+    fi
+    
+    if [[ $dryrun == TRUE ]]; then
+        exit 0
+    fi
+
+    ## Start the Pulse Secure GUI
+    pulse_start_gui
+}
+
+function pulse_close_gui() {
+    if [[ $(is_pulseUi_running) == FALSE ]]; then return; fi
+
+    mdebug "Closing Pulse Secure GUI"
+
+    ## Try with 'xdotool'?
+    if which xdotool &> /dev/null; then
+        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
+    else
+        pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
+    fi
+}
+
+function wait_for_pulse_window_to_close() {
+    wid=$1
+    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
+    while true; do
+       wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
+       echo "$wids" | grep -q "$wid" && break
+       sleep 0.2
+    done
+    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
+}
+
+function pulse_start() {
     ## Validate request    
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
         if [[ $gui == FALSE ]]; then
@@ -558,7 +588,6 @@ function start() {
     
     ## Load user credentials from file?
     source_netrc "${server}"
-    source_ucsfvpnrc  ## deprecated
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -577,7 +606,7 @@ function start() {
         which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Start Pulse Secure GUI
-        start_gui
+        pulse_start_gui
         
         sleep "$(div 1.0 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
@@ -710,7 +739,7 @@ function start() {
     fi
 }
 
-function stop() {
+function pulse_stop() {
     if [[ $online == FALSE ]]; then
       mecho "WARNING: $(status "$connected" "$ip")"
     elif [[ $force == FALSE || $skip == TRUE ]]; then
@@ -718,7 +747,7 @@ function stop() {
       connected=$(is_connected "$ip")
       if [[ "$connected" == FALSE ]]; then
           ## Close/kill the Pulse Secure GUI
-          close_gui
+          pulse_close_gui
     
           if [[ $skip == TRUE ]]; then
               mecho "[SKIPPING] $(status "$connected" "$ip")"
@@ -731,33 +760,197 @@ function stop() {
     fi
 
     ## Close/kill the Pulse Secure GUI
-    close_gui
+    pulse_close_gui
     
     ## Kill any running pulsesvc processes
     pulsesvc -Kill
-    mdebug "Killed local VPN process"
+    mdebug "Killed local ('pulsesvc') VPN process"
 }
 
-function result() {
-    ip=$(public_ip)
-    connected=$(is_connected "$ip")
-    echo "RESULT: $(status "$connected" "$ip")"
-}
 
-function div() {
-    if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
-        echo "$1"
+function pulse_troubleshoot() {
+    mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
+    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
+
+    mecho "[INFO] Pulse Secure software: $res"
+    pulsesvc --version
+
+    config_home="$HOME/.pulse_secure/pulse"
+    [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
+    mecho "[INFO] Pulse user configuration folder: $config_home"
+
+    confile="$config_home/.pulse_Connections.txt"
+    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
+    mecho "[INFO] Pulse connections file: $confile"
+    # shellcheck disable=SC2207
+    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
+    mecho "[INFO] Number of connections: ${#cons[@]}"
+    match=false
+    for ii in "${!cons[@]}"; do
+        con="${cons[$ii]/^ */}"
+        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
+            prefix=">>>"
+            match=true
+        else
+            prefix="   "
+        fi
+        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
+    done
+    if $match; then
+        mecho "[INFO] Found connection with URL of interest: $url"
     else
-        # shellcheck disable=SC2003
-        expr "$1/$2" | bc -l
+        mecho "[WARN] No connection with URL of interest: $url"
+    fi
+
+    logfile="$config_home/pulsesvc.log"
+    [[ -f "$logfile" ]] || merror "No log file: $logfile"
+
+    mecho "[INFO] Log file: $logfile"
+    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
+
+    mecho "[ERROR] Detected the following errors in the log file:"
+    grep -F Error "$logfile" | >&2 tail -3
+}
+
+
+# -------------------------------------------------------------------------
+# OpenConnect
+# -------------------------------------------------------------------------
+function openconnect_version() {
+    res=$(openconnect --version 2> /dev/null)
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+        echo "<PLEASE INSTALL>"
+    else
+        printf "%s\\n" "${res[@]}" | grep -F "version" | sed -E 's/.*v//'
     fi
 }
+
+function openconnect_is_running() {
+    ps -C openconnect > /dev/null
+    # shellcheck disable=SC2181
+    if [[ $? -eq 0 ]]; then
+        echo TRUE
+    else
+        echo FALSE
+    fi
+}
+
+function openconnect_start() {
+    if [[ $online == FALSE ]]; then
+      merror "$(status "$connected" "$ip")"
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected "$ip")
+      
+      if [[ "$connected" == TRUE ]]; then
+          if [[ $skip == TRUE ]]; then
+              mecho "SKIPPING: $(status "$connected" "$ip")"
+              exit 0
+          else
+              merror "$(status "$connected" "$ip")"
+          fi
+      fi
+    fi
+
+    ## Load user credentials from file?
+    source_netrc "${server}"
+
+    ## Prompt for username and password, if missing
+    prompt_user "${user}"
+    prompt_pwd "${pwd}"
+
+    ## Prompt for 2FA token?
+    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
+        ## Prompt for one-time token, if requested
+        prompt_token "${token}"
+    fi
+
+    ## openconnect options
+    opts="$extras"
+    opts="$opts --juniper ${url}"
+    opts="$opts --background"
+    
+    if [[ -n $user ]]; then
+        opts="$opts --user=$user"
+    fi
+    if [[ -n $pwd ]]; then
+        opts="$opts --passwd-on-stdin"
+    fi
+
+    if [[ ! $verbose == TRUE ]]; then
+        opts="$opts --quiet"
+    fi
+
+    if [[ $debug == TRUE ]]; then
+        mdebug "call: $call"
+        mdebug "user: $user"
+        if [[ -n $pwd ]]; then
+            mdebug "pwd: <hidden>"
+        else
+            mdebug "pwd: <not specified>"
+        fi
+        if [[ -n $token ]]; then
+            if [[ $token == "prompt" ]]; then
+                mdebug "token: <prompt>"
+            elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
+                mdebug "token: $token"
+	    else
+                mdebug "token: <hidden>"
+	    fi
+        else
+            mdebug "token: <not specified>"
+        fi
+        mdebug "opts: $opts"
+        mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
+    fi
+    
+    if [[ $dryrun == TRUE ]]; then
+        exit 0
+    fi
+
+    if [[ -n $pwd && -n $token ]]; then
+        # shellcheck disable=SC2086
+        sudo printf "$pwd\n$token\n" | sudo openconnect $opts --authgroup="$realm"
+    else
+        # shellcheck disable=SC2086
+        sudo openconnect $opts --authgroup="$realm"
+    fi
+}
+
+function openconnect_stop() {
+    if [[ $online == FALSE ]]; then
+      mecho "WARNING: $(status "$connected" "$ip")"
+    elif [[ $force == FALSE || $skip == TRUE ]]; then
+      ip=$(public_ip)
+      connected=$(is_connected "$ip")
+      if [[ "$connected" == FALSE ]]; then
+          if [[ $skip == TRUE ]]; then
+              mecho "[SKIPPING] $(status "$connected" "$ip")"
+              exit 0
+          else
+              merror "$(status "$connected" "$ip")"
+          fi
+      fi
+      mdebug "Public IP (before): $ip"
+    fi
+
+    ## FIXME / SAFER: Identify PID to kill using
+    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
+    ## instead. That would at least only kill UCSF VPN connections
+    sudo pkill -INT openconnect 2> /dev/null
+    echo "RESULT: Killed local ('openconnect') VPN process"
+}
+
 
 ## Actions
 action=help
 
 ## Status
 online=TRUE
+
+## VPN method: 'openconnect' or 'pulse' (default)
+method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
 server=remote.ucsf.edu
@@ -776,7 +969,7 @@ speed=1.0
 ## User credentials
 user=
 pwd=
-token=${default:-$UCSF_VPN_TOKEN}
+token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
@@ -816,6 +1009,9 @@ while [[ $# -gt 0 ]]; do
         skip=TRUE
     elif test "$1" == "--dry-run"; then
         dryrun=TRUE
+    elif test "$1" == "--method"; then
+        shift
+        method=$1
     elif test "$1" == "--url"; then
         shift
         url=$1
@@ -834,14 +1030,6 @@ while [[ $# -gt 0 ]]; do
     elif test "$1" == "--token"; then
         shift
         token=$1
-        if [[ ${token} == "true" ]]; then
-            mdebug "Will prompt user for 2FA token"
-        elif [[ ${token} == "false" ]]; then
-            mdebug "Will not use 2FA authenatication"
-        elif [[ $(is_token_valid "$token") == FALSE ]]; then
-            merror "The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
-            exit 1
-        fi
     elif test "$1" == "--gui"; then
         gui=TRUE
     elif test "$1" == "--no-gui"; then
@@ -865,6 +1053,15 @@ done
 ## Use default URL?
 [[ -z "$url" ]] && url=https://${server}/pulse
 
+## Validate 'method'
+if [[ ${method} == "openconnect" ]]; then
+    mdebug "Method: $method"
+elif [[ ${method} == "pulse" ]]; then
+    mdebug "Method: $method"
+else
+    merror "Unknown value on option --method: '$method'"
+fi
+
 ## Validate 'realm'
 if [[ -z $realm ]]; then
     if [[ $gui == TRUE ]]; then
@@ -885,26 +1082,25 @@ else
     merror "Unknown value on option --realm: $realm"
 fi
 
-if [[ $token == default ]]; then
-    if [[ $realm == "Dual-Factor Pulse Clients" ]]; then
-        token=true
-    else
-        token=false
-    fi
+## Validate 'token':
+if [[ ${token} == "true" ]]; then  ## Backward compatibility
+    token="prompt"
+fi
+if [[ $realm != "Dual-Factor Pulse Clients" ]]; then
+    token=false
+elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
+    mdebug "Will prompt user for 2FA token"
+elif [[ ${token} == "false" ]]; then
+    mdebug "Will not use 2FA authenatication"
+elif [[ $(is_token_valid "$token") == FALSE ]]; then
+    merror "The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
 fi
 
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
-    mdebug "gui: $gui"
-    mdebug "speed: $speed"
     mdebug "VPN server: $server"
     mdebug "Realm: '$realm'"
-    mdebug "verbose: $verbose"
-    mdebug "force: $force"
-    mdebug "skip: $skip"
-    mdebug "dryrun: $dryrun"
-    mdebug "extras: $extras"
     mdebug "user: $user"
     if [[ -z "${pwd}" ]]; then
         mdebug "pwd=<missing>"
@@ -913,11 +1109,21 @@ if [[ $debug == TRUE ]]; then
     fi
     if [[ -z "${token}" ]]; then
         mdebug "token=<missing>"
-    elif [[ "${token}" == "true" ]]; then
+    elif [[ $token == "prompt" ]]; then
         mdebug "token=<prompt>"
+    elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
+        mdebug "token=$token"
     else
         mdebug "token=<hidden>"
     fi
+    mdebug "verbose: $verbose"
+    mdebug "force: $force"
+    mdebug "skip: $skip"
+    mdebug "dryrun: $dryrun"
+    mdebug "extras: $extras"
+    mdebug "method: $method"
+    mdebug "gui: $gui"
+    mdebug "speed: $speed"
 fi
 
 if [[ $action == "version" ]]; then
@@ -939,34 +1145,56 @@ elif [[ $action == "details" ]]; then
     connection_details
     exit $?
 elif [[ $action == "open-gui" ]]; then
-    open_gui
+    if [[ $method != "pulse" ]]; then
+	merror "ucsf vpn open-gui requires --method pulse: $method"
+    fi
+    pulse_open_gui
     res=$?
     exit $res
 elif [[ $action == "close-gui" ]]; then
-    close_gui
+    if [[ $method != "pulse" ]]; then
+	merror "ucsf vpn open-gui requires --method pulse: $method"
+    fi
+    pulse_close_gui
     res=$?
     exit $res
 elif [[ $action == "start" ]]; then
-    start
-    res=$?
-    sleep "$(div 4.0 "$speed")"
+    if [[ $method == "openconnect" ]]; then
+        openconnect_start
+        res=$?
+    elif [[ $method == "pulse" ]]; then
+        pulse_start
+        res=$?
+        sleep "$(div 4.0 "$speed")"
+    fi
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "stop" ]]; then
-    stop
-    res=$?
-    sleep "$(div 1.0 "$speed")"
+    if [[ $method == "openconnect" ]]; then
+	openconnect_stop
+        res=$?
+    elif [[ $method == "pulse" ]]; then
+        pulse_stop
+        res=$?
+        sleep "$(div 1.0 "$speed")"
+    fi
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "restart" ]]; then
-    stop
-    sleep "$(div 1.0 "$speed")"
-    online=$(is_online)
-    start
-    sleep "$(div 4.0 "$speed")"
-    res=$?
+    if [[ $method == "openconnect" ]]; then
+	openconnect_stop
+	openconnect_start
+        res=$?
+    elif [[ $method == "pulse" ]]; then
+        pulse_stop
+        sleep "$(div 1.0 "$speed")"
+        online=$(is_online)
+        pulse_start
+        sleep "$(div 4.0 "$speed")"
+        res=$?
+    fi
     online=$(is_online)
     result
     exit $res
@@ -974,65 +1202,49 @@ elif [[ $action == "toggle" ]]; then
     connected=$(is_connected "$ip")
     mdebug "connected: $connected"
     if [[ "$connected" == FALSE ]]; then
-      start
-      sleep "$(div 4.0 "$speed")"
-      res=$?
+      if [[ $method == "openconnect" ]]; then
+          openconnect_start
+          res=$?
+      elif [[ $method == "pulse" ]]; then
+          pulse_start
+          sleep "$(div 4.0 "$speed")"
+          res=$?
+      fi
     else
-      stop
-      sleep "$(div 1.0 "$speed")"
-      res=$?
+      if [[ $method == "openconnect" ]]; then
+          openconnect_stop
+          res=$?
+      elif [[ $method == "pulse" ]]; then
+          pulse_stop
+          sleep "$(div 1.0 "$speed")"
+          res=$?
+      fi
     fi
     online=$(is_online)
     result
     exit $res
 elif [[ $action == "log" ]]; then
-    LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-    mdebug "Displaying log file: $LOGFILE"
-    if [[ ! -f $LOGFILE ]]; then
-        mecho "[WARN] No such log file: $LOGFILE"
-        exit 1
-    fi
-    cat "$LOGFILE"
-elif [[ $action == "troubleshoot" ]]; then
-    mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
-    
-    mecho "[INFO] Pulse Secure software: $res"
-    pulsesvc --version
-    
-    config_home="$HOME/.pulse_secure/pulse"
-    [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
-    mecho "[INFO] Pulse user configuration folder: $config_home"
-
-    confile="$config_home/.pulse_Connections.txt"
-    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    mecho "[INFO] Pulse connections file: $confile"
-    # shellcheck disable=SC2207
-    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    mecho "[INFO] Number of connections: ${#cons[@]}"
-    match=false
-    for ii in "${!cons[@]}"; do
-        con="${cons[$ii]/^ */}"
-        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-            prefix=">>>"
-            match=true
-        else
-            prefix="   "
+    if [[ $method == "openconnect" ]]; then
+	LOGFILE=/var/log/syslog
+        mdebug "Displaying 'VPN' entries in log file: $LOGFILE"
+        if [[ ! -f $LOGFILE ]]; then
+            mecho "[WARN] No such log file: $LOGFILE"
+            exit 1
         fi
-        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
-    done
-    if $match; then
-        mecho "[INFO] Found connection with URL of interest: $url"
-    else
-        mecho "[WARN] No connection with URL of interest: $url"
+        grep VPN "$LOGFILE"
+    elif [[ $method == "pulse" ]]; then
+	LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
+        mdebug "Displaying log file: $LOGFILE"
+        if [[ ! -f $LOGFILE ]]; then
+            mecho "[WARN] No such log file: $LOGFILE"
+            exit 1
+        fi
+        cat "$LOGFILE"
     fi
-    
-    logfile="$config_home/pulsesvc.log"
-    [[ -f "$logfile" ]] || merror "No log file: $logfile"
-    
-    mecho "[INFO] Log file: $logfile"
-    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
-    
-    mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error "$logfile" | >&2 tail -3
+elif [[ $action == "troubleshoot" ]]; then
+    if [[ $method == "openconnect" ]]; then
+	merror "ucsf-vpn troubleshoot is not implemented for --method=openconnect"
+    elif [[ $method == "pulse" ]]; then
+	pulse_troubleshoot
+    fi
 fi
