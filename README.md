@@ -127,7 +127,7 @@ Examples:
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given
 in ~/.netrc, then you will be prompted to enter them. To specify them
-in ~/.netrc file, use the following:
+in ~/.netrc file, use the following format:
 
   machine remote.ucsf.edu
       login alice
@@ -146,7 +146,7 @@ Requirements:
   - Ports 4242 (UDP) and 443 (TCP)
   - `curl`
   - `xdotool` (when using 'ucsf-vpn start --method pulse --gui')
-  - No need for sudo rights to run :)
+  - No need for sudo rights
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method pulse --gui' will, if missing,
@@ -175,7 +175,7 @@ Useful resources:
 * UCSF Active Directory Account Manager:
   - https://pwmanage.ucsf.edu/pm/
 
-Version: 4.0.0
+Version: 4.0.0-9000
 Copyright: Henrik Bengtsson (2016-2018)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
