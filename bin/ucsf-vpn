@@ -23,7 +23,8 @@
 ###                    - 'prompt' (user is prompted to enter the token),
 ###                    - 'push' ("approve and confirm" in Duo app; default),
 ###                    - 'phone' (receive phone call and "press any key"),
-###                    -  6-digit Duo token (from Duo app), or
+###                    - 'sms' (receive code via text message),
+###                    -  6 or 7 digit Duo token (from Duo app), or
 ###                    -  44-letter YubiKey token ("press YubiKey").
 ###
 ###  --server <host>  VPN server (default is remote.ucsf.edu)
@@ -358,8 +359,8 @@ function is_token_valid() {
         return
     fi
     
-    ## Duo 6-digit token
-    if [[ ${#token} -eq 6 ]] && [[ ${token} =~ ^[0-9]+$ ]]; then
+    ## Duo 6 or 7-digit token
+    if [[ ${#token} -eq 6 || ${#token} -eq 7 ]] && [[ ${token} =~ ^[0-9]+$ ]]; then
         mdebug "Duo token detected"
         echo TRUE
         return
@@ -375,11 +376,11 @@ function prompt_token() {
   
     mdebug "PROMPT: Asking user to enter one-time token:"
     while [ -z "${token}" ]; do
-        printf "Enter 'push', 'phone', 'sms', a 6-digit Duo token, or press your YubiKey: " 1>&2;
+        printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: " 1>&2;
         read -r -s token
         token=${token/ /}
         if [[ $(is_token_valid "$token") == FALSE ]]; then
-            printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 digits or 'push', YubiKey: 44 letters)\\n"
+            printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 or 7 digits or 'push', YubiKey: 44 letters)\\n"
             token=
         fi
     done
@@ -1093,7 +1094,7 @@ elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
 elif [[ ${token} == "false" ]]; then
     mdebug "Will not use 2FA authenatication"
 elif [[ $(is_token_valid "$token") == FALSE ]]; then
-    merror "The token (--token) must be 6 digits (Duo) or 44 letters (YubiKey)"
+    merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
 fi
 
 if [[ $debug == TRUE ]]; then
