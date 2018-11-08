@@ -7,7 +7,12 @@ NEW FEATURES:
 
  o Attempts to conncect using '--token sms' will now give an informative error
    message explaining that is not supported by the OpenConnect interface.
- 
+
+BUG FIXES:
+
+ o 'ucsf vpn --token <digits>' only supported six-digit tokens; now seven-digit
+   tokens are also supported.
+   
 
 Version 4.0.0 (2018-07-31)
 
