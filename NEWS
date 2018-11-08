@@ -1,9 +1,12 @@
 ucsf-vpn
 ========
 
-Version 4.0.0-9000 (2018-07-31)
+Version 4.0.0-9000 (2018-11-07)
 
- o ...
+NEW FEATURES:
+
+ o Attempts to conncect using '--token sms' will now give an informative error
+   message explaining that is not supported by the OpenConnect interface.
  
 
 Version 4.0.0 (2018-07-31)

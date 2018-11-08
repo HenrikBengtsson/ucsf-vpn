@@ -341,7 +341,7 @@ function is_token_valid() {
         mdebug "Will authenticate via Duo Push (approve and confirm in Duo app)"
         echo TRUE
         return
-    elif [[ ${token} == "sms" ]]; then
+    elif [[ ${token} =~ ^(sms|text)[1-9]*$ ]]; then
         mdebug "Will send token via SMS"
         echo TRUE
         return
@@ -893,7 +893,7 @@ function openconnect_start() {
         if [[ -n $token ]]; then
             if [[ $token == "prompt" ]]; then
                 mdebug "token: <prompt>"
-            elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
+            elif [[ $token == "push" || $token =~ ^(phone|sms|text)[1-9]*$ ]]; then
                 mdebug "token: $token"
 	    else
                 mdebug "token: <hidden>"
@@ -905,6 +905,10 @@ function openconnect_start() {
         mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
     fi
     
+    if [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
+	 merror "Sending tokens via SMS is not supported by the OpenConnect interface"
+    fi
+
     if [[ $dryrun == TRUE ]]; then
         exit 0
     fi
