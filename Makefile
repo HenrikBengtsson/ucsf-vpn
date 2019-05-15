@@ -15,3 +15,6 @@ README.md: README.md.tmpl announcement.md bin/ucsf-vpn
 check:
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
+
+spelling:
+	Rscript -e 'spelling::spell_check_files(c("NEWS.md", "README.md"), ignore = readLines("WORDLIST"))'
