@@ -170,7 +170,7 @@ function connection_details() {
 function public_ip() {
     mdebug "public_ip($*)"
     if [[ $1 == "" ]]; then
-        connection_details | grep -F "ip" | sed -E 's/[ ",]//g' | cut -d : -f 2
+        connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
     else
         echo "$1"
     fi
@@ -178,7 +178,7 @@ function public_ip() {
 
 function public_hostname() {
     mdebug "public_hostname()"
-    connection_details | grep -F "hostname" | sed -E 's/[ ",]//g' | cut -d : -f 2
+    connection_details | grep -F '"hostname":' | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
 function is_online() {

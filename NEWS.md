@@ -1,10 +1,14 @@
 ucsf-vpn
 ========
 
-## Version 4.1.0-9000 (2019-05-15)
+## Version 4.1.0-9000 (2019-08-30)
 
  * ...
 
+BUG FIXES:
+
+ * The reported IP could be garbled with a newline and 'https'.
+ 
 
 ## Version 4.1.0 (2019-05-15)
 
