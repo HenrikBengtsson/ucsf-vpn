@@ -53,7 +53,8 @@ after approving the push notification on your Duo Mobile app (the default is `--
 ```sh
 $ ucsf-vpn stop
 RESULT: Killed local ('openconnect') VPN process
-RESULT: Not connected to the UCSF network [ip=157.131.204.163, hostname='example.org', org='AS12345 Example Organization']
+RESULT: Not connected to the UCSF network [ip=157.131.204.163, hostname='example.org',
+org='AS12345 Example Organization']
 ```
 
 
