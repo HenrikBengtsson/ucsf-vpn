@@ -534,7 +534,7 @@ function pulse_close_gui() {
     mdebug "Closing Pulse Secure GUI"
 
     ## Try with 'xdotool'?
-    if which xdotool &> /dev/null; then
+    if command -v xdotool &> /dev/null; then
         xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
     else
         pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
@@ -617,7 +617,7 @@ function pulse_start() {
         local step=1
         
         ## Check for 'xdotool'        
-        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
+        command -v xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Start Pulse Secure GUI
         pulse_start_gui
@@ -784,7 +784,7 @@ function pulse_stop() {
 
 function pulse_troubleshoot() {
     mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
+    command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
