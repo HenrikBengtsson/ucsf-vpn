@@ -15,10 +15,12 @@ Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
-RESULT: Connected to the UCSF network [ (128.218.43.53)]
+RESULT: Connected to the UCSF network [ip=128.218.43.53, hostname='',
+org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn status
-Connected to the UCSF network [ (128.218.43.53)]
+Connected to the UCSF network [ip=128.218.43.53, hostname='',
+org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn details
 {
@@ -51,7 +53,7 @@ after approving the push notification on your Duo Mobile app (the default is `--
 ```sh
 $ ucsf-vpn stop
 RESULT: Killed local ('openconnect') VPN process
-RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
+RESULT: Not connected to the UCSF network [ip=157.131.204.163, hostname='example.org', org='AS12345 Example Organization']
 ```
 
 

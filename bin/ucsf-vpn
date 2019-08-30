@@ -181,6 +181,19 @@ function public_hostname() {
     connection_details | grep -F '"hostname":' | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
+function public_org() {
+    mdebug "public_org()"
+    connection_details | grep -F '"org":' | cut -d : -f 2 | sed -E 's/(^[ ]*"|",[ ]*$)//g' 
+}
+
+function public_info() {
+    mdebug "public_info()"
+    ip=$(public_ip)
+    hostname=$(public_hostname)
+    org=$(public_org)
+    printf "ip=%s, hostname='%s', org='%s'" "$ip" "$hostname" "$org"
+}
+
 function is_online() {
     mdebug "is_online()"
     if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
@@ -231,9 +244,9 @@ function status() {
       mdebug "connected=$connected"
     fi
     if [[ "$connected" == TRUE ]]; then
-        echo "Connected to the UCSF network [$(public_hostname) ($(public_ip))]"
+        echo "Connected to the UCSF network [$(public_info)]"
     else
-        echo "Not connected to the UCSF network [$(public_hostname) ($(public_ip))]"
+        echo "Not connected to the UCSF network [$(public_info)]"
     fi
 }
 

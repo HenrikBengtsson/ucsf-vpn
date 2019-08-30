@@ -3,7 +3,10 @@ ucsf-vpn
 
 ## Version 4.1.0-9000 (2019-08-30)
 
- * ...
+NEW FEATURES:
+
+ * Updated how the information on the current connection is reported by
+   for instance 'ucsf vpn status'.
 
 BUG FIXES:
 
