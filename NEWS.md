@@ -1,6 +1,18 @@
 ucsf-vpn
 ========
 
+## Version 4.2.0 (2019-10-15)
+
+NEW FEATURES:
+
+ * Updated how the information on the current connection is reported by
+   for instance 'ucsf vpn status'.
+
+BUG FIXES:
+
+ * The reported IP could be garbled with a newline and 'https'.
+ 
+
 ## Version 4.1.0 (2019-05-15)
 
 NEW FEATURES:

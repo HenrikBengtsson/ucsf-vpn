@@ -10,8 +10,8 @@
 ### Example:
 ###  ucsf vpn --help
 ###
-### Version: 0.2.2
-### Copyright: Henrik Bengtsson (2016-2017)
+### Version: 0.2.3
+### Copyright: Henrik Bengtsson (2016-2019)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 
 UCSF_DIR=$(dirname "$(readlink -e "$0")")
@@ -40,7 +40,7 @@ function list_tools {
 
 function whatis {
     local pathname
-    pathname="$(which "ucsf-$1")"
+    pathname="$(command -v "ucsf-$1")"
     local res
     res=$(grep -E "^### whatis: " "$pathname" | sed 's/^### whatis: //')
     if [[ -z "${res}" ]]; then

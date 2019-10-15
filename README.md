@@ -15,10 +15,12 @@ Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
-RESULT: Connected to the UCSF network [ (128.218.43.53)]
+RESULT: Connected to the UCSF network [ip=128.218.43.53, hostname='',
+org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn status
-Connected to the UCSF network [ (128.218.43.53)]
+Connected to the UCSF network [ip=128.218.43.53, hostname='',
+org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn details
 {
@@ -51,7 +53,8 @@ after approving the push notification on your Duo Mobile app (the default is `--
 ```sh
 $ ucsf-vpn stop
 RESULT: Killed local ('openconnect') VPN process
-RESULT: Not connected to the UCSF network [example.org (93.184.216.34)]
+RESULT: Not connected to the UCSF network [ip=157.131.204.163, hostname='example.org',
+org='AS12345 Example Organization']
 ```
 
 
@@ -164,10 +167,10 @@ Useful resources:
   - https://remote.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
   - https://it.ucsf.edu/services/duo-two-factor-authentication
-* UCSF Active Directory Account Manager:
-  - https://pwmanage.ucsf.edu/pm/
+* UCSF Managing Your Passwords:
+  - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 4.1.0
+Version: 4.2.0
 Copyright: Henrik Bengtsson (2016-2019)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -192,7 +195,7 @@ $ chmod ugo+x ucsf-vpn
 
 In August 2017, the UCSF VPN server was updated such that it no longer works with OpenConnect (< 7.08).  Because of this, `uscf vpn` requires OpenConnect (>= 7.08).
 
-OpenConnect (>= 7.08) is available on for instance Ubuntu 18.01 LTS (Bionic Beaver), but not on older LTS version.  For instance, Ubuntu 16.04 (Xenial Xerus) only provides OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3 installed at the same time.
+OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beaver), but not on older LTS version.  For instance, Ubuntu 16.04 (Xenial Xerus) only provides OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3 installed at the same time.
 
 
 ## Pulse Secure Client

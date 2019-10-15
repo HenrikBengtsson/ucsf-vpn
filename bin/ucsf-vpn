@@ -106,10 +106,10 @@
 ###   - https://remote.ucsf.edu/
 ### * UCSF Two-Factory Authentication (2FA):
 ###   - https://it.ucsf.edu/services/duo-two-factor-authentication
-### * UCSF Active Directory Account Manager:
-###   - https://pwmanage.ucsf.edu/pm/
+### * UCSF Managing Your Passwords:
+###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 4.1.0
+### Version: 4.2.0
 ### Copyright: Henrik Bengtsson (2016-2019)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -170,7 +170,7 @@ function connection_details() {
 function public_ip() {
     mdebug "public_ip($*)"
     if [[ $1 == "" ]]; then
-        connection_details | grep -F "ip" | sed -E 's/[ ",]//g' | cut -d : -f 2
+        connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
     else
         echo "$1"
     fi
@@ -178,7 +178,20 @@ function public_ip() {
 
 function public_hostname() {
     mdebug "public_hostname()"
-    connection_details | grep -F "hostname" | sed -E 's/[ ",]//g' | cut -d : -f 2
+    connection_details | grep -F '"hostname":' | sed -E 's/[ ",]//g' | cut -d : -f 2
+}
+
+function public_org() {
+    mdebug "public_org()"
+    connection_details | grep -F '"org":' | cut -d : -f 2 | sed -E 's/(^[ ]*"|",[ ]*$)//g' 
+}
+
+function public_info() {
+    mdebug "public_info()"
+    ip=$(public_ip)
+    hostname=$(public_hostname)
+    org=$(public_org)
+    printf "ip=%s, hostname='%s', org='%s'" "$ip" "$hostname" "$org"
 }
 
 function is_online() {
@@ -231,9 +244,9 @@ function status() {
       mdebug "connected=$connected"
     fi
     if [[ "$connected" == TRUE ]]; then
-        echo "Connected to the UCSF network [$(public_hostname) ($(public_ip))]"
+        echo "Connected to the UCSF network [$(public_info)]"
     else
-        echo "Not connected to the UCSF network [$(public_hostname) ($(public_ip))]"
+        echo "Not connected to the UCSF network [$(public_info)]"
     fi
 }
 
@@ -521,7 +534,7 @@ function pulse_close_gui() {
     mdebug "Closing Pulse Secure GUI"
 
     ## Try with 'xdotool'?
-    if which xdotool &> /dev/null; then
+    if command -v xdotool &> /dev/null; then
         xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
     else
         pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
@@ -604,7 +617,7 @@ function pulse_start() {
         local step=1
         
         ## Check for 'xdotool'        
-        which xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
+        command -v xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Start Pulse Secure GUI
         pulse_start_gui
@@ -771,7 +784,7 @@ function pulse_stop() {
 
 function pulse_troubleshoot() {
     mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    which pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
+    command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
     mecho "[INFO] Pulse Secure software: $res"
     pulsesvc --version
