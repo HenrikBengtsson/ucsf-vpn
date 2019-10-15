@@ -167,10 +167,10 @@ Useful resources:
   - https://remote.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
   - https://it.ucsf.edu/services/duo-two-factor-authentication
-* UCSF Active Directory Account Manager:
-  - https://pwmanage.ucsf.edu/pm/
+* UCSF Managing Your Passwords:
+  - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 4.1.0-9000
+Version: 4.2.0
 Copyright: Henrik Bengtsson (2016-2019)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
