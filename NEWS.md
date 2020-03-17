@@ -8,7 +8,11 @@ NEW FEATURES:
  * The VPN server can now be set via environment variable UCSF_VPN_SERVER as
    an alternative to specifying option '--server', e.g.
    UCSF_VPN_SERVER=remote-vpn01.ucsf.edu.
- 
+
+ * If a custom VPN server is used, then the .netrc file is search for that
+   first with a fallback to 'remote.ucsf.edu'.  This avoids having to update
+   the .netrc file when using an alternative UCSF VPN server.
+   
 
 ## Version 4.2.0 (2019-10-15)
 
