@@ -27,7 +27,8 @@
 ###                    -  6 or 7 digit Duo token (from Duo app), or
 ###                    -  44-letter YubiKey token ("press YubiKey").
 ###
-###  --server <host>  VPN server (default is remote.ucsf.edu)
+###  --server <host>  VPN server (default is remote.ucsf.edu,
+###                               an alternative is remote-vpn01.ucsf.edu)
 ###  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url <url>      VPN URL (default is https://{{server}}/pulse)
 ###
@@ -39,6 +40,7 @@
 ###
 ### Environment variables:
 ###  UCSF_VPN_METHOD  The default --method value ('openconnect').
+###  UCSF_VPN_SERVER  The default --server value ('remote.ucsf.edu').
 ###  UCSF_VPN_TOKEN   The default --token value ('push').
 ###
 ### Commands and Options for Pulse Security Client only (--method pulse):
@@ -55,6 +57,7 @@
 ###  ucsf-vpn start
 ###  ucsf-vpn start --user alice --token push
 ###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user alice --pwd secrets
+###  ucsf-vpn start --server remote-vpn01.ucsf.edu
 ###  ucsf-vpn start --token phone
 ###  ucsf-vpn stop
 ###
@@ -104,13 +107,14 @@
 ###   - https://software.ucsf.edu/content/vpn-virtual-private-network
 ### * UCSF Web-based VPN Interface:
 ###   - https://remote.ucsf.edu/
+###   - https://remote-vpn01.ucsf.edu/
 ### * UCSF Two-Factory Authentication (2FA):
 ###   - https://it.ucsf.edu/services/duo-two-factor-authentication
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 4.2.0
-### Copyright: Henrik Bengtsson (2016-2019)
+### Version: 4.3.0
+### Copyright: Henrik Bengtsson (2016-2020)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -255,8 +259,6 @@ function status() {
 # Credentials, e.g. .netrc, prompting for password etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local machine=$1
-
     local rcfile=${NETRC:-~/.netrc}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
@@ -271,30 +273,44 @@ function source_netrc() {
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
-    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    local pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
-        
     if [[ $debug == TRUE ]]; then
-        mdebug "- search: ${machine}"
-        mdebug "- search pattern: ${pattern}"
+        mdebug "- search: ${netrc_machines[*]}"
     fi
 
-    ## No such machine?
-    grep -q -E "${pattern}" "${rcfile}"
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
-        mdebug "- no such machine: $machine"
+    local pattern
+    local found=false
+    for machine in "${netrc_machines[@]}"; do
+        pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
+        if [[ $debug == TRUE ]]; then
+            mdebug "- search pattern: ${pattern}"
+        fi
+
+        ## No such machine?
+        grep -q -E "${pattern}" "${rcfile}"
+
+        # shellcheck disable=SC2181
+        if [[ $? -eq 0 ]]; then
+            if [[ $debug == TRUE ]]; then
+                mdebug "- found: ${machine}"
+            fi
+	    found=true
+	    break
+	fi
+    done
+
+    if ! $found; then
+        if [[ $debug == TRUE ]]; then
+            mdebug "- no such machine: $machine"
+	fi
         return 0
-    elif [[ $debug == TRUE ]]; then
-        mdebug "- found: ${machine}"
     fi
     
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
-    [[ -z $bfr ]] && merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
     
     user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
-    
+
     if [[ $debug == TRUE ]]; then
         mdebug "- user=${user}"
         if [[ -z "${pwd}" ]]; then
@@ -601,7 +617,7 @@ function pulse_start() {
     fi
     
     ## Load user credentials from file?
-    source_netrc "${server}"
+    source_netrc
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -868,7 +884,7 @@ function openconnect_start() {
     fi
 
     ## Load user credentials from file?
-    source_netrc "${server}"
+    source_netrc
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -923,6 +939,8 @@ function openconnect_start() {
 	 merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
+    mecho "Connecting to VPN server ${server} ..."
+    
     if [[ $dryrun == TRUE ]]; then
         exit 0
     fi
@@ -971,7 +989,7 @@ online=TRUE
 method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
-server=remote.ucsf.edu
+server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
 force=FALSE
 skip=FALSE
@@ -1114,6 +1132,15 @@ elif [[ $(is_token_valid "$token") == FALSE ]]; then
     merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
 fi
 
+
+## Regular expression for locating the proper netrc entry
+if [[ "$server" == "remote.ucsf.edu" ]]; then
+    netrc_machines=${server}
+else
+    netrc_machines=("${server}" remote.ucsf.edu)
+fi
+
+
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
@@ -1142,6 +1169,7 @@ if [[ $debug == TRUE ]]; then
     mdebug "method: $method"
     mdebug "gui: $gui"
     mdebug "speed: $speed"
+    mdebug "netrc machines: ${netrc_machines[*]}"
 fi
 
 if [[ $action == "version" ]]; then
