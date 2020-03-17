@@ -1129,9 +1129,10 @@ fi
 
 
 ## Regular expression for locating the proper netrc entry
-netrc_machines=${server}
-if [[ "$server" != "remote.ucsf.edu" ]]; then
-    netrc_machines=(${netrc_machines} remote.ucsf.edu)
+if [[ "$server" == "remote.ucsf.edu" ]]; then
+    netrc_machines=${server}
+else
+    netrc_machines=("${server}" remote.ucsf.edu)
 fi
 
 
