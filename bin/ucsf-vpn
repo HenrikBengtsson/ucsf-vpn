@@ -256,8 +256,6 @@ function status() {
 # Credentials, e.g. .netrc, prompting for password etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local machine=$1
-
     local rcfile=${NETRC:-~/.netrc}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
@@ -272,30 +270,44 @@ function source_netrc() {
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
-    local pattern="^[[:space:]]*machine[[:space:]]+${machine}([[:space:]]+|$)"
-    local pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
-        
     if [[ $debug == TRUE ]]; then
-        mdebug "- search: ${machine}"
-        mdebug "- search pattern: ${pattern}"
+        mdebug "- search: ${netrc_machines[*]}"
     fi
 
-    ## No such machine?
-    grep -q -E "${pattern}" "${rcfile}"
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
-        mdebug "- no such machine: $machine"
+    local pattern
+    local found=false
+    for machine in "${netrc_machines[@]}"; do
+        pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
+        if [[ $debug == TRUE ]]; then
+            mdebug "- search pattern: ${pattern}"
+        fi
+
+        ## No such machine?
+        grep -q -E "${pattern}" "${rcfile}"
+
+        # shellcheck disable=SC2181
+        if [[ $? -eq 0 ]]; then
+            if [[ $debug == TRUE ]]; then
+                mdebug "- found: ${machine}"
+            fi
+	    found=true
+	    break
+	fi
+    done
+
+    if ! $found; then
+        if [[ $debug == TRUE ]]; then
+            mdebug "- no such machine: $machine"
+	fi
         return 0
-    elif [[ $debug == TRUE ]]; then
-        mdebug "- found: ${machine}"
     fi
     
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
-    [[ -z $bfr ]] && merror "Internal error - failed to extract ${machine} credentials from ${rcfile}"
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
     
     user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
-    
+
     if [[ $debug == TRUE ]]; then
         mdebug "- user=${user}"
         if [[ -z "${pwd}" ]]; then
@@ -602,7 +614,7 @@ function pulse_start() {
     fi
     
     ## Load user credentials from file?
-    source_netrc "${server}"
+    source_netrc
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -869,7 +881,7 @@ function openconnect_start() {
     fi
 
     ## Load user credentials from file?
-    source_netrc "${server}"
+    source_netrc
 
     ## Prompt for username and password, if missing
     prompt_user "${user}"
@@ -1115,6 +1127,14 @@ elif [[ $(is_token_valid "$token") == FALSE ]]; then
     merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
 fi
 
+
+## Regular expression for locating the proper netrc entry
+netrc_machines=${server}
+if [[ "$server" != "remote.ucsf.edu" ]]; then
+    netrc_machines=(${netrc_machines} remote.ucsf.edu)
+fi
+
+
 if [[ $debug == TRUE ]]; then
     mdebug "call: $call"
     mdebug "action: $action"
@@ -1143,6 +1163,7 @@ if [[ $debug == TRUE ]]; then
     mdebug "method: $method"
     mdebug "gui: $gui"
     mdebug "speed: $speed"
+    mdebug "netrc machines: ${netrc_machines[*]}"
 fi
 
 if [[ $action == "version" ]]; then
