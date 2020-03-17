@@ -939,6 +939,8 @@ function openconnect_start() {
 	 merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
+    mecho "Connecting to VPN server ${server} ..."
+    
     if [[ $dryrun == TRUE ]]; then
         exit 0
     fi
