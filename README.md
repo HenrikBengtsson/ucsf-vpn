@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/HenrikBengtsson/ucsf-vpn.svg?branch=develop)](https://travis-ci.org/HenrikBengtsson/ucsf-vpn)
 
-For recent updates, see [NEWS](NEWS.md).
+For recent updates, see [NEWS].
 
 
 # UCSF VPN client (Linux)
@@ -34,7 +34,7 @@ $ ucsf-vpn details
 }
 ```
 
-If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy](https://remote.ucsf.edu/).
+If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy].
 
 Alternatively to command-line options, the username and password can also be specified in file `~/.netrc` (or the file that environment variable `NETRC` specifies).  See `ucsf-vpn --help` for more details.  With a properly setup `~/.netrc` entry, you can connect to the UCSF VPN using:
 
@@ -88,7 +88,8 @@ Options:
                    -  6 or 7 digit Duo token (from Duo app), or
                    -  44-letter YubiKey token ("press YubiKey").
 
- --server <host>  VPN server (default is remote.ucsf.edu)
+ --server <host>  VPN server (default is remote.ucsf.edu,
+                              an alternative is remote-vpn01.ucsf.edu)
  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url <url>      VPN URL (default is https://{{server}}/pulse)
 
@@ -100,6 +101,7 @@ Options:
 
 Environment variables:
  UCSF_VPN_METHOD  The default --method value ('openconnect').
+ UCSF_VPN_SERVER  The default --server value ('remote.ucsf.edu').
  UCSF_VPN_TOKEN   The default --token value ('push').
 
 Commands and Options for Pulse Security Client only (--method pulse):
@@ -116,6 +118,7 @@ Examples:
  ucsf-vpn start
  ucsf-vpn start --user alice --token push
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user alice --pwd secrets
+ ucsf-vpn start --server remote-vpn01.ucsf.edu
  ucsf-vpn start --token phone
  ucsf-vpn stop
 
@@ -165,6 +168,7 @@ Useful resources:
   - https://software.ucsf.edu/content/vpn-virtual-private-network
 * UCSF Web-based VPN Interface:
   - https://remote.ucsf.edu/
+  - https://remote-vpn01.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
   - https://it.ucsf.edu/services/duo-two-factor-authentication
 * UCSF Managing Your Passwords:
@@ -215,3 +219,7 @@ The `ucsf-vpn` software uses the https://ipinfo.io/ service to infer whether
 a VPN connection is established or not, and to provide you with details on
 your public internet connection.  The software does _not_ collect or attempt
 to collect any of your UCSF credentials.
+
+
+[NEWS]: NEWS.md
+[UCSF VPN web proxy]: https://remote-vpn01.ucsf.edu/
