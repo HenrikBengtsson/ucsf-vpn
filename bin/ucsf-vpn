@@ -39,6 +39,7 @@
 ###
 ### Environment variables:
 ###  UCSF_VPN_METHOD  The default --method value ('openconnect').
+###  UCSF_VPN_SERVER  The default --server value ('remote.ucsf.edu').
 ###  UCSF_VPN_TOKEN   The default --token value ('push').
 ###
 ### Commands and Options for Pulse Security Client only (--method pulse):
@@ -971,7 +972,7 @@ online=TRUE
 method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
-server=remote.ucsf.edu
+server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
 force=FALSE
 skip=FALSE

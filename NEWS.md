@@ -1,9 +1,13 @@
 ucsf-vpn
 ========
 
-## Version 4.2.0-9000 (2020-03-04)
+## Version 4.2.0-9000 (2020-03-16)
 
- * ...
+NEW FEATURES:
+
+ * The VPN server can now be set via environment variable UCSF_VPN_SERVER as
+   an alternative to specifying option '--server', e.g.
+   UCSF_VPN_SERVER=remote-vpn01.ucsf.edu.
  
 
 ## Version 4.2.0 (2019-10-15)
