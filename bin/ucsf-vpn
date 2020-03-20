@@ -144,7 +144,7 @@ function mdebug() {
     fi
     {
         tput setaf 8 2> /dev/null ## gray
-        echo "[DEBUG] $*"
+        echo "DEBUG: $*"
         tput sgr0 2> /dev/null    ## reset
     } 1>&2
 }
@@ -237,11 +237,7 @@ function public_info() {
 }
 
 function is_online() {
-    if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
+    ping -c 1 -W 1 8.8.8.8 > /dev/null
 }
 
 function is_connected() {
@@ -250,28 +246,18 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
-    # shellcheck disable=SC2181
-    if [[ $? -eq 0 ]]; then
-        echo "true"
-    else
-        echo "false"
-    fi
 }
 
 function result() {
-    connected=$(is_connected)
-    echo "RESULT: $(status)"
+    if is_connected; then
+        echo "RESULT: $(status)"
+    fi	
 }
 
 function status() {
     mdebug "status()"
-    if [[ $online == "false" ]]; then
-      merror "No internet connection"
-    fi
     mdebug "Testing if the public IP information is a known UCSF connection"
-    connected=$(is_connected)
-    mdebug "connected=$connected"
-    if [[ "$connected" == "true" ]]; then
+    if is_connected; then
         echo "Connected to the UCSF network [$(public_info)]"
     else
         echo "Not connected to the UCSF network [$(public_info)]"
@@ -519,13 +505,10 @@ function pulse_start_gui() {
 }
 
 function pulse_open_gui() {
-    if [[ $online == "false" ]]; then
-      merror "$(status)"
-    elif ! $force || $skip; then
-      connected=$(is_connected)
-      if [[ "$connected" == "true" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
-              mecho "[SKIPPING]: $(status)"
+              minfo "Skipping because $(status)"
               _exit 0
           else
               merror "$(status)"
@@ -585,12 +568,8 @@ function pulse_start() {
         fi
     fi
     
-    if [[ $online == "false" ]]; then
-      merror "$(status)"
-    elif ! $force || $skip; then
-      connected=$(is_connected)
-      
-      if [[ "$connected" == "true" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
               mecho "SKIPPING: $(status)"
               _exit 0
@@ -735,7 +714,7 @@ function pulse_start() {
           opts="-u $user $opts"
       fi
       
-      if ! $verbose; then
+      if ! $debug; then
           opts="-log-level 5 $opts"
       fi
   
@@ -767,16 +746,13 @@ function pulse_start() {
 }
 
 function pulse_stop() {
-    if [[ $online == "false" ]]; then
-      mecho "WARNING: $(status)"
-    elif ! $force || $skip; then
-      connected=$(is_connected)
-      if [[ "$connected" == "false" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
     
           if $skip; then
-              mecho "[SKIPPING] $(status)"
+              mecho "Skipping because $(status)"
               _exit 0
           else
               merror "$(status)"
@@ -795,22 +771,22 @@ function pulse_stop() {
 
 
 function pulse_troubleshoot() {
-    mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
+    minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
-    mecho "[INFO] Pulse Secure software: $res"
+    minfo "Pulse Secure software: $res"
     pulsesvc --version
 
     config_home="$HOME/.pulse_secure/pulse"
     [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
-    mecho "[INFO] Pulse user configuration folder: $config_home"
+    minfo "Pulse user configuration folder: $config_home"
 
     confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    mecho "[INFO] Pulse connections file: $confile"
+    minfo "Pulse connections file: $confile"
     # shellcheck disable=SC2207
     IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    mecho "[INFO] Number of connections: ${#cons[@]}"
+    minfo "Number of connections: ${#cons[@]}"
     match=false
     for ii in "${!cons[@]}"; do
         con="${cons[$ii]/^ */}"
@@ -823,19 +799,18 @@ function pulse_troubleshoot() {
         >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
     done
     if $match; then
-        mecho "[INFO] Found connection with URL of interest: $url"
+        minfo "Found connection with URL of interest: $url"
     else
-        mecho "[WARN] No connection with URL of interest: $url"
+        mwarn "No connection with URL of interest: $url"
     fi
 
     logfile="$config_home/pulsesvc.log"
     [[ -f "$logfile" ]] || merror "No log file: $logfile"
 
-    mecho "[INFO] Log file: $logfile"
-    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; _exit 0; }
+    minfo "Log file: $logfile"
+    grep -q -F Error "$logfile" &> /dev/null || { mok "No errors found: $logfile"; _exit 0; }
 
-    mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error "$logfile" | >&2 tail -3
+    mwarn "Detected the following errors in the log file: $(grep -F Error "$logfile" | >&2 tail -3)"
 }
 
 
@@ -885,12 +860,8 @@ function openconnect_start() {
         fi
     fi
     
-    if [[ $online == "false" ]]; then
-      merror "$(status)"
-    elif ! $force || $skip; then
-      connected=$(is_connected)
-      
-      if [[ "$connected" == "true" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
               mecho "SKIPPING: $(status)"
               _exit 0
@@ -932,7 +903,7 @@ function openconnect_start() {
         
     opts="$opts --pid-file=$pid_file"
     
-    if ! $verbose; then
+    if ! $debug; then
         opts="$opts --quiet"
     fi
 
@@ -1038,9 +1009,6 @@ pii_file=$(make_pii_file)
 
 ## Actions
 action=help
-
-## Status
-online=true
 
 ## VPN method: 'openconnect' or 'pulse' (default)
 method=${UCSF_VPN_METHOD:-openconnect}
@@ -1241,8 +1209,11 @@ elif [[ $action == "help" ]]; then
 fi
 
 ## Check internet connection
-online=$(is_online)
-mdebug "online: $online"
+if is_online; then
+    minfo "Verified that internet connection works"
+else
+    merror "Internet connection is not working"
+fi
 
 if [[ $action == "status" ]]; then
     status
@@ -1273,8 +1244,7 @@ elif [[ $action == "start" ]]; then
         res=$?
         sleep "$(div 4.0 "$speed")"
     fi
-    online=$(is_online)
-    if [[ $online == "true" ]]; then
+    if is_online; then
         mok "Working internet connection"
     else
         mwarning "Internet connection may not work (ping failed)"
@@ -1290,8 +1260,7 @@ elif [[ $action == "stop" ]]; then
         res=$?
         sleep "$(div 1.0 "$speed")"
     fi
-    online=$(is_online)
-    if [[ $online == "true" ]]; then
+    if is_online; then
         mok "Working internet connection"
     else
         mwarning "Internet connection may not work (ping failed)"
@@ -1300,24 +1269,28 @@ elif [[ $action == "stop" ]]; then
     _exit $res
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
-        openconnect_stop
+	if is_connected; then
+            openconnect_stop
+	fi
         openconnect_start
         res=$?
     elif [[ $method == "pulse" ]]; then
         pulse_stop
         sleep "$(div 1.0 "$speed")"
-        online=$(is_online)
+        is_online
         pulse_start
         sleep "$(div 4.0 "$speed")"
         res=$?
     fi
-    online=$(is_online)
+    if is_online; then
+        mok "Working internet connection"
+    else
+        mwarning "Internet connection may not work (ping failed)"
+    fi
     result
     _exit $res
 elif [[ $action == "toggle" ]]; then
-    connected=$(is_connected)
-    mdebug "connected: $connected"
-    if [[ "$connected" == "false" ]]; then
+    if ! is_connected; then
       if [[ $method == "openconnect" ]]; then
           openconnect_start
           res=$?
@@ -1336,23 +1309,27 @@ elif [[ $action == "toggle" ]]; then
           res=$?
       fi
     fi
-    online=$(is_online)
+    if is_online; then
+        mok "Working internet connection"
+    else
+        mwarning "Internet connection may not work (ping failed)"
+    fi
     result
     _exit $res
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then
         LOGFILE=/var/log/syslog
-        mdebug "Displaying 'VPN' entries in log file: $LOGFILE"
+        minfo "Displaying 'VPN' entries in log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
-            mecho "[WARN] No such log file: $LOGFILE"
+            mwarn "No such log file: $LOGFILE"
             _exit 1
         fi
         grep VPN "$LOGFILE"
     elif [[ $method == "pulse" ]]; then
         LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-        mdebug "Displaying log file: $LOGFILE"
+        minfo "Displaying log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
-            mecho "[WARN] No such log file: $LOGFILE"
+            mwarn "No such log file: $LOGFILE"
             _exit 1
         fi
         cat "$LOGFILE"
