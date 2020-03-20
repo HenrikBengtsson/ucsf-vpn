@@ -262,46 +262,33 @@ function source_netrc() {
     local rcfile=${NETRC:-~/.netrc}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
-        if [[ $debug == TRUE ]]; then
-            mdebug "No .netrc file: $rcfile"
-        fi
+        mdebug "No .netrc file: $rcfile"
         return;
     fi
-    if [[ $debug == TRUE ]]; then
-        mdebug "Detected .netrc file: $rcfile"
-    fi
+    mdebug "Detected .netrc file: $rcfile"
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
-    if [[ $debug == TRUE ]]; then
-        mdebug "- search: ${netrc_machines[*]}"
-    fi
-
+    mdebug "- search: ${netrc_machines[*]}"
     local pattern
     local found=false
     for machine in "${netrc_machines[@]}"; do
         pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
-        if [[ $debug == TRUE ]]; then
-            mdebug "- search pattern: ${pattern}"
-        fi
+        mdebug "- search pattern: ${pattern}"
 
         ## No such machine?
         grep -q -E "${pattern}" "${rcfile}"
 
         # shellcheck disable=SC2181
         if [[ $? -eq 0 ]]; then
-            if [[ $debug == TRUE ]]; then
-                mdebug "- found: ${machine}"
-            fi
-	    found=true
-	    break
-	fi
+            mdebug "- found: ${machine}"
+            found=true
+            break
+        fi
     done
 
     if ! $found; then
-        if [[ $debug == TRUE ]]; then
-            mdebug "- no such machine: $machine"
-	fi
+        mdebug "- no such machine: $machine"
         return 0
     fi
     
@@ -311,14 +298,12 @@ function source_netrc() {
     user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
 
-    if [[ $debug == TRUE ]]; then
-        mdebug "- user=${user}"
-        if [[ -z "${pwd}" ]]; then
-            mdebug "- pwd=<missing>"
-        else
-            mdebug "- pwd=<hidden>"
-        fi
-    fi
+    mdebug "- user=${user}"
+    if [[ -z "${pwd}" ]]; then
+        mdebug "- pwd=<missing>"
+    else
+        mdebug "- pwd=<hidden>"
+     fi
 }
 
 function prompt_user() {
@@ -330,9 +315,7 @@ function prompt_user() {
         read -r user
         user=${user/ /}
     done
-    if [[ $debug == TRUE ]]; then
-        mdebug "- user=${user}"
-    fi
+    mdebug "- user=${user}"
 }
 
 function prompt_pwd() {
@@ -346,12 +329,10 @@ function prompt_pwd() {
     done
     mecho "<password>"
 
-    if [[ $debug == TRUE ]]; then
-        if [[ -z "${pwd}" ]]; then
-            mdebug "- pwd=<missing>"
-        else
-            mdebug "- pwd=<hidden>"
-        fi
+    if [[ -z "${pwd}" ]]; then
+        mdebug "- pwd=<missing>"
+    else
+        mdebug "- pwd=<hidden>"
     fi
 }
 
@@ -415,12 +396,10 @@ function prompt_token() {
     done
     mecho "<valid token>"
 
-    if [[ $debug == TRUE ]]; then
-        if [[ -z "${token}" ]]; then
-            mdebug "- token=<missing>"
-        else
-            mdebug "- token=<hidden>"
-        fi
+    if [[ -z "${token}" ]]; then
+        mdebug "- token=<missing>"
+    else
+        mdebug "- token=<hidden>"
     fi
 }
 
@@ -531,10 +510,8 @@ function pulse_open_gui() {
       fi
     fi
 
-    if [[ $debug == TRUE ]]; then
-        mdebug "call: $call"
-        mdebug "call: pulseUi"
-    fi
+    mdebug "call: $call"
+    mdebug "call: pulseUi"
     
     if [[ $dryrun == TRUE ]]; then
         exit 0
@@ -740,17 +717,15 @@ function pulse_start() {
           opts="-log-level 5 $opts"
       fi
   
-      if [[ $debug == TRUE ]]; then
-          mdebug "call: $call"
-          mdebug "user: $user"
-          if [[ -n $pwd ]]; then
-              mdebug "pwd: <hidden>"
-          else
-              mdebug "pwd: <not specified>"
-          fi
-          mdebug "opts: $opts"
-          mdebug "call: pulsesvc $opts -r \"${realm}\""
+      mdebug "call: $call"
+      mdebug "user: $user"
+      if [[ -n $pwd ]]; then
+          mdebug "pwd: <hidden>"
+      else
+          mdebug "pwd: <not specified>"
       fi
+      mdebug "opts: $opts"
+      mdebug "call: pulsesvc $opts -r \"${realm}\""
       
       if [[ $dryrun == TRUE ]]; then
           if [[ -n $pwd ]]; then
@@ -912,31 +887,29 @@ function openconnect_start() {
         opts="$opts --quiet"
     fi
 
-    if [[ $debug == TRUE ]]; then
-        mdebug "call: $call"
-        mdebug "user: $user"
-        if [[ -n $pwd ]]; then
-            mdebug "pwd: <hidden>"
-        else
-            mdebug "pwd: <not specified>"
-        fi
-        if [[ -n $token ]]; then
-            if [[ $token == "prompt" ]]; then
-                mdebug "token: <prompt>"
-            elif [[ $token == "push" || $token =~ ^(phone|sms|text)[1-9]*$ ]]; then
-                mdebug "token: $token"
-	    else
-                mdebug "token: <hidden>"
-	    fi
-        else
-            mdebug "token: <not specified>"
-        fi
-        mdebug "opts: $opts"
-        mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
+    mdebug "call: $call"
+    mdebug "user: $user"
+    if [[ -n $pwd ]]; then
+        mdebug "pwd: <hidden>"
+    else
+        mdebug "pwd: <not specified>"
     fi
+    if [[ -n $token ]]; then
+        if [[ $token == "prompt" ]]; then
+            mdebug "token: <prompt>"
+        elif [[ $token == "push" || $token =~ ^(phone|sms|text)[1-9]*$ ]]; then
+            mdebug "token: $token"
+        else
+            mdebug "token: <hidden>"
+        fi
+    else
+        mdebug "token: <not specified>"
+    fi
+    mdebug "opts: $opts"
+    mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
     
     if [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
-	 merror "Sending tokens via SMS is not supported by the OpenConnect interface"
+         merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
     mecho "Connecting to VPN server ${server} ..."
@@ -1141,36 +1114,34 @@ else
 fi
 
 
-if [[ $debug == TRUE ]]; then
-    mdebug "call: $call"
-    mdebug "action: $action"
-    mdebug "VPN server: $server"
-    mdebug "Realm: '$realm'"
-    mdebug "user: $user"
-    if [[ -z "${pwd}" ]]; then
-        mdebug "pwd=<missing>"
-    else
-        mdebug "pwd=<hidden>"
-    fi
-    if [[ -z "${token}" ]]; then
-        mdebug "token=<missing>"
-    elif [[ $token == "prompt" ]]; then
-        mdebug "token=<prompt>"
-    elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
-        mdebug "token=$token"
-    else
-        mdebug "token=<hidden>"
-    fi
-    mdebug "verbose: $verbose"
-    mdebug "force: $force"
-    mdebug "skip: $skip"
-    mdebug "dryrun: $dryrun"
-    mdebug "extras: $extras"
-    mdebug "method: $method"
-    mdebug "gui: $gui"
-    mdebug "speed: $speed"
-    mdebug "netrc machines: ${netrc_machines[*]}"
+mdebug "call: $call"
+mdebug "action: $action"
+mdebug "VPN server: $server"
+mdebug "Realm: '$realm'"
+mdebug "user: $user"
+if [[ -z "${pwd}" ]]; then
+    mdebug "pwd=<missing>"
+else
+    mdebug "pwd=<hidden>"
 fi
+if [[ -z "${token}" ]]; then
+    mdebug "token=<missing>"
+elif [[ $token == "prompt" ]]; then
+    mdebug "token=<prompt>"
+elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
+    mdebug "token=$token"
+else
+    mdebug "token=<hidden>"
+fi
+mdebug "verbose: $verbose"
+mdebug "force: $force"
+mdebug "skip: $skip"
+mdebug "dryrun: $dryrun"
+mdebug "extras: $extras"
+mdebug "method: $method"
+mdebug "gui: $gui"
+mdebug "speed: $speed"
+mdebug "netrc machines: ${netrc_machines[*]}"
 
 if [[ $action == "version" ]]; then
     version
@@ -1192,14 +1163,14 @@ elif [[ $action == "details" ]]; then
     exit $?
 elif [[ $action == "open-gui" ]]; then
     if [[ $method != "pulse" ]]; then
-	merror "ucsf vpn open-gui requires --method pulse: $method"
+        merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_open_gui
     res=$?
     exit $res
 elif [[ $action == "close-gui" ]]; then
     if [[ $method != "pulse" ]]; then
-	merror "ucsf vpn open-gui requires --method pulse: $method"
+        merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_close_gui
     res=$?
@@ -1218,7 +1189,7 @@ elif [[ $action == "start" ]]; then
     exit $res
 elif [[ $action == "stop" ]]; then
     if [[ $method == "openconnect" ]]; then
-	openconnect_stop
+        openconnect_stop
         res=$?
     elif [[ $method == "pulse" ]]; then
         pulse_stop
@@ -1230,8 +1201,8 @@ elif [[ $action == "stop" ]]; then
     exit $res
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
-	openconnect_stop
-	openconnect_start
+        openconnect_stop
+        openconnect_start
         res=$?
     elif [[ $method == "pulse" ]]; then
         pulse_stop
@@ -1271,7 +1242,7 @@ elif [[ $action == "toggle" ]]; then
     exit $res
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then
-	LOGFILE=/var/log/syslog
+        LOGFILE=/var/log/syslog
         mdebug "Displaying 'VPN' entries in log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
             mecho "[WARN] No such log file: $LOGFILE"
@@ -1279,7 +1250,7 @@ elif [[ $action == "log" ]]; then
         fi
         grep VPN "$LOGFILE"
     elif [[ $method == "pulse" ]]; then
-	LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
+        LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
         mdebug "Displaying log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
             mecho "[WARN] No such log file: $LOGFILE"
@@ -1289,8 +1260,8 @@ elif [[ $action == "log" ]]; then
     fi
 elif [[ $action == "troubleshoot" ]]; then
     if [[ $method == "openconnect" ]]; then
-	merror "ucsf-vpn troubleshoot is not implemented for --method=openconnect"
+        merror "ucsf-vpn troubleshoot is not implemented for --method=openconnect"
     elif [[ $method == "pulse" ]]; then
-	pulse_troubleshoot
+        pulse_troubleshoot
     fi
 fi
