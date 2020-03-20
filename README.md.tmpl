@@ -9,7 +9,7 @@ The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnect
 
 ## Connect
 ```sh
-$ ucsf-vpn start --user alice --pwd secrets --token prompt
+$ ucsf-vpn start --user=alice --pwd=secrets --token=prompt
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <valid token>
 [sudo] password for alice: NNNNNNN
 WARNING: Juniper Network Connect support is experimental.
@@ -46,7 +46,7 @@ WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
 ```
-after approving the push notification on your Duo Mobile app (the default is `--token push`).
+after approving the push notification on your Duo Mobile app (the default is `--token=push`).
 
 
 
@@ -86,13 +86,13 @@ OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beav
 
 ## Pulse Secure Client
 
-If you don't have OpenConnect (>= 7.08) you can use `ucsf vpn --method pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
+If you don't have OpenConnect (>= 7.08) you can use `ucsf vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
 
 * https://software.ucsf.edu/content/vpn-virtual-private-network
 
 Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
 
-Note: `ucsf-vpn --method pulse` is just a convenient wrapper script around the Pulse Secure client.  It is assumed that `pulsesvc` is available under `/usr/local/pulse/`. If not, set `PULSEPATH` to the folder where it is installed.
+Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the Pulse Secure client.  It is assumed that `pulsesvc` is available under `/usr/local/pulse/`. If not, set `PULSEPATH` to the folder where it is installed.
 
 
 ## Privacy
