@@ -1039,78 +1039,78 @@ token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
-    if test "$1" == "--help"; then
+    if [[ "$1" == "--help" ]]; then
         action=help
-    elif test "$1" == "--version"; then
+    elif [[ "$1" == "--version" ]]; then
         action=version
-    elif test "$1" == "open-gui"; then
+    elif [[ "$1" == "open-gui" ]]; then
         action=open-gui
-    elif test "$1" == "close-gui"; then
+    elif [[ "$1" == "close-gui" ]]; then
         action=close-gui
-    elif test "$1" == "start"; then
+    elif [[ "$1" == "start" ]]; then
         action=start
-    elif test "$1" == "status"; then
+    elif [[ "$1" == "status" ]]; then
         action=status
-    elif test "$1" == "details"; then
+    elif [[ "$1" == "details" ]]; then
         action=details
-    elif test "$1" == "stop"; then
+    elif [[ "$1" == "stop" ]]; then
         action=stop
-    elif test "$1" == "restart"; then
+    elif [[ "$1" == "restart" ]]; then
         action=restart
         force=true
-    elif test "$1" == "toggle"; then
+    elif [[ "$1" == "toggle" ]]; then
         action=toggle
         force=true
-    elif test "$1" == "log"; then
+    elif [[ "$1" == "log" ]]; then
         action=log
-    elif test "$1" == "troubleshoot"; then
+    elif [[ "$1" == "troubleshoot" ]]; then
         action=troubleshoot
-    elif test "$1" == "--debug"; then
+    elif [[ "$1" == "--debug" ]]; then
         debug=true
-    elif test "$1" == "--verbose"; then
+    elif [[ "$1" == "--verbose" ]]; then
         verbose=true
-    elif test "$1" == "--force"; then
+    elif [[ "$1" == "--force" ]]; then
         force=true 
-    elif test "$1" == "--skip"; then
+    elif [[ "$1" == "--skip" ]]; then
         skip=true
-    elif test "$1" == "--dry-run"; then
+    elif [[ "$1" == "--dry-run" ]]; then
         dryrun=true
-    elif test "$1" == "--dryrun"; then
+    elif [[ "$1" == "--dryrun" ]]; then
         merror "Did you mean to use '--dry-run'?"
-    elif test "$1" == "--method"; then
+    elif [[ "$1" == "--method" ]]; then
         shift
         method=$1
-    elif test "$1" == "--url"; then
+    elif [[ "$1" == "--url" ]]; then
         shift
         url=$1
-    elif test "$1" == "--server"; then
+    elif [[ "$1" == "--server" ]]; then
         shift
         server=$1
-    elif test "$1" == "--realm"; then
+    elif [[ "$1" == "--realm" ]]; then
         shift
         realm=$1
-    elif test "$1" == "--user"; then
+    elif [[ "$1" == "--user" ]]; then
         shift
         user=$1
-    elif test "$1" == "--pwd"; then
+    elif [[ "$1" == "--pwd" ]]; then
         shift
         pwd=$1
-    elif test "$1" == "--token"; then
+    elif [[ "$1" == "--token" ]]; then
         shift
         token=$1
-    elif test "$1" == "--gui"; then
+    elif [[ "$1" == "--gui" ]]; then
         gui=true
-    elif test "$1" == "--no-gui"; then
+    elif [[ "$1" == "--no-gui" ]]; then
         gui=false
-    elif test "$1" == "--notification"; then
+    elif [[ "$1" == "--notification" ]]; then
         notification=true
-    elif test "$1" == "--no-notification"; then
+    elif [[ "$1" == "--no-notification" ]]; then
         notification=false
-    elif test "$1" == "--colors"; then
+    elif [[ "$1" == "--colors" ]]; then
         colors=true
-    elif test "$1" == "--no-colors"; then
+    elif [[ "$1" == "--no-colors" ]]; then
         colors=false
-    elif test "$1" == "--speed"; then
+    elif [[ "$1" == "--speed" ]]; then
         shift
         speed=$1
         if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
