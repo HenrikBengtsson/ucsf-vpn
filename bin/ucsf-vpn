@@ -47,8 +47,8 @@
 ###  open-gui         Open the Pulse Secure GUI
 ###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
 ###
-###  --gui            Connect to VPN via Pulse Secure GUI (default)
-###  --no-gui         Connect to VPN via Pulse Secure CLI
+###  --gui            Connect to VPN via Pulse Secure GUI
+###  --no-gui         Connect to VPN via Pulse Secure CLI (default)
 ###  --speed <factor> Control speed of --gui interactions (default is 1.0)
 ###
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
@@ -469,7 +469,7 @@ function pulseUi_add_connection() {
 
 function pulse_start_gui() {
     if is_pulseUi_running; then
-        mecho "SKIPPING: Pulse Secure GUI is already running"
+        mwarn "Pulse Secure GUI is already running"
         return
     fi
     
@@ -477,6 +477,8 @@ function pulse_start_gui() {
     ## NOTE: Sending stderr to dev null to silence warnings on
     ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
     ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
+    mdebug "Pulse Secure GUI client: $(command -v pulseUi)"
+    minfo "Launching the Pulse Secure GUI ($(command -v pulseUi))"
     pulseUi 2> /dev/null &
 }
 
