@@ -309,8 +309,13 @@ function prompt_user() {
     if [[ -n "${user}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z "${user}" ]; do
-        printf "Enter username: " 1>&2;
-        read -r user
+	{
+            tput setaf 11 2> /dev/null  ## bright yellow
+            printf "Enter UCSF VPN username: "
+            tput setaf 15 2> /dev/null  ## bright white
+            read -r user
+            tput sgr0 2> /dev/null      ## reset
+	} 1>&2
         user=${user/ /}
     done
     mdebug "- user=${user}"
@@ -321,8 +326,13 @@ function prompt_pwd() {
     if [[ -n "${pwd}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z "${pwd}" ]; do
-        printf "Enter password: " 1>&2;
-        read -r -s pwd
+	{
+            tput setaf 11 2> /dev/null  ## bright yellow
+            printf "Enter UCSF VPN password: "
+            tput setaf 15 2> /dev/null  ## bright white
+            read -r -s pwd
+            tput sgr0 2> /dev/null      ## reset
+	} 1>&2
         pwd=${pwd/ /}
     done
     mecho "<password>"
@@ -384,11 +394,20 @@ function prompt_token() {
   
     mdebug "PROMPT: Asking user to enter one-time token:"
     while [ -z "${token}" ]; do
-        printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: " 1>&2;
-        read -r -s token
+	{
+            tput setaf 11 2> /dev/null  ## bright yellow
+            printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: "
+            tput setaf 15 2> /dev/null  ## bright white
+            read -r -s token
+            tput sgr0 2> /dev/null      ## reset
+	} 1>&2
         token=${token/ /}
         if [[ $(is_token_valid "$token") == "false" ]]; then
-            printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 or 7 digits or 'push', YubiKey: 44 letters)\\n"
+	    {
+                tput setaf 1 2> /dev/null ## red
+                printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 or 7 digits or 'push', YubiKey: 44 letters)\\n"
+                tput sgr0 2> /dev/null      ## reset
+            } 1>&2
             token=
         fi
     done
