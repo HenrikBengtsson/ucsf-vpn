@@ -1,10 +1,30 @@
 ucsf-vpn
 ========
 
-## Version 4.3.0-9000 (2020-03-16)
+## Version 4.3.0-9000 (2020-03-19)
 
- * ...
+### Significant changes
+
+ * `ucsf vpn start` and `ucsf vpn stop` is significantly faster because in
+   previous versions there was a bug (see below) causing it to query for
+   public IP information multiple times, which was slow.
  
+### New Features
+
+ * `ucsf vpn stop` makes sure to terminate the process that `ucsf vpn start`
+   started, which works by having OpenConnect record the process ID to file.
+   Previously, `ucsf vpn stop` terminated _all_ `openconnect` process found.
+
+ * Messages are now outputted in different colors if the terminal supports it.
+   Success message are outputted in green, warnings in yellow, errors in red, and
+   debug messages in gray.  Message from OpenConnect are outputted using the
+   default foreground color, which is typically white.
+
+### Bug Fixes
+
+ * `ucsf vpn` failed to cache collected public IP information resulting in
+   it queried the same public IP information multiple times.
+
 
 ## Version 4.3.0 (2020-03-16)
 

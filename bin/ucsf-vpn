@@ -47,8 +47,8 @@
 ###  open-gui         Open the Pulse Secure GUI
 ###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
 ###
-###  --gui            Connect to VPN via Pulse Secure GUI (default)
-###  --no-gui         Connect to VPN via Pulse Secure CLI
+###  --gui            Connect to VPN via Pulse Secure GUI
+###  --no-gui         Connect to VPN via Pulse Secure CLI (default)
 ###  --speed <factor> Control speed of --gui interactions (default is 1.0)
 ###
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
@@ -122,22 +122,63 @@ call="$0 $*"
 export PULSEPATH=${PULSEPATH:-/usr/local/pulse}
 export PATH="${PULSEPATH}:${PATH}"
 export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
-export PUBLIC_INFO=
+
+function pii_cleanup() {
+    if [[ -f "$pii_file" ]]; then
+         mdebug "Removing file: $pii_file"
+        rm "$pii_file"
+    fi
+}
+
+function _exit() {
+    value=${1:-0}
+    pii_cleanup
+    mdebug "Exiting with exit code $value"
+    exit "$value"
+}
 
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
-    if $debug; then
-        mecho "[DEBUG] $*"
+    if ! $debug; then
+        return
     fi
+    {
+        tput setaf 8 2> /dev/null ## gray
+        echo "DEBUG: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
 }
 function merror() {
-    mecho "ERROR: $*";
-    exit 1
+    {
+        tput setaf 1 2> /dev/null ## red
+        echo "ERROR: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
+    _exit 1
 }
-function vecho() {
-    if $verbose; then
-        echo "$@";
+function mwarn() {
+    {
+        tput setaf 3 2> /dev/null ## yellow
+        echo "WARNING: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
+}
+function minfo() {
+    if ! $verbose; then
+        return
     fi
+    {
+        tput setaf 4 2> /dev/null ## blue
+        echo "INFO: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
+}
+function mok() {
+    {
+        tput setaf 2 2> /dev/null ## green
+        echo "OK: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
 }
 
 function version() {
@@ -159,25 +200,26 @@ function help() {
 # -------------------------------------------------------------------------
 function connection_details() {
     mdebug "connection_details()"
-    if [[ -z ${PUBLIC_INFO} ]]; then
-      mdebug "Querying https://ipinfo.io/ip for public IP:"
-      PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
-      export PUBLIC_INFO
+    if [[ ! -f "$pii_file" ]]; then
+        minfo "Getting public IP (from https://ipinfo.io/ip)"
+        if ! is_online; then
+            merror "Internet connection is not working"
+	fi
+        minfo "Verified that internet connection works"
+        mdebug "Calling: curl --silent https://ipinfo.io/json > \"$pii_file\""
+        curl --silent https://ipinfo.io/json > "$pii_file"
+        if [[ ! -f "$pii_file" ]]; then
+            merror "Failed to get public IP (from https://ipinfo.io/ip)"
+        fi
+        mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi
-    mdebug "Public connection information: $PUBLIC_INFO"
-    if [[ -z ${PUBLIC_INFO} ]]; then
-        merror "Failed to infer public IP information"
-    fi
-    echo "$PUBLIC_INFO"
+    cat "$pii_file"
+    echo
 }
 
 function public_ip() {
-    mdebug "public_ip($*)"
-    if [[ $1 == "" ]]; then
-        connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
-    else
-        echo "$1"
-    fi
+    mdebug "public_ip()"
+    connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
 function public_hostname() {
@@ -199,59 +241,15 @@ function public_info() {
 }
 
 function is_online() {
-    mdebug "is_online()"
-    if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
+    ping -c 1 -W 1 8.8.8.8 > /dev/null
 }
 
 function is_connected() {
-    mdebug "is_connected($*)"
+    mdebug "is_connected()"
     ## NOTE: It appears that field 'hostname' is not always returned, e.g. when
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
-    # shellcheck disable=SC2181
-    if [[ $? -eq 0 ]]; then
-        echo "true"
-    else
-        echo "false"
-    fi
-}
-
-function result() {
-    ip=$(public_ip)
-    connected=$(is_connected "$ip")
-    echo "RESULT: $(status "$connected" "$ip")"
-}
-
-function status() {
-    mdebug "status($*)"
-    if [[ $online == "false" ]]; then
-      merror "No internet connection"
-    fi
-    connected=$1
-    ip=$2
-    if [[ $ip == "" ]]; then
-      vecho "- Retrieving public IP"
-      ip=$(public_ip "$1")
-      vecho "  => $ip"
-      mdebug "ip=$ip"
-    fi
-    if [[ "$connected" == "" ]]; then
-      vecho "- Testing if IP $ip is a registered UCSF IP number"
-      connected=$(is_connected "$ip")
-      vecho "  => $connected"
-      mdebug "ip=$ip"
-      mdebug "connected=$connected"
-    fi
-    if [[ "$connected" == "true" ]]; then
-        echo "Connected to the UCSF network [$(public_info)]"
-    else
-        echo "Not connected to the UCSF network [$(public_info)]"
-    fi
 }
 
 
@@ -426,20 +424,8 @@ function pulsesvc_version() {
     fi
 }
 
-function is_pulsesvc_running() {
-    if ps -C pulsesvc > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
-}
-
 function is_pulseUi_running() {
-    if ps -C pulseUi > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
+    ps -C pulseUi > /dev/null
 }
 
 function pulseUi_find_connection() {
@@ -482,8 +468,8 @@ function pulseUi_add_connection() {
 }
 
 function pulse_start_gui() {
-    if [[ $(is_pulseUi_running) == "true" ]]; then
-        mecho "SKIPPING: Pulse Secure GUI is already running"
+    if is_pulseUi_running; then
+        mwarn "Pulse Secure GUI is already running"
         return
     fi
     
@@ -491,21 +477,19 @@ function pulse_start_gui() {
     ## NOTE: Sending stderr to dev null to silence warnings on
     ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
     ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
+    mdebug "Pulse Secure GUI client: $(command -v pulseUi)"
+    minfo "Launching the Pulse Secure GUI ($(command -v pulseUi))"
     pulseUi 2> /dev/null &
 }
 
 function pulse_open_gui() {
-    if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
-    elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      if [[ "$connected" == "true" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
-              mecho "[SKIPPING]: $(status "$connected" "$ip")"
-              exit 0
+              mwarn "Already connected to the UCSF network [$(public_info)]"
+              _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -514,7 +498,7 @@ function pulse_open_gui() {
     mdebug "call: pulseUi"
     
     if $dryrun; then
-        exit 0
+        _exit 0
     fi
 
     ## Start the Pulse Secure GUI
@@ -522,7 +506,7 @@ function pulse_open_gui() {
 }
 
 function pulse_close_gui() {
-    if [[ $(is_pulseUi_running) == "false" ]]; then return; fi
+    if ! is_pulseUi_running; then return; fi
 
     mdebug "Closing Pulse Secure GUI"
 
@@ -562,18 +546,13 @@ function pulse_start() {
         fi
     fi
     
-    if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
-    elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      
-      if [[ "$connected" == "true" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
-              mecho "SKIPPING: $(status "$connected" "$ip")"
-              exit 0
+              mwarn "Already connected to the UCSF network [$(public_info)]"
+              _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -583,7 +562,7 @@ function pulse_start() {
     if $gui; then
         ## If Pulse Secure GUI is open, we need to close it
         ## before peeking at its connections config file.
-        if [[ $(is_pulseUi_running) == "true" ]]; then
+        if is_pulseUi_running; then
             close_gui
             sleep "$(div 0.5 "$speed")"
         fi
@@ -713,7 +692,7 @@ function pulse_start() {
           opts="-u $user $opts"
       fi
       
-      if ! $verbose; then
+      if ! $debug; then
           opts="-log-level 5 $opts"
       fi
   
@@ -733,7 +712,7 @@ function pulse_start() {
           else
               echo "pulsesvc $opts -r \"${realm}\" &"
           fi
-          exit 0
+          _exit 0
       fi
       
       if [[ -n $pwd ]]; then
@@ -745,20 +724,16 @@ function pulse_start() {
 }
 
 function pulse_stop() {
-    if [[ $online == "false" ]]; then
-      mecho "WARNING: $(status "$connected" "$ip")"
-    elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      if [[ "$connected" == "false" ]]; then
+    if ! $force || $skip; then
+      if is_connected; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
     
           if $skip; then
-              mecho "[SKIPPING] $(status "$connected" "$ip")"
-              exit 0
+              mwarn "Already connected to the UCSF network [$(public_info)]"
+              _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
       mdebug "Public IP (before): $ip"
@@ -774,22 +749,22 @@ function pulse_stop() {
 
 
 function pulse_troubleshoot() {
-    mecho "[INFO] Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
+    minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
-    mecho "[INFO] Pulse Secure software: $res"
+    minfo "Pulse Secure software: $res"
     pulsesvc --version
 
     config_home="$HOME/.pulse_secure/pulse"
     [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
-    mecho "[INFO] Pulse user configuration folder: $config_home"
+    minfo "Pulse user configuration folder: $config_home"
 
     confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    mecho "[INFO] Pulse connections file: $confile"
+    minfo "Pulse connections file: $confile"
     # shellcheck disable=SC2207
     IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    mecho "[INFO] Number of connections: ${#cons[@]}"
+    minfo "Number of connections: ${#cons[@]}"
     match=false
     for ii in "${!cons[@]}"; do
         con="${cons[$ii]/^ */}"
@@ -802,19 +777,18 @@ function pulse_troubleshoot() {
         >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
     done
     if $match; then
-        mecho "[INFO] Found connection with URL of interest: $url"
+        minfo "Found connection with URL of interest: $url"
     else
-        mecho "[WARN] No connection with URL of interest: $url"
+        mwarn "No connection with URL of interest: $url"
     fi
 
     logfile="$config_home/pulsesvc.log"
     [[ -f "$logfile" ]] || merror "No log file: $logfile"
 
-    mecho "[INFO] Log file: $logfile"
-    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
+    minfo "Log file: $logfile"
+    grep -q -F Error "$logfile" &> /dev/null || { mok "No errors found: $logfile"; _exit 0; }
 
-    mecho "[ERROR] Detected the following errors in the log file:"
-    grep -F Error "$logfile" | >&2 tail -3
+    mwarn "Detected the following errors in the log file: $(grep -F Error "$logfile" | >&2 tail -3)"
 }
 
 
@@ -831,29 +805,46 @@ function openconnect_version() {
     fi
 }
 
-function openconnect_is_running() {
-    ps -C openconnect > /dev/null
-    # shellcheck disable=SC2181
-    if [[ $? -eq 0 ]]; then
-        echo "true"
-    else
-        echo "false"
+function openconnect_pid() {
+    ## Is there a PID file?
+    if [[ ! -f "$pid_file" ]]; then
+        mdebug "PID file does not exists: $pid_file"
+        echo "-1"
+        return
     fi
+    
+    mdebug "PID file exists: $pid_file"
+    pid=$(cat "$pid_file")
+    mdebug "PID recorded in file: $pid"
+    
+    ## Is the process still running?
+    if ps -p "$pid" > /dev/null; then
+        mdebug "Process is running: $pid"
+        echo "$pid"
+        return
+    fi
+    
+    ## Remove stray PID file
+    rm "$pid_file"
+    mwarn "Removed stray PID file with non-existing process (PID=$pid): $pid_file"
+    echo "-1"
 }
 
 function openconnect_start() {
-    if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
-    elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      
-      if [[ "$connected" == "true" ]]; then
+    pid=$(openconnect_pid)
+    if [[ "$pid" != "-1" ]]; then
+        if [[ ! $force ]]; then
+            merror "A UCSF VPN process ('openconnect' PID $pid) is already running."
+        fi
+    fi
+    
+    if ! $force || $skip; then
+      if is_connected; then
           if $skip; then
-              mecho "SKIPPING: $(status "$connected" "$ip")"
-              exit 0
+              mwarn "Already connected to the UCSF network [$(public_info)]"
+              _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -875,7 +866,7 @@ function openconnect_start() {
     opts="$extras"
     opts="$opts --juniper ${url}"
     opts="$opts --background"
-    
+
     if [[ -n $user ]]; then
         opts="$opts --user=$user"
     fi
@@ -883,7 +874,14 @@ function openconnect_start() {
         opts="$opts --passwd-on-stdin"
     fi
 
-    if ! $verbose; then
+    ## Assert that OpenConnect is not already running
+    if [[ -f "$pid_file" ]]; then
+        merror "Do you already have an active UCSF VPN connection? Detected PID file: $pid_file"
+    fi
+        
+    opts="$opts --pid-file=$pid_file"
+    
+    if ! $debug; then
         opts="$opts --quiet"
     fi
 
@@ -912,10 +910,10 @@ function openconnect_start() {
          merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
-    mecho "Connecting to VPN server ${server} ..."
+    minfo "Connecting to VPN server '${server}'"
     
     if $dryrun; then
-        exit 0
+        _exit 0
     fi
 
     if [[ -n $pwd && -n $token ]]; then
@@ -925,38 +923,70 @@ function openconnect_start() {
         # shellcheck disable=SC2086
         sudo openconnect $opts --authgroup="$realm"
     fi
+
+    ## Update IP-info file
+    pii_file=$(make_pii_file)
+    
+    pid=$(openconnect_pid)
+    if [[ "$pid" == "-1" ]]; then
+        merror "Failed to connect to VPN server"
+    fi
+    minfo "Connected to VPN server"
 }
 
 function openconnect_stop() {
-    if [[ $online == "false" ]]; then
-      mecho "WARNING: $(status "$connected" "$ip")"
-    elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
-      if [[ "$connected" == "false" ]]; then
-          if $skip; then
-              mecho "[SKIPPING] $(status "$connected" "$ip")"
-              exit 0
-          else
-              merror "$(status "$connected" "$ip")"
-          fi
-      fi
-      mdebug "Public IP (before): $ip"
+    pid=$(openconnect_pid)
+    if [[ "$pid" == "-1" ]]; then
+        merror "Failed to located a UCSF VPN OpenConnect process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
-    ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
-    ## instead. That would at least only kill UCSF VPN connections
-    sudo pkill -INT openconnect 2> /dev/null
-    echo "RESULT: Killed local ('openconnect') VPN process"
+    minfo "Disconnecting from VPN server"
+
+    mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+    sudo kill -s INT "$pid" 2> /dev/null
+    
+     ## Wait for process to terminate
+    kill_timeout=10
+    timeout $kill_timeout tail --pid="$pid" -f /dev/null
+
+    ## Update IP-info file
+    pii_file=$(make_pii_file)
+    
+    ## Assert that the process was terminated
+    if ps -p "$pid" > /dev/null; then
+        merror "Failed to terminate VPN process ('openconnect' with PID $pid). You could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
+    fi
+
+    ## OpenConnect should remove PID file when terminated properly,
+    ## but if not, let us remove it here
+    if [[ -f "$pid_file" ]]; then
+        rm -f "$pid_file"
+        mwarn "OpenConnect PID file removed manually: $pid_file"
+    fi
+
+    minfo "Disconnected from VPN server"
 }
 
+xdg_config_path() {
+    local path 
+    ## https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+    path=${XDG_CONFIG_HOME:-$HOME/.config}/ucsf-vpn
+    if [ ! -d "$path" ]; then
+        mkdir -p "$path"
+    fi
+    echo "$path"
+}
+
+make_pii_file() {
+    pii_cleanup
+    mktemp --dry-run --tmpdir="$(xdg_config_path)" --suffix=-ipinfo.json
+}
+
+pid_file="$(xdg_config_path)/openconnect.pid"
+pii_file=$(make_pii_file)
 
 ## Actions
 action=help
-
-## Status
-online=true
 
 ## VPN method: 'openconnect' or 'pulse' (default)
 method=${UCSF_VPN_METHOD:-openconnect}
@@ -1018,6 +1048,8 @@ while [[ $# -gt 0 ]]; do
         skip=true
     elif test "$1" == "--dry-run"; then
         dryrun=true
+    elif test "$1" == "--dryrun"; then
+        merror "Did you mean to use '--dry-run'?"
     elif test "$1" == "--method"; then
         shift
         method=$1
@@ -1142,39 +1174,44 @@ mdebug "method: $method"
 mdebug "gui: $gui"
 mdebug "speed: $speed"
 mdebug "netrc machines: ${netrc_machines[*]}"
+mdebug "pid_file: $pid_file"
+mdebug "openconnect_pid: $(openconnect_pid)"
+mdebug "pii_file: $pii_file"
 
 if [[ $action == "version" ]]; then
     version
-    exit 0
+    _exit 0
 elif [[ $action == "help" ]]; then
     help 
-    exit 0
+    _exit 0
 fi
 
-## Check internet connection
-online=$(is_online)
-mdebug "online: $online"
-
 if [[ $action == "status" ]]; then
-    status
-    exit $?
+    is_connected
+    res=$?
+    if [[ $res -eq 0 ]]; then
+        echo "Connected to the UCSF network [$(public_info)]"
+    else
+        echo "Not connected to the UCSF network [$(public_info)]"
+    fi
+    _exit $res
 elif [[ $action == "details" ]]; then
     connection_details
-    exit $?
+    _exit $?
 elif [[ $action == "open-gui" ]]; then
     if [[ $method != "pulse" ]]; then
         merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_open_gui
     res=$?
-    exit $res
+    _exit $res
 elif [[ $action == "close-gui" ]]; then
     if [[ $method != "pulse" ]]; then
         merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_close_gui
     res=$?
-    exit $res
+    _exit $res
 elif [[ $action == "start" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_start
@@ -1184,9 +1221,10 @@ elif [[ $action == "start" ]]; then
         res=$?
         sleep "$(div 4.0 "$speed")"
     fi
-    online=$(is_online)
-    result
-    exit $res
+    if ! is_connected; then
+        merror "Failed to connect to the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully connected to the UCSF network [$(public_info)]"
 elif [[ $action == "stop" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_stop
@@ -1196,65 +1234,68 @@ elif [[ $action == "stop" ]]; then
         res=$?
         sleep "$(div 1.0 "$speed")"
     fi
-    online=$(is_online)
-    result
-    exit $res
+    if is_connected; then
+        merror "Failed to disconnect from the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully disconnected from the UCSF network [$(public_info)]"
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
-        openconnect_stop
+	if is_connected; then
+            openconnect_stop
+	fi
         openconnect_start
         res=$?
     elif [[ $method == "pulse" ]]; then
         pulse_stop
         sleep "$(div 1.0 "$speed")"
-        online=$(is_online)
+        is_online
         pulse_start
         sleep "$(div 4.0 "$speed")"
         res=$?
     fi
-    online=$(is_online)
-    result
-    exit $res
+    if ! is_connected; then
+        merror "Failed to connect to the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully connected to the UCSF network [$(public_info)]"
 elif [[ $action == "toggle" ]]; then
-    connected=$(is_connected "$ip")
-    mdebug "connected: $connected"
-    if [[ "$connected" == "false" ]]; then
+    if ! is_connected; then
       if [[ $method == "openconnect" ]]; then
           openconnect_start
-          res=$?
       elif [[ $method == "pulse" ]]; then
           pulse_start
           sleep "$(div 4.0 "$speed")"
-          res=$?
       fi
+      if ! is_connected; then
+          merror "Failed to connect to the UCSF network [$(public_info)]"
+      fi	
+      mok "Successfully connected to the UCSF network [$(public_info)]"
     else
       if [[ $method == "openconnect" ]]; then
           openconnect_stop
-          res=$?
       elif [[ $method == "pulse" ]]; then
           pulse_stop
           sleep "$(div 1.0 "$speed")"
-          res=$?
       fi
+      if is_connected; then
+          merror "Failed to disconnect from the UCSF network [$(public_info)]"
+      fi	
+      mok "Successfully disconnected from the UCSF network [$(public_info)]"
     fi
-    online=$(is_online)
-    result
-    exit $res
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then
         LOGFILE=/var/log/syslog
-        mdebug "Displaying 'VPN' entries in log file: $LOGFILE"
+        minfo "Displaying 'VPN' entries in log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
-            mecho "[WARN] No such log file: $LOGFILE"
-            exit 1
+            mwarn "No such log file: $LOGFILE"
+            _exit 1
         fi
         grep VPN "$LOGFILE"
     elif [[ $method == "pulse" ]]; then
         LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-        mdebug "Displaying log file: $LOGFILE"
+        minfo "Displaying log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
-            mecho "[WARN] No such log file: $LOGFILE"
-            exit 1
+            mwarn "No such log file: $LOGFILE"
+            _exit 1
         fi
         cat "$LOGFILE"
     fi
@@ -1265,3 +1306,6 @@ elif [[ $action == "troubleshoot" ]]; then
         pulse_troubleshoot
     fi
 fi
+
+
+_exit 0

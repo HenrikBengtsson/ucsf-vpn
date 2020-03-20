@@ -108,8 +108,8 @@ Commands and Options for Pulse Security Client only (--method pulse):
  open-gui         Open the Pulse Secure GUI
  close-gui        Close the Pulse Secure GUI (and any VPN connections)
 
- --gui            Connect to VPN via Pulse Secure GUI (default)
- --no-gui         Connect to VPN via Pulse Secure CLI
+ --gui            Connect to VPN via Pulse Secure GUI
+ --no-gui         Connect to VPN via Pulse Secure CLI (default)
  --speed <factor> Control speed of --gui interactions (default is 1.0)
 
 Any other options are passed to Pulse Secure CLI as is (only --no-gui).
@@ -174,7 +174,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 4.3.0
+Version: 4.3.0-9000
 Copyright: Henrik Bengtsson (2016-2020)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
