@@ -96,6 +96,8 @@ Options:
  --skip           If already fulfilled, skip command
  --force          Force running the command
  --verbose        Verbose output
+ --colors,        Enable (default) and disable colored output
+ --no-colors      
  --help           This help
  --version        Display version
 
@@ -103,6 +105,7 @@ Environment variables:
  UCSF_VPN_METHOD  The default --method value ('openconnect').
  UCSF_VPN_SERVER  The default --server value ('remote.ucsf.edu').
  UCSF_VPN_TOKEN   The default --token value ('push').
+ UCSF_VPN_COLORS  --colors (true, default) or --no-colors (false)
 
 Commands and Options for Pulse Security Client only (--method pulse):
  open-gui         Open the Pulse Secure GUI
