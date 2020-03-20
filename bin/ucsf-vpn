@@ -126,7 +126,7 @@ export PUBLIC_INFO=
 
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
-    if [[ $debug == TRUE ]]; then
+    if [[ $debug == true ]]; then
         mecho "[DEBUG] $*";
     fi
 }
@@ -135,7 +135,7 @@ function merror() {
     exit 1
 }
 function vecho() {
-    if [[ $verbose == TRUE ]]; then
+    if [[ $verbose == true ]]; then
         echo "$@";
     fi
 }
@@ -201,9 +201,9 @@ function public_info() {
 function is_online() {
     mdebug "is_online()"
     if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
-        echo TRUE
+        echo true
     else
-        echo FALSE
+        echo false
     fi
 }
 
@@ -215,9 +215,9 @@ function is_connected() {
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
     # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
-        echo TRUE
+        echo true
     else
-        echo FALSE
+        echo false
     fi
 }
 
@@ -229,7 +229,7 @@ function result() {
 
 function status() {
     mdebug "status($*)"
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       merror "No internet connection"
     fi
     connected=$1
@@ -247,7 +247,7 @@ function status() {
       mdebug "ip=$ip"
       mdebug "connected=$connected"
     fi
-    if [[ "$connected" == TRUE ]]; then
+    if [[ "$connected" == true ]]; then
         echo "Connected to the UCSF network [$(public_info)]"
     else
         echo "Not connected to the UCSF network [$(public_info)]"
@@ -346,37 +346,37 @@ function is_token_valid() {
         ## different registered.  Also 'phone1' and 'phone3' gives
         ## an error.
         mdebug "Will authenticate via a phone call from Duo"
-        echo TRUE
+        echo true
         return
     elif [[ ${token} == "push" ]]; then
         mdebug "Will authenticate via Duo Push (approve and confirm in Duo app)"
-        echo TRUE
+        echo true
         return
     elif [[ ${token} =~ ^(sms|text)[1-9]*$ ]]; then
         mdebug "Will send token via SMS"
-        echo TRUE
+        echo true
         return
     elif [[ ${token} == "false" ]]; then
         mdebug "Will not use token (in the form)"
-        echo TRUE
+        echo true
         return
     fi
     
     ## YubiKey token (44 lower-case letters)
     if [[ ${#token} -eq 44 ]] && [[ ${token} =~ ^[a-z]+$ ]]; then
         mdebug "YubiKey token detected"
-        echo TRUE
+        echo true
         return
     fi
     
     ## Duo 6 or 7-digit token
     if [[ ${#token} -eq 6 || ${#token} -eq 7 ]] && [[ ${token} =~ ^[0-9]+$ ]]; then
         mdebug "Duo token detected"
-        echo TRUE
+        echo true
         return
     fi
 
-    echo FALSE
+    echo false
 }
 
 function prompt_token() {
@@ -389,7 +389,7 @@ function prompt_token() {
         printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: " 1>&2;
         read -r -s token
         token=${token/ /}
-        if [[ $(is_token_valid "$token") == FALSE ]]; then
+        if [[ $(is_token_valid "$token") == false ]]; then
             printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 or 7 digits or 'push', YubiKey: 44 letters)\\n"
             token=
         fi
@@ -428,17 +428,17 @@ function pulsesvc_version() {
 
 function is_pulsesvc_running() {
     if ps -C pulsesvc > /dev/null; then
-        echo TRUE
+        echo true
     else
-        echo FALSE
+        echo false
     fi
 }
 
 function is_pulseUi_running() {
     if ps -C pulseUi > /dev/null; then
-        echo TRUE
+        echo true
     else
-        echo FALSE
+        echo false
     fi
 }
 
@@ -482,7 +482,7 @@ function pulseUi_add_connection() {
 }
 
 function pulse_start_gui() {
-    if [[ $(is_pulseUi_running) == TRUE ]]; then
+    if [[ $(is_pulseUi_running) == true ]]; then
         mecho "SKIPPING: Pulse Secure GUI is already running"
         return
     fi
@@ -495,13 +495,13 @@ function pulse_start_gui() {
 }
 
 function pulse_open_gui() {
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       merror "$(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
+    elif [[ $force == false || $skip == true ]]; then
       ip=$(public_ip)
       connected=$(is_connected "$ip")
-      if [[ "$connected" == TRUE ]]; then
-          if [[ $skip == TRUE ]]; then
+      if [[ "$connected" == true ]]; then
+          if [[ $skip == true ]]; then
               mecho "[SKIPPING]: $(status "$connected" "$ip")"
               exit 0
           else
@@ -513,7 +513,7 @@ function pulse_open_gui() {
     mdebug "call: $call"
     mdebug "call: pulseUi"
     
-    if [[ $dryrun == TRUE ]]; then
+    if [[ $dryrun == true ]]; then
         exit 0
     fi
 
@@ -522,7 +522,7 @@ function pulse_open_gui() {
 }
 
 function pulse_close_gui() {
-    if [[ $(is_pulseUi_running) == FALSE ]]; then return; fi
+    if [[ $(is_pulseUi_running) == false ]]; then return; fi
 
     mdebug "Closing Pulse Secure GUI"
 
@@ -548,7 +548,7 @@ function wait_for_pulse_window_to_close() {
 function pulse_start() {
     ## Validate request    
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
-        if [[ $gui == FALSE ]]; then
+        if [[ $gui == false ]]; then
             merror "Using --realm '$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
         fi
     elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
@@ -557,19 +557,19 @@ function pulse_start() {
         fi
     fi
     if [ -n "${token}" ] && [ ${token} != false ]; then
-        if [[ $gui == FALSE ]]; then
+        if [[ $gui == false ]]; then
             merror "Using --token '$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
         fi
     fi
     
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       merror "$(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
+    elif [[ $force == false || $skip == true ]]; then
       ip=$(public_ip)
       connected=$(is_connected "$ip")
       
-      if [[ "$connected" == TRUE ]]; then
-          if [[ $skip == TRUE ]]; then
+      if [[ "$connected" == true ]]; then
+          if [[ $skip == true ]]; then
               mecho "SKIPPING: $(status "$connected" "$ip")"
               exit 0
           else
@@ -580,10 +580,10 @@ function pulse_start() {
 
     ## Check for valid connection in Pulse Secure GUI
     local conidx=-1
-    if [[ $gui == TRUE ]]; then
+    if [[ $gui == true ]]; then
         ## If Pulse Secure GUI is open, we need to close it
         ## before peeking at its connections config file.
-        if [[ $(is_pulseUi_running) == TRUE ]]; then
+        if [[ $(is_pulseUi_running) == true ]]; then
             close_gui
             sleep "$(div 0.5 "$speed")"
         fi
@@ -606,7 +606,7 @@ function pulse_start() {
         prompt_token "${token}"
     fi
 
-    if [[ $gui == TRUE ]]; then
+    if [[ $gui == true ]]; then
         local step=1
         
         ## Check for 'xdotool'        
@@ -642,7 +642,7 @@ function pulse_start() {
         fi
 
         ## Click-through UCSF announcement message?
-        if [[ ${notification} == TRUE ]]; then
+        if [[ ${notification} == true ]]; then
             mdebug "Clicking on 'Proceed'"
             cmd="xdotool windowactivate --sync $wid2 key --delay 50 --repeat 2 Tab key Return"
             mdebug " - $cmd"
@@ -713,7 +713,7 @@ function pulse_start() {
           opts="-u $user $opts"
       fi
       
-      if [[ ! $verbose == TRUE ]]; then
+      if [[ ! $verbose == true ]]; then
           opts="-log-level 5 $opts"
       fi
   
@@ -727,7 +727,7 @@ function pulse_start() {
       mdebug "opts: $opts"
       mdebug "call: pulsesvc $opts -r \"${realm}\""
       
-      if [[ $dryrun == TRUE ]]; then
+      if [[ $dryrun == true ]]; then
           if [[ -n $pwd ]]; then
               echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
           else
@@ -745,16 +745,16 @@ function pulse_start() {
 }
 
 function pulse_stop() {
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       mecho "WARNING: $(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
+    elif [[ $force == false || $skip == true ]]; then
       ip=$(public_ip)
       connected=$(is_connected "$ip")
-      if [[ "$connected" == FALSE ]]; then
+      if [[ "$connected" == false ]]; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
     
-          if [[ $skip == TRUE ]]; then
+          if [[ $skip == true ]]; then
               mecho "[SKIPPING] $(status "$connected" "$ip")"
               exit 0
           else
@@ -835,21 +835,21 @@ function openconnect_is_running() {
     ps -C openconnect > /dev/null
     # shellcheck disable=SC2181
     if [[ $? -eq 0 ]]; then
-        echo TRUE
+        echo true
     else
-        echo FALSE
+        echo false
     fi
 }
 
 function openconnect_start() {
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       merror "$(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
+    elif [[ $force == false || $skip == true ]]; then
       ip=$(public_ip)
       connected=$(is_connected "$ip")
       
-      if [[ "$connected" == TRUE ]]; then
-          if [[ $skip == TRUE ]]; then
+      if [[ "$connected" == true ]]; then
+          if [[ $skip == true ]]; then
               mecho "SKIPPING: $(status "$connected" "$ip")"
               exit 0
           else
@@ -883,7 +883,7 @@ function openconnect_start() {
         opts="$opts --passwd-on-stdin"
     fi
 
-    if [[ ! $verbose == TRUE ]]; then
+    if [[ ! $verbose == true ]]; then
         opts="$opts --quiet"
     fi
 
@@ -914,7 +914,7 @@ function openconnect_start() {
 
     mecho "Connecting to VPN server ${server} ..."
     
-    if [[ $dryrun == TRUE ]]; then
+    if [[ $dryrun == true ]]; then
         exit 0
     fi
 
@@ -928,13 +928,13 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
-    if [[ $online == FALSE ]]; then
+    if [[ $online == false ]]; then
       mecho "WARNING: $(status "$connected" "$ip")"
-    elif [[ $force == FALSE || $skip == TRUE ]]; then
+    elif [[ $force == false || $skip == true ]]; then
       ip=$(public_ip)
       connected=$(is_connected "$ip")
-      if [[ "$connected" == FALSE ]]; then
-          if [[ $skip == TRUE ]]; then
+      if [[ "$connected" == false ]]; then
+          if [[ $skip == true ]]; then
               mecho "[SKIPPING] $(status "$connected" "$ip")"
               exit 0
           else
@@ -956,7 +956,7 @@ function openconnect_stop() {
 action=help
 
 ## Status
-online=TRUE
+online=true
 
 ## VPN method: 'openconnect' or 'pulse' (default)
 method=${UCSF_VPN_METHOD:-openconnect}
@@ -964,15 +964,15 @@ method=${UCSF_VPN_METHOD:-openconnect}
 ## Options
 server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
-force=FALSE
-skip=FALSE
-debug=FALSE
-verbose=FALSE
-dryrun=FALSE
+force=false
+skip=false
+debug=false
+verbose=false
+dryrun=false
 realm=
 extras=
-gui=TRUE
-notification=FALSE
+gui=true
+notification=false
 speed=1.0
 
 ## User credentials
@@ -1000,24 +1000,24 @@ while [[ $# -gt 0 ]]; do
         action=stop
     elif test "$1" == "restart"; then
         action=restart
-        force=TRUE
+        force=true
     elif test "$1" == "toggle"; then
         action=toggle
-        force=TRUE
+        force=true
     elif test "$1" == "log"; then
         action=log
     elif test "$1" == "troubleshoot"; then
         action=troubleshoot
     elif test "$1" == "--debug"; then
-        debug=TRUE
+        debug=true
     elif test "$1" == "--verbose"; then
-        verbose=TRUE
+        verbose=true
     elif test "$1" == "--force"; then
-        force=TRUE 
+        force=true 
     elif test "$1" == "--skip"; then
-        skip=TRUE
+        skip=true
     elif test "$1" == "--dry-run"; then
-        dryrun=TRUE
+        dryrun=true
     elif test "$1" == "--method"; then
         shift
         method=$1
@@ -1040,13 +1040,13 @@ while [[ $# -gt 0 ]]; do
         shift
         token=$1
     elif test "$1" == "--gui"; then
-        gui=TRUE
+        gui=true
     elif test "$1" == "--no-gui"; then
-        gui=FALSE
+        gui=false
     elif test "$1" == "--notification"; then
-        notification=TRUE
+        notification=true
     elif test "$1" == "--no-notification"; then
-        notification=FALSE
+        notification=false
     elif test "$1" == "--speed"; then
         shift
         speed=$1
@@ -1073,7 +1073,7 @@ fi
 
 ## Validate 'realm'
 if [[ -z $realm ]]; then
-    if [[ $gui == TRUE ]]; then
+    if [[ $gui == true ]]; then
         realm="Dual-Factor Pulse Clients"
     else
         realm="Single-Factor Pulse Clients"
@@ -1101,7 +1101,7 @@ elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
     mdebug "Will prompt user for 2FA token"
 elif [[ ${token} == "false" ]]; then
     mdebug "Will not use 2FA authenatication"
-elif [[ $(is_token_valid "$token") == FALSE ]]; then
+elif [[ $(is_token_valid "$token") == false ]]; then
     merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
 fi
 
@@ -1218,7 +1218,7 @@ elif [[ $action == "restart" ]]; then
 elif [[ $action == "toggle" ]]; then
     connected=$(is_connected "$ip")
     mdebug "connected: $connected"
-    if [[ "$connected" == FALSE ]]; then
+    if [[ "$connected" == false ]]; then
       if [[ $method == "openconnect" ]]; then
           openconnect_start
           res=$?
