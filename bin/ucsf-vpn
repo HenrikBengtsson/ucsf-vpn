@@ -187,6 +187,13 @@ function mok() {
         _tput sgr0    ## reset
     } 1>&2
 }
+function mdeprecated() {
+    {
+        _tput setaf 3 ## yellow
+        echo "DEPRECATED: $*"
+        _tput sgr0    ## reset
+    } 1>&2
+}
 
 function version() {
     grep -E "^###[ ]*Version:[ ]*" "$0" | sed 's/###[ ]*Version:[ ]*//g'
@@ -1039,6 +1046,7 @@ token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
+    mdebug "Next CLI argument: $1"
     ## Commands:
     if [[ "$1" == "start" ]]; then
         action=start
@@ -1062,7 +1070,8 @@ while [[ $# -gt 0 ]]; do
         action=open-gui
     elif [[ "$1" == "close-gui" ]]; then
         action=close-gui
-    ## Options (flags):
+	
+    ## Options (--flags):
     elif [[ "$1" == "--help" ]]; then
         action=help
     elif [[ "$1" == "--version" ]]; then
@@ -1087,38 +1096,52 @@ while [[ $# -gt 0 ]]; do
         colors=true
     elif [[ "$1" == "--no-colors" ]]; then
         colors=false
-    ## Options (key=value):
-    elif [[ "$1" == "--method" ]]; then
-        shift
-        method=$1
-    elif [[ "$1" == "--url" ]]; then
-        shift
-        url=$1
-    elif [[ "$1" == "--server" ]]; then
-        shift
-        server=$1
-    elif [[ "$1" == "--realm" ]]; then
-        shift
-        realm=$1
-    elif [[ "$1" == "--user" ]]; then
-        shift
-        user=$1
-    elif [[ "$1" == "--pwd" ]]; then
-        shift
-        pwd=$1
-    elif [[ "$1" == "--token" ]]; then
-        shift
-        token=$1
     elif [[ "$1" == "--gui" ]]; then
         gui=true
     elif [[ "$1" == "--no-gui" ]]; then
         gui=false
-    elif [[ "$1" == "--speed" ]]; then
+	
+    ## Options (--key=value):
+    elif [[ "$1" =~ ^--method=.*$ ]]; then
+        method=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--url=.*$ ]]; then
+        url=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--server=.*$ ]]; then
+        server=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--realm=.*$ ]]; then
+        realm=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--user=.*$ ]]; then
+        user=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--pwd=.*$ ]]; then
+        pwd=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--token=.*$ ]]; then
+        token=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--speed=.*$ ]]; then
+        speed=${1//--[[:alpha:]]*=}
+	
+    ## DEPRECATED: Options (--key value):
+    elif [[ "$1" =~ ^--[[:alpha:]]+$ ]]; then
+	mdeprecated "The command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
+	key=$1
         shift
-        speed=$1
-        if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
-            merror "Invalid --speed argument: $speed"
-        fi
+        if [[ "$key" == "--method" ]]; then
+            method=$1
+        elif [[ "$key" == "--url" ]]; then
+            url=$1
+        elif [[ "$key" == "--server" ]]; then
+            server=$1
+        elif [[ "$key" == "--realm" ]]; then
+            realm=$1
+        elif [[ "$key" == "--user" ]]; then
+            user=$1
+        elif [[ "$key" == "--pwd" ]]; then
+            pwd=$1
+        elif [[ "$key" == "--token" ]]; then
+            token=$1
+        elif [[ "$key" == "--speed" ]]; then
+            speed=$1
+	fi
+	
     ## Additional options to be appended (rarely needed)
     else
         extras="$extras $1"
@@ -1170,6 +1193,11 @@ elif [[ ${token} == "false" ]]; then
     mdebug "Will not use 2FA authenatication"
 elif [[ $(is_token_valid "$token") == "false" ]]; then
     merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
+fi
+
+## Validate 'speed'
+if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
+    merror "Invalid --speed argument: $speed"
 fi
 
 

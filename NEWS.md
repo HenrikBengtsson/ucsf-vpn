@@ -8,6 +8,8 @@ ucsf-vpn
  * `ucsf vpn start` and `ucsf vpn stop` is significantly faster because in
    previous versions there was a bug (see below) causing it to query for
    public IP information multiple times, which was slow.
+
+ * Now supporting proper key-value pair CLI options, e.g. --user=alice.
  
 ### New Features
 
@@ -26,6 +28,11 @@ ucsf-vpn
 
  * `ucsf vpn` failed to cache collected public IP information resulting in
    it queried the same public IP information multiple times.
+
+### Deprecated
+
+ * Legacy, non-standard key-value pair CLI option without equal signs such
+   as `--user alice` are no deprecated. Use `--user=alice` instead.
 
 
 ## Version 4.3.0 (2020-03-16)
