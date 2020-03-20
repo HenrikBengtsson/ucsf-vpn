@@ -15,8 +15,10 @@ ucsf-vpn
    started, which works by having OpenConnect record the process ID to file.
    Previously, `ucsf vpn stop` terminated _all_ `openconnect` process found.
 
- * Success, warning, error, and debug messages are now outputted using
-   different colors if the terminal supports it.
+ * Messages are now outputted in different colors if the terminal supports it.
+   Success message are outputted in green, warnings in yellow, errors in red, and
+   debug messages in gray.  Message from OpenConnect are outputted using the
+   default foreground color, which is typically white.
 
 ### Bug Fixes
 

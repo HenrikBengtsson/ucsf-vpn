@@ -202,6 +202,10 @@ function connection_details() {
     mdebug "connection_details()"
     if [[ ! -f "$pii_file" ]]; then
         minfo "Getting public IP (from https://ipinfo.io/ip)"
+        if ! is_online; then
+            merror "Internet connection is not working"
+	fi
+        minfo "Verified that internet connection works"
         mdebug "Calling: curl --silent https://ipinfo.io/json > \"$pii_file\""
         curl --silent https://ipinfo.io/json > "$pii_file"
         if [[ ! -f "$pii_file" ]]; then
@@ -246,22 +250,6 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
-}
-
-function result() {
-    if is_connected; then
-        echo "RESULT: $(status)"
-    fi	
-}
-
-function status() {
-    mdebug "status()"
-    mdebug "Testing if the public IP information is a known UCSF connection"
-    if is_connected; then
-        echo "Connected to the UCSF network [$(public_info)]"
-    else
-        echo "Not connected to the UCSF network [$(public_info)]"
-    fi
 }
 
 
@@ -496,10 +484,10 @@ function pulse_open_gui() {
     if ! $force || $skip; then
       if is_connected; then
           if $skip; then
-              minfo "Skipping because $(status)"
+              mwarn "Already connected to the UCSF network [$(public_info)]"
               _exit 0
           else
-              merror "$(status)"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -559,10 +547,10 @@ function pulse_start() {
     if ! $force || $skip; then
       if is_connected; then
           if $skip; then
-              mecho "SKIPPING: $(status)"
+              mwarn "Already connected to the UCSF network [$(public_info)]"
               _exit 0
           else
-              merror "$(status)"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -740,10 +728,10 @@ function pulse_stop() {
           pulse_close_gui
     
           if $skip; then
-              mecho "Skipping because $(status)"
+              mwarn "Already connected to the UCSF network [$(public_info)]"
               _exit 0
           else
-              merror "$(status)"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
       mdebug "Public IP (before): $ip"
@@ -851,10 +839,10 @@ function openconnect_start() {
     if ! $force || $skip; then
       if is_connected; then
           if $skip; then
-              mecho "SKIPPING: $(status)"
+              mwarn "Already connected to the UCSF network [$(public_info)]"
               _exit 0
           else
-              merror "$(status)"
+              merror "Already connected to the UCSF network [$(public_info)]"
           fi
       fi
     fi
@@ -941,7 +929,7 @@ function openconnect_start() {
     if [[ "$pid" == "-1" ]]; then
         merror "Failed to connect to VPN server"
     fi
-    mok "Connected to VPN server"
+    minfo "Connected to VPN server"
 }
 
 function openconnect_stop() {
@@ -974,7 +962,7 @@ function openconnect_stop() {
         mwarn "OpenConnect PID file removed manually: $pid_file"
     fi
 
-    mok "Disconnected from VPN server"
+    minfo "Disconnected from VPN server"
 }
 
 xdg_config_path() {
@@ -1196,16 +1184,15 @@ elif [[ $action == "help" ]]; then
     _exit 0
 fi
 
-## Check internet connection
-if is_online; then
-    minfo "Verified that internet connection works"
-else
-    merror "Internet connection is not working"
-fi
-
 if [[ $action == "status" ]]; then
-    status
-    _exit $?
+    is_connected
+    res=$?
+    if [[ $res -eq 0 ]]; then
+        echo "Connected to the UCSF network [$(public_info)]"
+    else
+        echo "Not connected to the UCSF network [$(public_info)]"
+    fi
+    _exit $res
 elif [[ $action == "details" ]]; then
     connection_details
     _exit $?
@@ -1232,13 +1219,10 @@ elif [[ $action == "start" ]]; then
         res=$?
         sleep "$(div 4.0 "$speed")"
     fi
-    if is_online; then
-        mok "Working internet connection"
-    else
-        mwarning "Internet connection may not work (ping failed)"
-    fi
-    result
-    _exit $res
+    if ! is_connected; then
+        merror "Failed to connect to the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully connected to the UCSF network [$(public_info)]"
 elif [[ $action == "stop" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_stop
@@ -1248,13 +1232,10 @@ elif [[ $action == "stop" ]]; then
         res=$?
         sleep "$(div 1.0 "$speed")"
     fi
-    if is_online; then
-        mok "Working internet connection"
-    else
-        mwarning "Internet connection may not work (ping failed)"
-    fi
-    result
-    _exit $res
+    if is_connected; then
+        merror "Failed to disconnect from the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully disconnected from the UCSF network [$(public_info)]"
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
 	if is_connected; then
@@ -1270,40 +1251,34 @@ elif [[ $action == "restart" ]]; then
         sleep "$(div 4.0 "$speed")"
         res=$?
     fi
-    if is_online; then
-        mok "Working internet connection"
-    else
-        mwarning "Internet connection may not work (ping failed)"
-    fi
-    result
-    _exit $res
+    if ! is_connected; then
+        merror "Failed to connect to the UCSF network [$(public_info)]"
+    fi	
+    mok "Successfully connected to the UCSF network [$(public_info)]"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
       if [[ $method == "openconnect" ]]; then
           openconnect_start
-          res=$?
       elif [[ $method == "pulse" ]]; then
           pulse_start
           sleep "$(div 4.0 "$speed")"
-          res=$?
       fi
+      if ! is_connected; then
+          merror "Failed to connect to the UCSF network [$(public_info)]"
+      fi	
+      mok "Successfully connected to the UCSF network [$(public_info)]"
     else
       if [[ $method == "openconnect" ]]; then
           openconnect_stop
-          res=$?
       elif [[ $method == "pulse" ]]; then
           pulse_stop
           sleep "$(div 1.0 "$speed")"
-          res=$?
       fi
+      if is_connected; then
+          merror "Failed to disconnect from the UCSF network [$(public_info)]"
+      fi	
+      mok "Successfully disconnected from the UCSF network [$(public_info)]"
     fi
-    if is_online; then
-        mok "Working internet connection"
-    else
-        mwarning "Internet connection may not work (ping failed)"
-    fi
-    result
-    _exit $res
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then
         LOGFILE=/var/log/syslog
@@ -1332,4 +1307,3 @@ fi
 
 
 _exit 0
-
