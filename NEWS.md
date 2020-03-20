@@ -33,8 +33,7 @@ ucsf-vpn
 ### New Features
 
  * The VPN server can now be set via environment variable `UCSF_VPN_SERVER` as
-   an alternative to specifying option `--server`, e.g.
-   `UCSF_VPN_SERVER=remote-vpn01.ucsf.edu`. `ucsf vpn start` will output
+   an alternative to specifying option `--server`. `ucsf vpn start` will output
    'Connection to server <server> ...' to indicate which server is used.
 
  * If a custom VPN server is used, then the ~/.netrc file is search for that

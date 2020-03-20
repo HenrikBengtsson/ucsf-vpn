@@ -27,8 +27,7 @@
 ###                    -  6 or 7 digit Duo token (from Duo app), or
 ###                    -  44-letter YubiKey token ("press YubiKey").
 ###
-###  --server <host>  VPN server (default is remote.ucsf.edu,
-###                               an alternative is remote-vpn01.ucsf.edu)
+###  --server <host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm <realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url <url>      VPN URL (default is https://{{server}}/pulse)
 ###
@@ -60,7 +59,6 @@
 ###  ucsf-vpn start
 ###  ucsf-vpn start --user alice --token push
 ###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user alice --pwd secrets
-###  ucsf-vpn start --server remote-vpn01.ucsf.edu
 ###  ucsf-vpn start --token phone
 ###  ucsf-vpn stop
 ###
@@ -109,8 +107,8 @@
 ### * UCSF VPN information:
 ###   - https://software.ucsf.edu/content/vpn-virtual-private-network
 ### * UCSF Web-based VPN Interface:
+###   - https://remote-vpn01.ucsf.edu/ (preferred)
 ###   - https://remote.ucsf.edu/
-###   - https://remote-vpn01.ucsf.edu/
 ### * UCSF Two-Factory Authentication (2FA):
 ###   - https://it.ucsf.edu/services/duo-two-factor-authentication
 ### * UCSF Managing Your Passwords:
