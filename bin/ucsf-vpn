@@ -126,21 +126,53 @@ export PUBLIC_INFO=
 
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
-    if $debug; then
-        mecho "[DEBUG] $*"
+    if ! $debug; then
+        return
     fi
+    {
+        tput setaf 8 2> /dev/null ## gray
+        echo "[DEBUG] $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
 }
 function merror() {
-    mecho "ERROR: $*";
+    {
+        tput setaf 1 2> /dev/null ## red
+        echo "ERROR: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
     exit 1
 }
 function mwarn() {
-    mecho "WARNING: $*";
+    {
+        tput setaf 3 2> /dev/null ## yellow
+        echo "WARNING: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
+}
+function minfo() {
+    {
+        tput setaf 4 2> /dev/null ## blue
+        echo "INFO: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
+}
+function mok() {
+    {
+        tput setaf 2 2> /dev/null ## green
+        echo "OK: $*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
 }
 function vecho() {
-    if $verbose; then
-        echo "$@";
+    if ! $verbose; then
+        return
     fi
+    {
+        tput setaf 4 2> /dev/null ## blue
+        echo "$*"
+        tput sgr0 2> /dev/null    ## reset
+    } 1>&2
 }
 
 function version() {
@@ -163,7 +195,7 @@ function help() {
 function connection_details() {
     mdebug "connection_details()"
     if [[ -z ${PUBLIC_INFO} ]]; then
-      mdebug "Querying https://ipinfo.io/ip for public IP:"
+      minfo "Getting public IP (from https://ipinfo.io/ip)"
       PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
       export PUBLIC_INFO
     fi
@@ -838,8 +870,8 @@ function openconnect_pid() {
     ## Is there a PID file?
     if [[ ! -f "$pid_file" ]]; then
         mdebug "PID file does not exists: $pid_file"
-	echo "-1"
-	return
+        echo "-1"
+        return
     fi
     
     mdebug "PID file exists: $pid_file"
@@ -862,7 +894,9 @@ function openconnect_pid() {
 function openconnect_start() {
     pid=$(openconnect_pid)
     if [[ "$pid" != "-1" ]]; then
-	merror "A UCSF VPN OpenConnect process (PID $pid) is already running (remove PID file $pid_file if this is not correct)"
+        if [[ ! $force ]]; then
+            merror "A UCSF VPN process ('openconnect' PID $pid) is already running."
+        fi
     fi
     
     if [[ $online == "false" ]]; then
@@ -908,9 +942,9 @@ function openconnect_start() {
 
     ## Assert that OpenConnect is not already running
     if [[ -f "$pid_file" ]]; then
-	merror "Do you already have an active UCSF VPN connection? Detected PID file: $pid_file"
+        merror "Do you already have an active UCSF VPN connection? Detected PID file: $pid_file"
     fi
-	
+        
     opts="$opts --pid-file=$pid_file"
     
     if ! $verbose; then
@@ -942,7 +976,7 @@ function openconnect_start() {
          merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
-    mecho "Connecting to VPN server ${server} ..."
+    minfo "Connecting to VPN server '${server}'"
     
     if $dryrun; then
         exit 0
@@ -955,20 +989,42 @@ function openconnect_start() {
         # shellcheck disable=SC2086
         sudo openconnect $opts --authgroup="$realm"
     fi
+    
+    pid=$(openconnect_pid)
+    if [[ "$pid" == "-1" ]]; then
+        merror "Failed to connect to VPN server"
+    fi
+    mok "Connected to VPN server"
 }
 
 function openconnect_stop() {
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
-	merror "Failed to located active UCSF VPN OpenConnect process. Are you really connected by VPN?"
+        merror "Failed to located a UCSF VPN OpenConnect process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
-    
-    ## FIXME / SAFER: Identify PID to kill using
-    ##   ps -ef | grep -F "openconnect --no-cert-check --juniper https://${server}/openconnect"
-    ## instead. That would at least only kill UCSF VPN connections
+
+    minfo "Disconnecting from VPN server"
+
     mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
     sudo kill -s INT "$pid" 2> /dev/null
-    echo "RESULT: Killed local ('openconnect') VPN process"
+    
+     ## Wait for process to terminate
+    kill_timeout=10
+    timeout $kill_timeout tail --pid="$pid" -f /dev/null
+    
+    ## Assert that the process was terminated
+    if ps -p "$pid" > /dev/null; then
+        merror "Failed to terminate VPN process ('openconnect' with PID $pid). You could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
+    fi
+
+    ## OpenConnect should remove PID file when terminated properly,
+    ## but if not, let us remove it here
+    if [[ -f "$pid_file" ]]; then
+        rm -f "$pid_file"
+        mwarn "OpenConnect PID file removed manually: $pid_file"
+    fi
+
+    mok "Disconnected from VPN server"
 }
 
 xdg_config_path() {
@@ -1050,6 +1106,8 @@ while [[ $# -gt 0 ]]; do
         skip=true
     elif test "$1" == "--dry-run"; then
         dryrun=true
+    elif test "$1" == "--dryrun"; then
+        merror "Did you mean to use '--dry-run'?"
     elif test "$1" == "--method"; then
         shift
         method=$1
@@ -1219,6 +1277,11 @@ elif [[ $action == "start" ]]; then
         sleep "$(div 4.0 "$speed")"
     fi
     online=$(is_online)
+    if [[ $online == "true" ]]; then
+        mok "Working internet connection"
+    else
+        mwarning "Internet connection may not work (ping failed)"
+    fi
     result
     exit $res
 elif [[ $action == "stop" ]]; then
@@ -1231,6 +1294,11 @@ elif [[ $action == "stop" ]]; then
         sleep "$(div 1.0 "$speed")"
     fi
     online=$(is_online)
+    if [[ $online == "true" ]]; then
+        mok "Working internet connection"
+    else
+        mwarning "Internet connection may not work (ping failed)"
+    fi
     result
     exit $res
 elif [[ $action == "restart" ]]; then
