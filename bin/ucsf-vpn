@@ -126,14 +126,15 @@ export PUBLIC_INFO=
 
 function pii_cleanup() {
     if [[ -f "$pii_file" ]]; then
+         mdebug "Removing file: $pii_file"
         rm "$pii_file"
     fi
 }
 
 function _exit() {
     value=${1:-0}
-    mdebug "Exiting with exit code $value"
     pii_cleanup
+    mdebug "Exiting with exit code $value"
     exit "$value"
 }
 

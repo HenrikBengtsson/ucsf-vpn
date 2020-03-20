@@ -3,6 +3,12 @@ ucsf-vpn
 
 ## Version 4.3.0-9000 (2020-03-19)
 
+### Significant changes
+
+ * `ucsf vpn start` and `ucsf vpn stop` is significantly faster because in
+   previous versions there was a bug (see below) causing it to query for
+   public IP information multiple times, which was slow.
+ 
 ### New Features
 
  * `ucsf vpn stop` makes sure to terminate the process that `ucsf vpn start`
@@ -14,7 +20,8 @@ ucsf-vpn
 
 ### Bug Fixes
 
- * `ucsf vpn` would query the public IP information multiple times.
+ * `ucsf vpn` failed to cache collected public IP information resulting in
+   it queried the same public IP information multiple times.
 
 
 ## Version 4.3.0 (2020-03-16)
