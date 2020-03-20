@@ -122,7 +122,6 @@ call="$0 $*"
 export PULSEPATH=${PULSEPATH:-/usr/local/pulse}
 export PATH="${PULSEPATH}:${PATH}"
 export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
-export PUBLIC_INFO=
 
 function pii_cleanup() {
     if [[ -f "$pii_file" ]]; then
@@ -165,6 +164,9 @@ function mwarn() {
     } 1>&2
 }
 function minfo() {
+    if ! $verbose; then
+        return
+    fi
     {
         tput setaf 4 2> /dev/null ## blue
         echo "INFO: $*"
@@ -175,16 +177,6 @@ function mok() {
     {
         tput setaf 2 2> /dev/null ## green
         echo "OK: $*"
-        tput sgr0 2> /dev/null    ## reset
-    } 1>&2
-}
-function vecho() {
-    if ! $verbose; then
-        return
-    fi
-    {
-        tput setaf 4 2> /dev/null ## blue
-        echo "$*"
         tput sgr0 2> /dev/null    ## reset
     } 1>&2
 }
@@ -215,18 +207,15 @@ function connection_details() {
         if [[ ! -f "$pii_file" ]]; then
             merror "Failed to get public IP (from https://ipinfo.io/ip)"
         fi
+        mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi
-    mdebug "Public connection information: $(cat "$pii_file")"
     cat "$pii_file"
+    echo
 }
 
 function public_ip() {
-    mdebug "public_ip($*)"
-    if [[ $1 == "" ]]; then
-        connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
-    else
-        echo "$1"
-    fi
+    mdebug "public_ip()"
+    connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
 }
 
 function public_hostname() {
@@ -248,7 +237,6 @@ function public_info() {
 }
 
 function is_online() {
-    mdebug "is_online()"
     if ping -c 1 -W 1 8.8.8.8 > /dev/null; then
         echo "true"
     else
@@ -257,7 +245,7 @@ function is_online() {
 }
 
 function is_connected() {
-    mdebug "is_connected($*)"
+    mdebug "is_connected()"
     ## NOTE: It appears that field 'hostname' is not always returned, e.g. when
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
@@ -271,31 +259,18 @@ function is_connected() {
 }
 
 function result() {
-    ip=$(public_ip)
-    connected=$(is_connected "$ip")
-    echo "RESULT: $(status "$connected" "$ip")"
+    connected=$(is_connected)
+    echo "RESULT: $(status)"
 }
 
 function status() {
-    mdebug "status($*)"
+    mdebug "status()"
     if [[ $online == "false" ]]; then
       merror "No internet connection"
     fi
-    connected=$1
-    ip=$2
-    if [[ $ip == "" ]]; then
-      vecho "- Retrieving public IP"
-      ip=$(public_ip "$1")
-      vecho "  => $ip"
-      mdebug "ip=$ip"
-    fi
-    if [[ "$connected" == "" ]]; then
-      vecho "- Testing if IP $ip is a registered UCSF IP number"
-      connected=$(is_connected "$ip")
-      vecho "  => $connected"
-      mdebug "ip=$ip"
-      mdebug "connected=$connected"
-    fi
+    mdebug "Testing if the public IP information is a known UCSF connection"
+    connected=$(is_connected)
+    mdebug "connected=$connected"
     if [[ "$connected" == "true" ]]; then
         echo "Connected to the UCSF network [$(public_info)]"
     else
@@ -545,16 +520,15 @@ function pulse_start_gui() {
 
 function pulse_open_gui() {
     if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
+      merror "$(status)"
     elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
+      connected=$(is_connected)
       if [[ "$connected" == "true" ]]; then
           if $skip; then
-              mecho "[SKIPPING]: $(status "$connected" "$ip")"
+              mecho "[SKIPPING]: $(status)"
               _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "$(status)"
           fi
       fi
     fi
@@ -612,17 +586,16 @@ function pulse_start() {
     fi
     
     if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
+      merror "$(status)"
     elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
+      connected=$(is_connected)
       
       if [[ "$connected" == "true" ]]; then
           if $skip; then
-              mecho "SKIPPING: $(status "$connected" "$ip")"
+              mecho "SKIPPING: $(status)"
               _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "$(status)"
           fi
       fi
     fi
@@ -795,19 +768,18 @@ function pulse_start() {
 
 function pulse_stop() {
     if [[ $online == "false" ]]; then
-      mecho "WARNING: $(status "$connected" "$ip")"
+      mecho "WARNING: $(status)"
     elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
+      connected=$(is_connected)
       if [[ "$connected" == "false" ]]; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
     
           if $skip; then
-              mecho "[SKIPPING] $(status "$connected" "$ip")"
+              mecho "[SKIPPING] $(status)"
               _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "$(status)"
           fi
       fi
       mdebug "Public IP (before): $ip"
@@ -890,7 +862,7 @@ function openconnect_pid() {
     
     mdebug "PID file exists: $pid_file"
     pid=$(cat "$pid_file")
-    mdebug "PID=$pid"
+    mdebug "PID recorded in file: $pid"
     
     ## Is the process still running?
     if ps -p "$pid" > /dev/null; then
@@ -914,17 +886,16 @@ function openconnect_start() {
     fi
     
     if [[ $online == "false" ]]; then
-      merror "$(status "$connected" "$ip")"
+      merror "$(status)"
     elif ! $force || $skip; then
-      ip=$(public_ip)
-      connected=$(is_connected "$ip")
+      connected=$(is_connected)
       
       if [[ "$connected" == "true" ]]; then
           if $skip; then
-              mecho "SKIPPING: $(status "$connected" "$ip")"
+              mecho "SKIPPING: $(status)"
               _exit 0
           else
-              merror "$(status "$connected" "$ip")"
+              merror "$(status)"
           fi
       fi
     fi
@@ -1344,7 +1315,7 @@ elif [[ $action == "restart" ]]; then
     result
     _exit $res
 elif [[ $action == "toggle" ]]; then
-    connected=$(is_connected "$ip")
+    connected=$(is_connected)
     mdebug "connected: $connected"
     if [[ "$connected" == "false" ]]; then
       if [[ $method == "openconnect" ]]; then
