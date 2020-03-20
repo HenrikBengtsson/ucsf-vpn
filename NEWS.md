@@ -9,7 +9,7 @@ ucsf-vpn
    previous versions there was a bug (see below) causing it to query for
    public IP information multiple times, which was slow.
 
- * Now supporting proper key-value pair CLI options, e.g. --user=alice.
+ * Now supporting proper key-value pair CLI options, e.g. `--user=alice`.
  
 ### New Features
 
