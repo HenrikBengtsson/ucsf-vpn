@@ -436,20 +436,8 @@ function pulsesvc_version() {
     fi
 }
 
-function is_pulsesvc_running() {
-    if ps -C pulsesvc > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
-}
-
 function is_pulseUi_running() {
-    if ps -C pulseUi > /dev/null; then
-        echo "true"
-    else
-        echo "false"
-    fi
+    ps -C pulseUi > /dev/null
 }
 
 function pulseUi_find_connection() {
@@ -492,7 +480,7 @@ function pulseUi_add_connection() {
 }
 
 function pulse_start_gui() {
-    if [[ $(is_pulseUi_running) == "true" ]]; then
+    if is_pulseUi_running; then
         mecho "SKIPPING: Pulse Secure GUI is already running"
         return
     fi
@@ -528,7 +516,7 @@ function pulse_open_gui() {
 }
 
 function pulse_close_gui() {
-    if [[ $(is_pulseUi_running) == "false" ]]; then return; fi
+    if ! is_pulseUi_running; then return; fi
 
     mdebug "Closing Pulse Secure GUI"
 
@@ -584,7 +572,7 @@ function pulse_start() {
     if $gui; then
         ## If Pulse Secure GUI is open, we need to close it
         ## before peeking at its connections config file.
-        if [[ $(is_pulseUi_running) == "true" ]]; then
+        if is_pulseUi_running; then
             close_gui
             sleep "$(div 0.5 "$speed")"
         fi
