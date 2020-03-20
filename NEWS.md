@@ -1,10 +1,21 @@
 ucsf-vpn
 ========
 
-## Version 4.3.0-9000 (2020-03-16)
+## Version 4.3.0-9000 (2020-03-19)
 
- * ...
- 
+### New Features
+
+ * `ucsf vpn stop` makes sure to terminate the process that `ucsf vpn start`
+   started, which works by having OpenConnect record the process ID to file.
+   Previously, `ucsf vpn stop` terminated _all_ `openconnect` process found.
+
+ * Success, warning, error, and debug messages are now outputted using
+   different colors if the terminal supports it.
+
+### Bug Fixes
+
+ * `ucsf vpn` would query the public IP information multiple times.
+
 
 ## Version 4.3.0 (2020-03-16)
 

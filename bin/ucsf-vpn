@@ -124,6 +124,19 @@ export PATH="${PULSEPATH}:${PATH}"
 export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 export PUBLIC_INFO=
 
+function pii_cleanup() {
+    if [[ -f "$pii_file" ]]; then
+        rm "$pii_file"
+    fi
+}
+
+function _exit() {
+    value=${1:-0}
+    mdebug "Exiting with exit code $value"
+    pii_cleanup
+    exit "$value"
+}
+
 function mecho() { echo "$@" 1>&2; }
 function mdebug() {
     if ! $debug; then
@@ -141,7 +154,7 @@ function merror() {
         echo "ERROR: $*"
         tput sgr0 2> /dev/null    ## reset
     } 1>&2
-    exit 1
+    _exit 1
 }
 function mwarn() {
     {
@@ -538,7 +551,7 @@ function pulse_open_gui() {
       if [[ "$connected" == "true" ]]; then
           if $skip; then
               mecho "[SKIPPING]: $(status "$connected" "$ip")"
-              exit 0
+              _exit 0
           else
               merror "$(status "$connected" "$ip")"
           fi
@@ -549,7 +562,7 @@ function pulse_open_gui() {
     mdebug "call: pulseUi"
     
     if $dryrun; then
-        exit 0
+        _exit 0
     fi
 
     ## Start the Pulse Secure GUI
@@ -606,7 +619,7 @@ function pulse_start() {
       if [[ "$connected" == "true" ]]; then
           if $skip; then
               mecho "SKIPPING: $(status "$connected" "$ip")"
-              exit 0
+              _exit 0
           else
               merror "$(status "$connected" "$ip")"
           fi
@@ -768,7 +781,7 @@ function pulse_start() {
           else
               echo "pulsesvc $opts -r \"${realm}\" &"
           fi
-          exit 0
+          _exit 0
       fi
       
       if [[ -n $pwd ]]; then
@@ -791,7 +804,7 @@ function pulse_stop() {
     
           if $skip; then
               mecho "[SKIPPING] $(status "$connected" "$ip")"
-              exit 0
+              _exit 0
           else
               merror "$(status "$connected" "$ip")"
           fi
@@ -846,7 +859,7 @@ function pulse_troubleshoot() {
     [[ -f "$logfile" ]] || merror "No log file: $logfile"
 
     mecho "[INFO] Log file: $logfile"
-    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; exit 0; }
+    grep -q -F Error "$logfile" &> /dev/null || { mecho "[OK] No errors found: $logfile"; _exit 0; }
 
     mecho "[ERROR] Detected the following errors in the log file:"
     grep -F Error "$logfile" | >&2 tail -3
@@ -908,7 +921,7 @@ function openconnect_start() {
       if [[ "$connected" == "true" ]]; then
           if $skip; then
               mecho "SKIPPING: $(status "$connected" "$ip")"
-              exit 0
+              _exit 0
           else
               merror "$(status "$connected" "$ip")"
           fi
@@ -979,7 +992,7 @@ function openconnect_start() {
     minfo "Connecting to VPN server '${server}'"
     
     if $dryrun; then
-        exit 0
+        _exit 0
     fi
 
     if [[ -n $pwd && -n $token ]]; then
@@ -991,7 +1004,6 @@ function openconnect_start() {
     fi
 
     ## Update IP-info file
-    rm -f "$pii_file"
     pii_file=$(make_pii_file)
     
     pid=$(openconnect_pid)
@@ -1017,7 +1029,6 @@ function openconnect_stop() {
     timeout $kill_timeout tail --pid="$pid" -f /dev/null
 
     ## Update IP-info file
-    rm -f "$pii_file"
     pii_file=$(make_pii_file)
     
     ## Assert that the process was terminated
@@ -1046,6 +1057,7 @@ xdg_config_path() {
 }
 
 make_pii_file() {
+    pii_cleanup
     mktemp --dry-run --tmpdir="$(xdg_config_path)" --suffix=-ipinfo.json
 }
 
@@ -1250,10 +1262,10 @@ mdebug "pii_file: $pii_file"
 
 if [[ $action == "version" ]]; then
     version
-    exit 0
+    _exit 0
 elif [[ $action == "help" ]]; then
     help 
-    exit 0
+    _exit 0
 fi
 
 ## Check internet connection
@@ -1262,24 +1274,24 @@ mdebug "online: $online"
 
 if [[ $action == "status" ]]; then
     status
-    exit $?
+    _exit $?
 elif [[ $action == "details" ]]; then
     connection_details
-    exit $?
+    _exit $?
 elif [[ $action == "open-gui" ]]; then
     if [[ $method != "pulse" ]]; then
         merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_open_gui
     res=$?
-    exit $res
+    _exit $res
 elif [[ $action == "close-gui" ]]; then
     if [[ $method != "pulse" ]]; then
         merror "ucsf vpn open-gui requires --method pulse: $method"
     fi
     pulse_close_gui
     res=$?
-    exit $res
+    _exit $res
 elif [[ $action == "start" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_start
@@ -1296,7 +1308,7 @@ elif [[ $action == "start" ]]; then
         mwarning "Internet connection may not work (ping failed)"
     fi
     result
-    exit $res
+    _exit $res
 elif [[ $action == "stop" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_stop
@@ -1313,7 +1325,7 @@ elif [[ $action == "stop" ]]; then
         mwarning "Internet connection may not work (ping failed)"
     fi
     result
-    exit $res
+    _exit $res
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_stop
@@ -1329,7 +1341,7 @@ elif [[ $action == "restart" ]]; then
     fi
     online=$(is_online)
     result
-    exit $res
+    _exit $res
 elif [[ $action == "toggle" ]]; then
     connected=$(is_connected "$ip")
     mdebug "connected: $connected"
@@ -1354,14 +1366,14 @@ elif [[ $action == "toggle" ]]; then
     fi
     online=$(is_online)
     result
-    exit $res
+    _exit $res
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then
         LOGFILE=/var/log/syslog
         mdebug "Displaying 'VPN' entries in log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
             mecho "[WARN] No such log file: $LOGFILE"
-            exit 1
+            _exit 1
         fi
         grep VPN "$LOGFILE"
     elif [[ $method == "pulse" ]]; then
@@ -1369,7 +1381,7 @@ elif [[ $action == "log" ]]; then
         mdebug "Displaying log file: $LOGFILE"
         if [[ ! -f $LOGFILE ]]; then
             mecho "[WARN] No such log file: $LOGFILE"
-            exit 1
+            _exit 1
         fi
         cat "$LOGFILE"
     fi
@@ -1380,3 +1392,7 @@ elif [[ $action == "troubleshoot" ]]; then
         pulse_troubleshoot
     fi
 fi
+
+
+_exit 0
+
