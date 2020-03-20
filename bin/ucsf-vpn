@@ -194,16 +194,16 @@ function help() {
 # -------------------------------------------------------------------------
 function connection_details() {
     mdebug "connection_details()"
-    if [[ -z ${PUBLIC_INFO} ]]; then
-      minfo "Getting public IP (from https://ipinfo.io/ip)"
-      PUBLIC_INFO=$(curl --silent https://ipinfo.io/json)
-      export PUBLIC_INFO
+    if [[ ! -f "$pii_file" ]]; then
+        minfo "Getting public IP (from https://ipinfo.io/ip)"
+        mdebug "Calling: curl --silent https://ipinfo.io/json > \"$pii_file\""
+        curl --silent https://ipinfo.io/json > "$pii_file"
+        if [[ ! -f "$pii_file" ]]; then
+            merror "Failed to get public IP (from https://ipinfo.io/ip)"
+        fi
     fi
-    mdebug "Public connection information: $PUBLIC_INFO"
-    if [[ -z ${PUBLIC_INFO} ]]; then
-        merror "Failed to infer public IP information"
-    fi
-    echo "$PUBLIC_INFO"
+    mdebug "Public connection information: $(cat "$pii_file")"
+    cat "$pii_file"
 }
 
 function public_ip() {
@@ -989,6 +989,10 @@ function openconnect_start() {
         # shellcheck disable=SC2086
         sudo openconnect $opts --authgroup="$realm"
     fi
+
+    ## Update IP-info file
+    rm -f "$pii_file"
+    pii_file=$(make_pii_file)
     
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
@@ -1011,6 +1015,10 @@ function openconnect_stop() {
      ## Wait for process to terminate
     kill_timeout=10
     timeout $kill_timeout tail --pid="$pid" -f /dev/null
+
+    ## Update IP-info file
+    rm -f "$pii_file"
+    pii_file=$(make_pii_file)
     
     ## Assert that the process was terminated
     if ps -p "$pid" > /dev/null; then
@@ -1037,8 +1045,12 @@ xdg_config_path() {
     echo "$path"
 }
 
-pid_file="$(xdg_config_path)/openconnect.pid"
+make_pii_file() {
+    mktemp --dry-run --tmpdir="$(xdg_config_path)" --suffix=-ipinfo.json
+}
 
+pid_file="$(xdg_config_path)/openconnect.pid"
+pii_file=$(make_pii_file)
 
 ## Actions
 action=help
@@ -1234,6 +1246,7 @@ mdebug "speed: $speed"
 mdebug "netrc machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "openconnect_pid: $(openconnect_pid)"
+mdebug "pii_file: $pii_file"
 
 if [[ $action == "version" ]]; then
     version
