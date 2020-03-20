@@ -15,8 +15,7 @@ Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
-RESULT: Connected to the UCSF network [ip=128.218.43.53, hostname='',
-org='AS5653 University of California San Francisco']
+OK: Successfully connected to the UCSF network [ip=128.218.43.191, hostname='', org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn status
 Connected to the UCSF network [ip=128.218.43.53, hostname='',
@@ -24,13 +23,15 @@ org='AS5653 University of California San Francisco']
 
 $ ucsf-vpn details
 {
-  "ip": "128.218.43.53",
+  "ip": "128.218.43.123",
   "city": "San Francisco",
   "region": "California",
   "country": "US",
-  "loc": "37.7631,-122.4590",
-  "postal": "94143",
-  "org": "AS5653 University of California San Francisco"
+  "loc": "37.7749,-122.4194",
+  "org": "AS5653 University of California San Francisco",
+  "postal": "94103",
+  "timezone": "America/Los_Angeles",
+  "readme": "https://ipinfo.io/missingauth"
 }
 ```
 
@@ -39,7 +40,7 @@ If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use t
 Alternatively to command-line options, the username and password can also be specified in file `~/.netrc` (or the file that environment variable `NETRC` specifies).  See `ucsf-vpn --help` for more details.  With a properly setup `~/.netrc` entry, you can connect to the UCSF VPN using:
 
 ```sh
-$ ucsf-vpn connect
+$ ucsf-vpn start
 [sudo] password for alice: NNNNNNN
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
@@ -52,14 +53,12 @@ after approving the push notification on your Duo Mobile app (the default is `--
 ## Disconnect
 ```sh
 $ ucsf-vpn stop
-RESULT: Killed local ('openconnect') VPN process
-RESULT: Not connected to the UCSF network [ip=157.131.204.163, hostname='example.org',
-org='AS12345 Example Organization']
+OK: Successfully disconnected from the UCSF network [ip=135.180.135.100, hostname='135-180-135-100.fiber.dynamic.sonic.net', org='AS46375 Sonic Telecom LLC']
 ```
 
 
 ## Usage
-```sh
+```
 Connect to and Disconnect from the UCSF VPN
 
 Usage:
@@ -72,9 +71,9 @@ Commands:
  toggle           Connect to or disconnect from UCSF VPN
 
  status           Display UCSF VPN connection status
- details          Display connection details
- log              Display the log file
- troubleshoot     Scan the log file for errors and more.
+ details          Display connection details in JSON format
+ log              Display log file
+ troubleshoot     Scan log file for errors (only for '--method pulse')
 
 Options:
  --method <mth>   Either 'openconnect' (default) or 'pulse'.

@@ -11,9 +11,9 @@
 ###  toggle           Connect to or disconnect from UCSF VPN
 ###
 ###  status           Display UCSF VPN connection status
-###  details          Display connection details
-###  log              Display the log file
-###  troubleshoot     Scan the log file for errors and more.
+###  details          Display connection details in JSON format
+###  log              Display log file
+###  troubleshoot     Scan log file for errors (only for '--method pulse')
 ###
 ### Options:
 ###  --method <mth>   Either 'openconnect' (default) or 'pulse'.
@@ -320,7 +320,7 @@ function prompt_user() {
     while [ -z "${user}" ]; do
 	{
             _tput setaf 11  ## bright yellow
-            printf "Enter UCSF VPN username: "
+            printf "Enter your UCSF Active Directory username: "
             _tput setaf 15  ## bright white
             read -r user
             _tput sgr0      ## reset
@@ -337,7 +337,7 @@ function prompt_pwd() {
     while [ -z "${pwd}" ]; do
 	{
             _tput setaf 11  ## bright yellow
-            printf "Enter UCSF VPN password: "
+            printf "Enter your UCSF Active Directory password: "
             _tput setaf 15  ## bright white
             read -r -s pwd
             _tput sgr0      ## reset
