@@ -1039,32 +1039,34 @@ token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
-    if [[ "$1" == "--help" ]]; then
-        action=help
-    elif [[ "$1" == "--version" ]]; then
-        action=version
-    elif [[ "$1" == "open-gui" ]]; then
-        action=open-gui
-    elif [[ "$1" == "close-gui" ]]; then
-        action=close-gui
-    elif [[ "$1" == "start" ]]; then
+    ## Commands:
+    if [[ "$1" == "start" ]]; then
         action=start
+    elif [[ "$1" == "stop" ]]; then
+        action=stop
+    elif [[ "$1" == "toggle" ]]; then
+        action=toggle
+        force=true
+    elif [[ "$1" == "restart" ]]; then
+        action=restart
+        force=true
     elif [[ "$1" == "status" ]]; then
         action=status
     elif [[ "$1" == "details" ]]; then
         action=details
-    elif [[ "$1" == "stop" ]]; then
-        action=stop
-    elif [[ "$1" == "restart" ]]; then
-        action=restart
-        force=true
-    elif [[ "$1" == "toggle" ]]; then
-        action=toggle
-        force=true
     elif [[ "$1" == "log" ]]; then
         action=log
     elif [[ "$1" == "troubleshoot" ]]; then
         action=troubleshoot
+    elif [[ "$1" == "open-gui" ]]; then
+        action=open-gui
+    elif [[ "$1" == "close-gui" ]]; then
+        action=close-gui
+    ## Options (flags):
+    elif [[ "$1" == "--help" ]]; then
+        action=help
+    elif [[ "$1" == "--version" ]]; then
+        action=version
     elif [[ "$1" == "--debug" ]]; then
         debug=true
     elif [[ "$1" == "--verbose" ]]; then
@@ -1077,6 +1079,15 @@ while [[ $# -gt 0 ]]; do
         dryrun=true
     elif [[ "$1" == "--dryrun" ]]; then
         merror "Did you mean to use '--dry-run'?"
+    elif [[ "$1" == "--notification" ]]; then
+        notification=true
+    elif [[ "$1" == "--no-notification" ]]; then
+        notification=false
+    elif [[ "$1" == "--colors" ]]; then
+        colors=true
+    elif [[ "$1" == "--no-colors" ]]; then
+        colors=false
+    ## Options (key=value):
     elif [[ "$1" == "--method" ]]; then
         shift
         method=$1
@@ -1102,20 +1113,13 @@ while [[ $# -gt 0 ]]; do
         gui=true
     elif [[ "$1" == "--no-gui" ]]; then
         gui=false
-    elif [[ "$1" == "--notification" ]]; then
-        notification=true
-    elif [[ "$1" == "--no-notification" ]]; then
-        notification=false
-    elif [[ "$1" == "--colors" ]]; then
-        colors=true
-    elif [[ "$1" == "--no-colors" ]]; then
-        colors=false
     elif [[ "$1" == "--speed" ]]; then
         shift
         speed=$1
         if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
             merror "Invalid --speed argument: $speed"
         fi
+    ## Additional options to be appended (rarely needed)
     else
         extras="$extras $1"
     fi
