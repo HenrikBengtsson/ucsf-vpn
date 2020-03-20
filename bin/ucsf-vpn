@@ -142,7 +142,7 @@ function _exit() {
 
 function _tput() {
     if $colors; then
-        tput $* 2> /dev/null
+        tput "$@" 2> /dev/null
     fi
 }
 
