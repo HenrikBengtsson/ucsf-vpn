@@ -10,6 +10,9 @@ ucsf-vpn
   public IP information (through a third-party service) to infer whether
   the machine is on the UCSF network or not.
 
+* The server used for testing the internet connection by pinging it, can
+  now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
+
 
 ## Version 5.0.0 (2020-03-20)
 

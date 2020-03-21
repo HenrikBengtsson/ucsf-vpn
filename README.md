@@ -138,10 +138,11 @@ Examples:
 
 
 Environment variables:
- UCSF_VPN_METHOD  Default value for --method
- UCSF_VPN_SERVER  Default value for --server
- UCSF_VPN_TOKEN   Default value for --token
- UCSF_VPN_THEME   Default value for --theme
+ UCSF_VPN_METHOD       Default value for --method
+ UCSF_VPN_SERVER       Default value for --server
+ UCSF_VPN_TOKEN        Default value for --token
+ UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
 
 Commands and Options for Pulse Security Client only (--method=pulse):
  open-gui         Open the Pulse Secure GUI
