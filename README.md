@@ -243,10 +243,14 @@ Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the P
 
 The `ucsf-vpn` software pings 8.8.8.8 (<https://dns.google/>; owned by
 Google Inc.) to check whether there is a working internet connection or not.
-It also queries the https://ipinfo.io/ service to infer whether a VPN
-connection is established or not, and to provide details on your public
-internet connection.
-The software _neither_ collects nor store your local or UCSF credentials.
+Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
+ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
+
+The `ucsf-vpn` software also queries the https://ipinfo.io/ service to infer
+whether a VPN connection is established or not, and to provide public IP
+information on your current internet connection.
+
+The software itself _neither_ collects nor store your local or UCSF credentials.
 
 
 [NEWS]: NEWS.md
