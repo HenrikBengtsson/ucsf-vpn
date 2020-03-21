@@ -11,6 +11,7 @@ README.md: README.md.tmpl bin/ucsf-vpn
 .PHONY: test
 
 check:
+	echo "ShellCheck $$(shellcheck --version | grep version:)"
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
 

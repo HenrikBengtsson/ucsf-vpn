@@ -1,16 +1,53 @@
 ucsf-vpn
 ========
 
+## Version 5.0.0 (2020-03-20)
+
+### Significant changes
+
+ * `ucsf vpn start` and `ucsf vpn stop` is significantly faster because in
+   previous versions there was a bug (see below) causing it to query for
+   public IP information multiple times, which was slow.
+
+ * Now supporting proper key-value pair CLI options, e.g. `--user=alice`.
+ 
+### New Features
+
+ * `ucsf vpn stop` makes sure to terminate the process that `ucsf vpn start`
+   started, which works by having OpenConnect record the process ID to file.
+   Previously, `ucsf vpn stop` terminated _all_ `openconnect` process found.
+
+ * Messages are now outputted in different colors if the terminal supports it.
+   Success message are outputted in green, warnings in yellow, errors in red,
+   and debug messages in gray.  Message from OpenConnect are outputted using
+   the default foreground color, which is typically white.  Similarly, prompts
+   are highlighted in bright yellow.  Disable with `--theme=none` or set
+   environment variable `UCSF_VPN_THEME=none`.
+
+ * Now `ucsf vpn` displays parts of the help and `ucsf vpn --help` the full.
+
+### Bug Fixes
+
+ * `ucsf vpn` failed to cache collected public IP information resulting in
+   it queried the same public IP information multiple times.
+
+### Deprecated
+
+ * Legacy, non-standard key-value pair CLI option without equal signs such
+   as `--user alice` are no deprecated. Use `--user=alice` instead.
+
+ * CLI option `--skip` has been dropped.  It is now the default behavior.
+ 
+
 ## Version 4.3.0 (2020-03-16)
 
-NEW FEATURES:
+### New Features
 
- * The VPN server can now be set via environment variable UCSF_VPN_SERVER as
-   an alternative to specifying option '--server', e.g.
-   UCSF_VPN_SERVER=remote-vpn01.ucsf.edu. 'ucsf vpn start' will output
+ * The VPN server can now be set via environment variable `UCSF_VPN_SERVER` as
+   an alternative to specifying option `--server`. `ucsf vpn start` will output
    'Connection to server <server> ...' to indicate which server is used.
 
- * If a custom VPN server is used, then the .netrc file is search for that
+ * If a custom VPN server is used, then the ~/.netrc file is search for that
    first with a fallback to 'remote.ucsf.edu'.  This avoids having to update
    the .netrc file when using an alternative UCSF VPN server.
 
@@ -18,24 +55,24 @@ NEW FEATURES:
 
 ## Version 4.2.0 (2019-10-15)
 
-NEW FEATURES:
+### New Features
 
  * Updated how the information on the current connection is reported by
-   for instance 'ucsf vpn status'.
+   for instance `ucsf vpn status`.
 
-BUG FIXES:
+### Bug Fixes
 
  * The reported IP could be garbled with a newline and 'https'.
  
 
 ## Version 4.1.0 (2019-05-15)
 
-NEW FEATURES:
+### New Features
 
  * Attempts to connect using `--token sms` will now give an informative error
    message explaining that is not supported by the OpenConnect interface.
 
-BUG FIXES:
+### Bug Fixes
 
  * `ucsf vpn --token <digits>` only supported six-digit tokens; now seven-digit
    tokens are also supported.
@@ -43,14 +80,14 @@ BUG FIXES:
 
 ## Version 4.0.0 (2018-07-31)
 
-SIGNIFICANT CHANGES:
+### Significant Changes
 
  * The default VPN method is now OpenConnect (`--method openconnect`).  The
    previous method, Pulse Secure Client, is available by using `--method pulse`.
 
  * The default is now `--token push` (was `--token prompt`).
    
-NEW FEATURES:
+### New Features
 
  * Added support to connect to the UCSF VPN using OpenConnect (>= 7.08),
    which is available on recent Linux distributions such as Ubuntu 18.04.
@@ -64,11 +101,11 @@ NEW FEATURES:
    or the Pulse Secure Client (`pulse`).  The default, which is `openconnect`,
    can be controlled via environment variable `UCSF_VPN_METHOD`.
 
-BUG FIXES:
+### Bug Fixes
 
  * Option `--token` did not have a default value.
 
-DEPRECATED & DEFUNCT:
+### Deprecated & Defunct
 
  * Option `--token true` is deprecated; use `--token prompt` instead.
 
@@ -77,7 +114,7 @@ DEPRECATED & DEFUNCT:
 
 ## Version 3.2.1 (2018-01-04)
 
-NEW FEATURES:
+### New Features
 
  * Now `ucsf vpn start --gui` gives more information about the steps
    taken and how to force or skip a UCSF notification popup, if such
@@ -89,7 +126,7 @@ NEW FEATURES:
 
 ## Version 3.2.0 (2017-12-14)
 
-NEW FEATURES:
+### New Features
 
  * Now `ucsf vpn start --gui` looks in the Pulse Secure GUI config file
    to identify which of several connections is for the target VPN URL.
@@ -120,7 +157,7 @@ SOFTWARE QUALITY:
 
 ## Version 3.1.0 (2017-12-09)
 
-NEW FEATURES:
+### New Features
 
  * Added support for `--token push` and `--token phone`, which will
    authenticate via the Duo app (approve and confirm), and phone call
@@ -133,7 +170,7 @@ NEW FEATURES:
  * Now `ucsf-vpn start --gui` waits for the popup windows to close before
    verifying that the VPN connection is working.
 
-BUG FIXES:
+### Bug Fixes
 
  * `ucsf-vpn start --gui` would not works if Pulse Secure GUI was already
    open but minimized.
@@ -143,7 +180,7 @@ BUG FIXES:
 
 ## Version 3.0.0 (2017-12-09)
 
-SIGNIFICANT CHANGES:
+### Significant Changes
 
  * Two-factor authentication (2FA) is now supported by sending user credentials
    and 2FA tokens via the Pulse Secure GUI by utilizing xdotool (automated
@@ -153,7 +190,7 @@ SIGNIFICANT CHANGES:
 
  * `ucsf-vpn start-gui` was renamed to `ucsf-vpn open-gui`.
 
-NEW FEATURES:
+### New Features
 
  * Now `ucsf-vpn start` (with default `--gui`) connects to the UCSF VPN
    via the Pulse Secure GUI (by sending mouse and key sequences).
@@ -174,23 +211,23 @@ NEW FEATURES:
 
  * Now `ucsf-vpn troubleshoot` also reports on `pulsesvc --version`.
 
- * Use environment variable PULSEPATH to override the default location
+ * Use environment variable `PULSEPATH` to override the default location
    (/usr/local/pulse/) of the Pulse Secure software and libraries.
 
-DEPRECATED & DEFUNCT:
+### Deprecated & Defunct
 
  * Credentials in ~/.ucsfvpnrc are defunct. Use ~/.netrc instead.
 
  
 ## Version 2.3.0 (2017-12-08)
 
-NEW FEATURES:
+### New Features
 
  * Added `ucsf-vpn log`, which output the log file.
  
  * Added `ucsf-vpn troubleshoot`, which reports on errors in the log file.
 
-BUG FIXES:
+### Bug Fixes
 
  * Authentication credentials in ~/.netrc were not found on systems where
    where awk does not support POSIX regular expressions.
@@ -198,7 +235,7 @@ BUG FIXES:
 
 ## Version 2.2.0 (2017-11-10)
 
-NEW FEATURES:
+### New Features
 
  * If username and/or password are not specified or not identifiable from
    the ~/.netrc file, then the user will be prompted to enter them.
@@ -206,29 +243,29 @@ NEW FEATURES:
 
 ## Version 2.1.0 (2017-11-04)
 
-SIGNIFICANT CHANGES:
+### Significant Changes
 
  * Add support for credentials in ~/.netrc.
 
-DEPRECATED & DEFUNCT:
+### Deprecated & Defunct
 
  * Credentials in ~/.ucsfvpnrc are deprecated. Use ~/.netrc instead.
 
 
 ## Version 2.0.0 (2017-11-03)
 
-SIGNIFICANT CHANGES:
+### Significant Changes
 
  * Now supporting the new Junos Secure Pulse client.
 
-DEPRECATED & DEFUNCT:
+### Deprecated & Defunct
 
  * Support for OpenConnect is defunct due to UCSF VPN server changes.
  
 
 ## Version 1.3.0 (2017-02-16)
 
-NEW FEATURES:
+### New Features
 
  * Add option `--server <server>` to override the default VPN specify.
 
@@ -237,14 +274,14 @@ NEW FEATURES:
 
 ## Version 1.2.0 (2016-10-14)
 
-NEW FEATURES:
+### New Features
 
  * Add `ucsf-vpn toggle` for quick toggling of the UCSF VPN connect.
 
 
 ## Version 1.1.0 (2016-09-25)
 
-NEW FEATURES:
+### New Features
 
  * Now `ucsf-vpn` checks for working internet connection and
    adjust accordingly.  For instance, `ucsf-vpn restart` will not
