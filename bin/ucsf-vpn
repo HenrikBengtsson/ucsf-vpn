@@ -1029,6 +1029,7 @@ theme=${UCSF_VPN_THEME:-cli}
 force=false
 debug=false
 verbose=false
+quick=false
 dryrun=false
 realm=
 extras=
@@ -1077,6 +1078,8 @@ while [[ $# -gt 0 ]]; do
         debug=true
     elif [[ "$1" == "--verbose" ]]; then
         verbose=true
+    elif [[ "$1" == "--quick" ]]; then
+        quick=true
     elif [[ "$1" == "--force" ]]; then
         force=true 
     elif [[ "$1" == "--dry-run" ]]; then
@@ -1241,6 +1244,7 @@ else
 fi
 mdebug "verbose: $verbose"
 mdebug "force: $force"
+mdebug "quick: $quick"
 mdebug "dryrun: $dryrun"
 mdebug "extras: $extras"
 mdebug "method: $method"
@@ -1257,14 +1261,23 @@ if [[ $action == "version" ]]; then
 fi    
 
 if [[ $action == "status" ]]; then
-    is_connected
-    res=$?
-    if [[ $res -eq 0 ]]; then
-        echo "Connected to the UCSF network [$(public_info)]"
+    if $quick; then
+        if [[ -f "$pid_file" ]]; then
+            echo "Connected to the UCSF network (OpenConnect process running)"
+            _exit 0
+	else
+            echo "Not connected to the UCSF network (OpenConnect process not running)"
+            _exit 1
+	fi
     else
-        echo "Not connected to the UCSF network [$(public_info)]"
-    fi
-    _exit $res
+        if is_connected; then
+            echo "Connected to the UCSF network [$(public_info)]"
+            _exit 0
+        else
+            echo "Not connected to the UCSF network [$(public_info)]"
+            _exit 1
+        fi
+    fi	
 elif [[ $action == "details" ]]; then
     connection_details
     _exit $?
