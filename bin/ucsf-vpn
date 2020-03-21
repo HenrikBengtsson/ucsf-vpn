@@ -1265,8 +1265,9 @@ fi
 
 if [[ $action == "status" ]]; then
     if $quick; then
-        if [[ -f "$pid_file" ]]; then
-            echo "Connected to the UCSF network (OpenConnect process running)"
+	pid=$(openconnect_pid)
+        if [[ $pid != "-1" ]]; then
+            echo "Connected to the UCSF network (OpenConnect process $pid running)"
             _exit 0
 	else
             echo "Not connected to the UCSF network (OpenConnect process not running)"
