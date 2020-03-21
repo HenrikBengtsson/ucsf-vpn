@@ -6,7 +6,7 @@ ucsf-vpn
 ### New Features
 
 * Add `ucsf vpn status --quick`, which reports whether there is an active
-  OpenConnect process or not.  In constrast, `ucsf vpn status` queries the
+  OpenConnect process or not.  In contrast, `ucsf vpn status` queries the
   public IP information (through a third-party service) to infer whether
   the machine is on the UCSF network or not.
 

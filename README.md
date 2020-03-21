@@ -250,7 +250,8 @@ The `ucsf-vpn` software also queries the https://ipinfo.io/ service to infer
 whether a VPN connection is established or not, and to provide public IP
 information on your current internet connection.
 
-The software itself _neither_ collects nor store your local or UCSF credentials.
+The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
+credentials.
 
 
 [NEWS]: NEWS.md
