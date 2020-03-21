@@ -1153,6 +1153,14 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+
+## --help should always be available prior to any validation errors
+if [[ $action == "help" ]]; then
+    help 
+    _exit 0
+fi
+
+
 ## Use default URL?
 [[ -z "$url" ]] && url=https://${server}/pulse
 
@@ -1253,10 +1261,7 @@ mdebug "pii_file: $pii_file"
 if [[ $action == "version" ]]; then
     version
     _exit 0
-elif [[ $action == "help" ]]; then
-    help 
-    _exit 0
-fi
+fi    
 
 if [[ $action == "status" ]]; then
     is_connected
