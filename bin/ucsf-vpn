@@ -22,29 +22,29 @@
 ###                    - 'phone' (receive phone call and "press any key"),
 ###                    - 'sms' (receive code via text message),
 ###                    -  6 or 7 digit Duo token (from Duo app), or
-###                    -  44-letter YubiKey token ("press YubiKey").
+###                    -  44-letter YubiKey token ("press YubiKey")
 ###  --user=<user>    UCSF Active Directory ID (username)
 ###  --pwd=<pwd>      UCSF Active Directory ID password
 ###
 ###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
-###  --method=<mth>   Either 'openconnect' (default) or 'pulse'.
+###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+###
+###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###
 ### Flags:
 ###  --verbose        Verbose output
 ###  --skip           If already fulfilled, skip command with error
 ###  --force          Force command
-###  --colors,        Enable (default) and disable colored output
-###  --no-colors      
 ###  --help           This help
 ###  --version        Display version
 ###
 ### Environment variables:
-###  UCSF_VPN_METHOD  The default --method=<value> ('openconnect').
-###  UCSF_VPN_SERVER  The default --server=<value> ('remote.ucsf.edu').
-###  UCSF_VPN_TOKEN   The default --token=<value> ('push').
-###  UCSF_VPN_COLORS  --colors (true, default) or --no-colors (false)
+###  UCSF_VPN_METHOD  The default --method=<value> ('openconnect')
+###  UCSF_VPN_SERVER  The default --server=<value> ('remote.ucsf.edu')
+###  UCSF_VPN_TOKEN   The default --token=<value> ('push')
+###  UCSF_VPN_THEME   The default --theme=<value> ('cli')
 ###
 ### Commands and Options for Pulse Security Client only (--method=pulse):
 ###  open-gui         Open the Pulse Secure GUI
@@ -140,9 +140,10 @@ function _exit() {
 }
 
 function _tput() {
-    if $colors; then
-        tput "$@" 2> /dev/null
+    if [[ $theme == "none" ]]; then
+	return
     fi
+    tput "$@" 2> /dev/null
 }
 
 function mecho() { echo "$@" 1>&2; }
@@ -1032,7 +1033,7 @@ method=${UCSF_VPN_METHOD:-openconnect}
 ## Options
 server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
-colors=${UCSF_VPN_COLORS:-true}
+theme=${UCSF_VPN_THEME:-cli}
 force=false
 skip=false
 debug=false
@@ -1097,10 +1098,6 @@ while [[ $# -gt 0 ]]; do
         notification=true
     elif [[ "$1" == "--no-notification" ]]; then
         notification=false
-    elif [[ "$1" == "--colors" ]]; then
-        colors=true
-    elif [[ "$1" == "--no-colors" ]]; then
-        colors=false
     elif [[ "$1" == "--gui" ]]; then
         gui=true
     elif [[ "$1" == "--no-gui" ]]; then
@@ -1123,6 +1120,8 @@ while [[ $# -gt 0 ]]; do
         token=${1//--[[:alpha:]]*=}
     elif [[ "$1" =~ ^--speed=.*$ ]]; then
         speed=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--theme=.*$ ]]; then
+        theme=${1//--[[:alpha:]]*=}
 	
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" =~ ^--[[:alpha:]]+$ ]]; then
@@ -1198,6 +1197,11 @@ elif [[ ${token} == "false" ]]; then
     mdebug "Will not use 2FA authenatication"
 elif [[ $(is_token_valid "$token") == "false" ]]; then
     merror "The token (--token) must be 6 or 7 digits (Duo) or 44 letters (YubiKey)"
+fi
+
+## Validate 'theme'
+if [[ ! $theme =~ ^(cli|none)$ ]]; then
+    merror "Unknown --theme value: '$theme'"
 fi
 
 ## Validate 'speed'

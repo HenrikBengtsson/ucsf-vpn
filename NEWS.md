@@ -21,8 +21,8 @@ ucsf-vpn
    Success message are outputted in green, warnings in yellow, errors in red,
    and debug messages in gray.  Message from OpenConnect are outputted using
    the default foreground color, which is typically white.  Similarly, prompts
-   are highlighted in bright yellow.  Disable with `--no-colors` or set
-   environment variable `UCSF_VPN_COLORS=false`.
+   are highlighted in bright yellow.  Disable with `--theme=none` or set
+   environment variable `UCSF_VPN_THEME=none`.
 
 ### Bug Fixes
 

@@ -112,29 +112,29 @@ Options:
                    - 'phone' (receive phone call and "press any key"),
                    - 'sms' (receive code via text message),
                    -  6 or 7 digit Duo token (from Duo app), or
-                   -  44-letter YubiKey token ("press YubiKey").
+                   -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
 
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
- --method=<mth>   Either 'openconnect' (default) or 'pulse'.
+ --method=<mth>   Either 'openconnect' (default) or 'pulse'
+
+ --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
  --verbose        Verbose output
  --skip           If already fulfilled, skip command with error
  --force          Force command
- --colors,        Enable (default) and disable colored output
- --no-colors      
  --help           This help
  --version        Display version
 
 Environment variables:
- UCSF_VPN_METHOD  The default --method=<value> ('openconnect').
- UCSF_VPN_SERVER  The default --server=<value> ('remote.ucsf.edu').
- UCSF_VPN_TOKEN   The default --token=<value> ('push').
- UCSF_VPN_COLORS  --colors (true, default) or --no-colors (false)
+ UCSF_VPN_METHOD  The default --method=<value> ('openconnect')
+ UCSF_VPN_SERVER  The default --server=<value> ('remote.ucsf.edu')
+ UCSF_VPN_TOKEN   The default --token=<value> ('push')
+ UCSF_VPN_THEME   The default --theme=<value> ('cli')
 
 Commands and Options for Pulse Security Client only (--method=pulse):
  open-gui         Open the Pulse Secure GUI
