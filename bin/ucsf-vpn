@@ -37,8 +37,17 @@
 ###  --verbose        Verbose output
 ###  --skip           If already fulfilled, skip command with error
 ###  --force          Force command
-###  --help           This help
+###  --help           Full help
 ###  --version        Display version
+###
+### Examples:
+###  ucsf-vpn start --user=alice --token=push
+###  ucsf-vpn stop
+###
+###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
+###  ucsf-vpn start
+###
+### ---
 ###
 ### Environment variables:
 ###  UCSF_VPN_METHOD  The default --method=<value> ('openconnect')
@@ -55,13 +64,6 @@
 ###  --speed=<factor> Control speed of --gui interactions (default is 1.0)
 ###
 ### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
-###
-### Examples:
-###  ucsf-vpn start
-###  ucsf-vpn start --user=alice --token=push
-###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
-###  ucsf-vpn start --token=phone
-###  ucsf-vpn stop
 ###
 ### User credentials:
 ### If user credentials (--user and --pwd) are neither specified nor given
@@ -202,8 +204,15 @@ function version() {
 }
 
 function help() {
+    what=$1
+    
     local res=
     res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+
+    if [[ $what != "full" ]]; then
+	res=$(echo "$res" | sed '/^---/Q')
+    fi
+    
     if [[ ${UCSF_TOOLS} == "true" ]]; then
         res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
@@ -1025,7 +1034,7 @@ pid_file="$(xdg_config_path)/openconnect.pid"
 pii_file=$(make_pii_file)
 
 ## Actions
-action=help
+action=
 
 ## VPN method: 'openconnect' or 'pulse' (default)
 method=${UCSF_VPN_METHOD:-openconnect}
@@ -1155,8 +1164,11 @@ done
 
 
 ## --help should always be available prior to any validation errors
-if [[ $action == "help" ]]; then
-    help 
+if [[ -z $action ]]; then
+    help
+    _exit 0
+elif [[ $action == "help" ]]; then
+    help full
     _exit 0
 fi
 

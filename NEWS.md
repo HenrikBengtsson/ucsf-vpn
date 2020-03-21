@@ -24,6 +24,8 @@ ucsf-vpn
    are highlighted in bright yellow.  Disable with `--theme=none` or set
    environment variable `UCSF_VPN_THEME=none`.
 
+ * Now `ucsf vpn` displays parts of the help and `ucsf vpn --help` the full.
+
 ### Bug Fixes
 
  * `ucsf vpn` failed to cache collected public IP information resulting in
