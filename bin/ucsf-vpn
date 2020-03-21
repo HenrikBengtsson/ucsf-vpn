@@ -35,7 +35,6 @@
 ###
 ### Flags:
 ###  --verbose        Verbose output
-###  --skip           If already fulfilled, skip command with error
 ###  --force          Force command
 ###  --help           Full help
 ###  --version        Display version
@@ -527,14 +526,10 @@ function pulse_start_gui() {
 }
 
 function pulse_open_gui() {
-    if ! $force || $skip; then
+    if ! $force; then
       if is_connected; then
-          if $skip; then
-              mwarn "Already connected to the UCSF network [$(public_info)]"
-              _exit 0
-          else
-              merror "Already connected to the UCSF network [$(public_info)]"
-          fi
+          mwarn "Already connected to the UCSF network [$(public_info)]"
+          _exit 0
       fi
     fi
 
@@ -590,14 +585,10 @@ function pulse_start() {
         fi
     fi
     
-    if ! $force || $skip; then
+    if ! $force; then
       if is_connected; then
-          if $skip; then
-              mwarn "Already connected to the UCSF network [$(public_info)]"
-              _exit 0
-          else
-              merror "Already connected to the UCSF network [$(public_info)]"
-          fi
+          mwarn "Already connected to the UCSF network [$(public_info)]"
+          _exit 0
       fi
     fi
 
@@ -768,17 +759,13 @@ function pulse_start() {
 }
 
 function pulse_stop() {
-    if ! $force || $skip; then
+    if ! $force; then
       if is_connected; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
     
-          if $skip; then
-              mwarn "Already connected to the UCSF network [$(public_info)]"
-              _exit 0
-          else
-              merror "Already connected to the UCSF network [$(public_info)]"
-          fi
+          mwarn "Already connected to the UCSF network [$(public_info)]"
+          _exit 0
       fi
       mdebug "Public IP (before): $ip"
     fi
@@ -882,14 +869,10 @@ function openconnect_start() {
         fi
     fi
     
-    if ! $force || $skip; then
+    if ! $force; then
       if is_connected; then
-          if $skip; then
-              mwarn "Already connected to the UCSF VPN"
-              return
-          else
-              merror "Already connected to the UCSF network [$(public_info)]"
-          fi
+          mwarn "Already connected to the UCSF VPN"
+          return
       fi
     fi
 
@@ -981,10 +964,8 @@ function openconnect_start() {
 function openconnect_stop() {
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
-	if $skip; then
-            mwarn "Could not detect a UCSF VPN OpenConnect process. Skipping."
-	    return
-	fi
+        mwarn "Could not detect a UCSF VPN OpenConnect process. Skipping."
+        return
         merror "Failed to located a UCSF VPN OpenConnect process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
@@ -1044,7 +1025,6 @@ server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
 theme=${UCSF_VPN_THEME:-cli}
 force=false
-skip=false
 debug=false
 verbose=false
 dryrun=false
@@ -1097,8 +1077,6 @@ while [[ $# -gt 0 ]]; do
         verbose=true
     elif [[ "$1" == "--force" ]]; then
         force=true 
-    elif [[ "$1" == "--skip" ]]; then
-        skip=true
     elif [[ "$1" == "--dry-run" ]]; then
         dryrun=true
     elif [[ "$1" == "--dryrun" ]]; then
@@ -1133,8 +1111,10 @@ while [[ $# -gt 0 ]]; do
         theme=${1//--[[:alpha:]]*=}
 	
     ## DEPRECATED: Options (--key value):
+    elif [[ "$1" == "--skip" ]]; then
+	mdeprecated "Command-line option $1 is deprecated and ignored."
     elif [[ "$1" =~ ^--[[:alpha:]]+$ ]]; then
-	mdeprecated "The command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
+	mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
 	key=$1
         shift
         if [[ "$key" == "--method" ]]; then
@@ -1259,7 +1239,6 @@ else
 fi
 mdebug "verbose: $verbose"
 mdebug "force: $force"
-mdebug "skip: $skip"
 mdebug "dryrun: $dryrun"
 mdebug "extras: $extras"
 mdebug "method: $method"
