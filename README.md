@@ -205,7 +205,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.0.0
+Version: 5.0.0-9000
 Copyright: Henrik Bengtsson (2016-2020)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -240,10 +240,12 @@ Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the P
 
 ## Privacy
 
-The `ucsf-vpn` software uses the https://ipinfo.io/ service to infer whether
-a VPN connection is established or not, and to provide you with details on
-your public internet connection.  The software does _not_ collect or attempt
-to collect any of your UCSF credentials.
+The `ucsf-vpn` software pings 8.8.8.8 (<https://dns.google/>; owned by
+Google Inc.) to check whether there is a working internet connection or not.
+It also queries the https://ipinfo.io/ service to infer whether a VPN
+connection is established or not, and to provide details on your public
+internet connection.
+The software _neither_ collects nor store your local or UCSF credentials.
 
 
 [NEWS]: NEWS.md
