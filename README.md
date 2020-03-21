@@ -124,10 +124,10 @@ Options:
  --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
- --verbose        Verbose output
- --force          Force command
- --help           Full help
+ --verbose        More verbose output
+ --help           Display full help
  --version        Display version
+ --force          Force command
 
 Examples:
  ucsf-vpn start --user=alice --token=push
@@ -138,10 +138,10 @@ Examples:
 
 
 Environment variables:
- UCSF_VPN_METHOD  The default --method=<value> ('openconnect')
- UCSF_VPN_SERVER  The default --server=<value> ('remote.ucsf.edu')
- UCSF_VPN_TOKEN   The default --token=<value> ('push')
- UCSF_VPN_THEME   The default --theme=<value> ('cli')
+ UCSF_VPN_METHOD  Default value for --method
+ UCSF_VPN_SERVER  Default value for --server
+ UCSF_VPN_TOKEN   Default value for --token
+ UCSF_VPN_THEME   Default value for --theme
 
 Commands and Options for Pulse Security Client only (--method=pulse):
  open-gui         Open the Pulse Secure GUI
@@ -205,7 +205,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 4.3.0-9000
+Version: 5.0.0
 Copyright: Henrik Bengtsson (2016-2020)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

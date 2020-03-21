@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 4.3.0-9000 (2020-03-20)
+## Version 5.0.0 (2020-03-20)
 
 ### Significant changes
 
@@ -36,7 +36,7 @@ ucsf-vpn
  * Legacy, non-standard key-value pair CLI option without equal signs such
    as `--user alice` are no deprecated. Use `--user=alice` instead.
 
- * CLI option --skip has been dropped.  It is now the default behavior.
+ * CLI option `--skip` has been dropped.  It is now the default behavior.
  
 
 ## Version 4.3.0 (2020-03-16)
