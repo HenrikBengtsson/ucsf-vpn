@@ -125,10 +125,17 @@ Options:
 
 Flags:
  --verbose        Verbose output
- --skip           If already fulfilled, skip command with error
  --force          Force command
- --help           This help
+ --help           Full help
  --version        Display version
+
+Examples:
+ ucsf-vpn start --user=alice --token=push
+ ucsf-vpn stop
+
+ UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
+ ucsf-vpn start
+
 
 Environment variables:
  UCSF_VPN_METHOD  The default --method=<value> ('openconnect')
@@ -145,13 +152,6 @@ Commands and Options for Pulse Security Client only (--method=pulse):
  --speed=<factor> Control speed of --gui interactions (default is 1.0)
 
 Any other options are passed to Pulse Secure CLI as is (only --no-gui).
-
-Examples:
- ucsf-vpn start
- ucsf-vpn start --user=alice --token=push
- UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
- ucsf-vpn start --token=phone
- ucsf-vpn stop
 
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given

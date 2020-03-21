@@ -208,7 +208,9 @@ function help() {
     local res=
     res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
-    if [[ $what != "full" ]]; then
+    if [[ $what == "full" ]]; then
+	res=$(echo "$res" | sed '/^---/d')
+    else
 	res=$(echo "$res" | sed '/^---/Q')
     fi
     
