@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 5.0.0-9000 (2020-03-21)
+## Version 5.0.0-9000 (2020-03-23)
 
 ### New Features
 
@@ -12,6 +12,8 @@ ucsf-vpn
 
 * The server used for testing the internet connection by pinging it, can
   now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
+
+* The prompt asking for type of token now echoes type of token requested.
 
 
 ## Version 5.0.0 (2020-03-20)

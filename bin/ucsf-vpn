@@ -373,7 +373,7 @@ function prompt_pwd() {
     fi
 }
 
-function is_token_valid() {
+function type_of_token() {
     token=$1
 
     ## Hardcoded methods
@@ -383,37 +383,37 @@ function is_token_valid() {
         ## different registered.  Also 'phone1' and 'phone3' gives
         ## an error.
         mdebug "Will authenticate via a phone call from Duo"
-        echo true
+        echo "Duo phone call"
         return
     elif [[ ${token} == "push" ]]; then
         mdebug "Will authenticate via Duo Push (approve and confirm in Duo app)"
-        echo true
+        echo "Duo push"
         return
     elif [[ ${token} =~ ^(sms|text)[1-9]*$ ]]; then
         mdebug "Will send token via SMS"
-        echo true
+        echo "Duo SMS token"
         return
     elif [[ ${token} == "false" ]]; then
         mdebug "Will not use token (in the form)"
-        echo true
+        echo "none"
         return
     fi
     
     ## YubiKey token (44 lower-case letters)
     if [[ ${#token} -eq 44 ]] && [[ ${token} =~ ^[a-z]+$ ]]; then
         mdebug "YubiKey token detected"
-        echo true
+        echo "YubiKey token"
         return
     fi
     
     ## Duo 6 or 7-digit token
     if [[ ${#token} -eq 6 || ${#token} -eq 7 ]] && [[ ${token} =~ ^[0-9]+$ ]]; then
         mdebug "Duo token detected"
-        echo true
+        echo "Duo time-based token"
         return
     fi
 
-    echo "false"
+    echo "unknown"
 }
 
 function prompt_token() {
@@ -422,6 +422,7 @@ function prompt_token() {
     if [[ -n "${token}" ]]; then return; fi
   
     mdebug "PROMPT: Asking user to enter one-time token:"
+    type="unknown token"
     while [ -z "${token}" ]; do
 	{
             _tput setaf 11  ## bright yellow
@@ -431,7 +432,8 @@ function prompt_token() {
             _tput sgr0      ## reset
 	} 1>&2
         token=${token/ /}
-        if [[ $(is_token_valid "$token") == "false" ]]; then
+	type=$(type_of_token "$token")
+        if [[ $type == "unknown token" ]]; then
 	    {
                 _tput setaf 1 ## red
                 printf "\\nERROR: Not a valid token ('phone', 'sms', Duo: 6 or 7 digits or 'push', YubiKey: 44 letters)\\n"
@@ -440,7 +442,7 @@ function prompt_token() {
             token=
         fi
     done
-    mecho "<valid token>"
+    mecho "<$type>"
 
     if [[ -z "${token}" ]]; then
         mdebug "- token=<missing>"
