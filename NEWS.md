@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 5.0.0-9000 (2020-03-23)
+## Version 5.0.0-9000 (2020-03-24)
 
 ### New Features
 
@@ -17,6 +17,8 @@ ucsf-vpn
    `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
    by specifying option `--validate=pid`, or by setting environment variable
    `UCSF_VPN_VALIDATE=pid`.
+
+ * Sudo rights are now established upfront with an informative message.
 
 ### Bug Fixes
 

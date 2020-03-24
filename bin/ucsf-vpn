@@ -225,6 +225,46 @@ function help() {
 
 
 # -------------------------------------------------------------------------
+# Sudo tools
+# -------------------------------------------------------------------------
+function assert_sudo() {
+    local cmd
+
+    cmd=$1
+    
+    if sudo -v -n 2> /dev/null; then
+        mdebug "'sudo' is already active"
+	minfo "Administrative (\"sudo\") rights already establish"
+	return
+    fi
+    mdebug "'sudo' is not active"
+
+    if [[ -n $cmd ]]; then
+        if [[ ${UCSF_TOOLS} == "true" ]]; then
+	    cmd=" ('ucsf vpn $cmd')"
+	else
+	    cmd=" ('ucsf-vpn $cmd')"
+	fi
+    fi
+    
+    {
+        mwarn "This action$cmd requires administrative (\"sudo\") rights."
+        _tput setaf 11  ## bright yellow
+	sudo -v -p "Enter the password for your account ('$USER') on your local computer ('$HOSTNAME'): "
+#        _tput setaf 15  ## bright white
+        _tput sgr0      ## reset
+    } 1>&2
+
+    ## Assert success
+    if ! sudo -v -n 2> /dev/null; then
+        merror "Failed to establish 'sudo' access. Please check your password. It might also be that you do not have administrative rights on this machine."
+    fi
+
+    minfo "Administrative (\"sudo\") rights establish"
+}    
+
+
+# -------------------------------------------------------------------------
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
 function connection_details() {
@@ -994,6 +1034,8 @@ function openconnect_start() {
     fi
 
     minfo "Preparing to connect to VPN server '$server'"
+
+    assert_sudo "start"
     
     ## Load user credentials from file?
     source_netrc
@@ -1097,9 +1139,11 @@ function openconnect_stop() {
         return
         merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
-
+    
     minfo "Disconnecting from VPN server"
 
+    assert_sudo "stop"
+    
     mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
     sudo kill -s INT "$pid" 2> /dev/null
     
