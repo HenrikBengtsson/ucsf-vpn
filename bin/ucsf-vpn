@@ -1052,7 +1052,7 @@ theme=${UCSF_VPN_THEME:-cli}
 force=false
 debug=false
 verbose=false
-quick=false
+validate=false
 dryrun=false
 realm=
 extras=${UCSF_VPN_EXTRAS}
@@ -1101,8 +1101,8 @@ while [[ $# -gt 0 ]]; do
         debug=true
     elif [[ "$1" == "--verbose" ]]; then
         verbose=true
-    elif [[ "$1" == "--quick" ]]; then
-        quick=true
+    elif [[ "$1" == "--validate" ]]; then
+        validate=true
     elif [[ "$1" == "--force" ]]; then
         force=true 
     elif [[ "$1" == "--dry-run" ]]; then
@@ -1267,7 +1267,7 @@ else
 fi
 mdebug "verbose: $verbose"
 mdebug "force: $force"
-mdebug "quick: $quick"
+mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
 mdebug "extras: $extras"
 mdebug "method: $method"
@@ -1284,7 +1284,7 @@ if [[ $action == "version" ]]; then
 fi    
 
 if [[ $action == "status" ]]; then
-    if $quick; then
+    if ! $validate; then
 	pid=$(openconnect_pid)
         if [[ $pid != "-1" ]]; then
             echo "Connected to the UCSF network (OpenConnect process $pid running)"
