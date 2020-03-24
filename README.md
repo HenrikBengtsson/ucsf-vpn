@@ -45,7 +45,7 @@ To disconnect from the UCSF VPN, call:
 ```sh
 $ ucsf-vpn stop
 OK: OpenConnect status: No 'openconnect' process running
-OK: Public IP information: ip=135.180.135.100, hostname=135-180-135-100.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
+OK: Public IP information: ip=123.145.254.42, hostname=123.145.254.42.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
 OK: Not connected to the VPN
 ```
 
