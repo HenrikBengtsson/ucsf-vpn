@@ -931,18 +931,24 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
+    mdebug "openconnect_start() ..."
+    
     pid=$(openconnect_pid)
     if [[ "$pid" != "-1" ]]; then
         if [[ ! $force ]]; then
             merror "A UCSF VPN process ('openconnect' PID $pid) is already running."
         fi
     fi
+
+    if ! is_online; then
+        merror "Internet connection is not working"
+    fi
     
     if ! $force; then
-      if is_connected; then
-          mwarn "Already connected to the UCSF VPN"
-          return
-      fi
+	if [[ $validate == "full" ]] && is_connected; then
+           mwarn "Already connected to the UCSF VPN"
+           return
+        fi
     fi
 
     ## Load user credentials from file?
@@ -1042,6 +1048,8 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
+    mdebug "openconnect_stop() ..."
+    
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
         mwarn "Could not detect a UCSF VPN OpenConnect process. Skipping."
