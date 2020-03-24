@@ -143,6 +143,7 @@ Environment variables:
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+ UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
 Commands and Options for Pulse Security Client only (--method=pulse):
  open-gui         Open the Pulse Secure GUI

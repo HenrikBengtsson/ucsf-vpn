@@ -15,6 +15,10 @@ ucsf-vpn
  
  * The prompt asking for type of token now echoes type of token requested.
 
+ * If OpenConnect requires additional options, then these can be specified
+   also via environment variable `UCSF_VPN_EXTRAS`.
+
+
 ### Bug Fixes
 
  * It was not possible to pass additional options of kind `--key value` to
