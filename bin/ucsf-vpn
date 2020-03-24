@@ -268,9 +268,9 @@ function public_info() {
 }
 
 function is_online() {
-    server=${UCSF_VPN_PING_SERVER:-8.8.8.8}
-    minfo "Pinging '$server' once"
-    ping -c 1 -W 1 "$server" > /dev/null
+    ping_server=${UCSF_VPN_PING_SERVER:-8.8.8.8}
+    minfo "Pinging '$ping_server' once"
+    ping -c 1 -W 1 "$ping_server" > /dev/null
 }
 
 function is_connected() {
@@ -679,7 +679,7 @@ function pulse_start() {
         conidx=$(pulseUi_find_connection)        
         [[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the VPN: $url"
     fi
-    
+
     ## Load user credentials from file?
     source_netrc
 
@@ -944,10 +944,6 @@ function openconnect_start() {
         fi
     fi
 
-    if ! is_online; then
-        merror "Internet connection is not working"
-    fi
-    
     if ! $force; then
 	if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != "-1" ]]; then
            mwarn "Skipping - already connected to the VPN"
@@ -957,12 +953,18 @@ function openconnect_start() {
            return
         fi
     fi
-
+    
     ## Assert that OpenConnect is not already running
     if [[ -f "$pid_file" ]]; then
         merror "Hmm, this might be a bug. Do you already have an active VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
     fi
-        
+
+    if ! is_online; then
+        merror "Internet connection is not working"
+    fi
+
+    minfo "Preparing to connect to VPN server '$server'"
+    
     ## Load user credentials from file?
     source_netrc
 
