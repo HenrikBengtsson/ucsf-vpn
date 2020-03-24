@@ -95,12 +95,12 @@ Usage:
  ucsf-vpn <command> [flags] [options]
 
 Commands:
- start            Connect to UCSF VPN
- stop             Disconnect from UCSF VPN
- restart          Disconnect and reconnect to UCSF VPN
- toggle           Connect to or disconnect from UCSF VPN
+ start            Connect to VPN
+ stop             Disconnect from VPN
+ restart          Disconnect and reconnect to VPN
+ toggle           Connect to or disconnect from VPN
 
- status           Display UCSF VPN connection status
+ status           Display VPN connection status
  details          Display connection details in JSON format
  log              Display log file
  troubleshoot     Scan log file for errors (only for '--method=pulse')
@@ -122,7 +122,7 @@ Options:
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
 
  --theme=<theme>  Either 'cli' (default) or 'none'
- --validate=<how> Either 'full' (default) or 'pid'.
+ --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
 
 Flags:
  --verbose        More verbose output
@@ -143,6 +143,7 @@ Environment variables:
  UCSF_VPN_SERVER       Default value for --server
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_VALIDATE     Default value for --validate
  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
@@ -182,7 +183,7 @@ Requirements:
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
-automatically add a valid UCSF VPN connection to the Pulse Secure GUI
+automatically add a valid VPN connection to the Pulse Secure GUI
 with the following details:
  - Name: UCSF
  - URL: https://remote.ucsf.edu/pulse

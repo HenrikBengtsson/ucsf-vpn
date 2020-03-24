@@ -32,7 +32,7 @@
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
 ###
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --validate=<how> Either 'ipinfo' (default) or 'pid'.
+###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -54,6 +54,7 @@
 ###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_TOKEN        Default value for --token
 ###  UCSF_VPN_THEME        Default value for --theme
+###  UCSF_VPN_VALIDATE     Default value for --validate
 ###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 ###

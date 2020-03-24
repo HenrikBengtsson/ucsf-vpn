@@ -1,5 +1,7 @@
 SHELL:=/bin/bash
 
+all: README.md check spelling
+
 README.md: README.md.tmpl bin/ucsf-vpn
 	@bfr=`cat $<`; \
 	help=`bin/ucsf-vpn --help`; \
