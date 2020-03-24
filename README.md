@@ -250,7 +250,10 @@ ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
 
 The `ucsf-vpn` software also queries the https://ipinfo.io/ service to infer
 whether a VPN connection is established or not, and to provide public IP
-information on your current internet connection.
+information on your current internet connection.  To disable this check, use
+`--validate=pid`, or environment variable `UCSF_VPN_VALIDATE=pid`, which
+uses the PID file of OpenConnect to decide whether a VPN connection is
+established or not.  This only works for `--method=openconnect`.
 
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.
