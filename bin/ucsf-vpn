@@ -290,7 +290,7 @@ function status() {
     minfo "validate='$validate'"
 
     connected=false
-    mcmd=echo
+    mcmd="echo"
 
     if [[ $validate == *pid* ]]; then
         pid=$(openconnect_pid)
@@ -298,37 +298,37 @@ function status() {
 	    connected=true
             msg="No \'openconnect\' process running"
             if [[ $assert == "connected" ]]; then
-		mcmd=merror
+		mcmd="merror"
             elif [[ $assert == "disconnected" ]]; then
-		mcmd=mok
+		mcmd="mok"
 	    fi
         else
 	    connected=false
             msg="\'openconnect\' process running \(PID=$pid\)"
             if [[ $assert == "connected" ]]; then
-		mcmd=mok
+		mcmd="mok"
             elif [[ $assert == "disconnected" ]]; then
-		mcmd=merror
+		mcmd="merror"
 	    fi
         fi	
         eval "$mcmd" "OpenConnect status: $msg"
     fi
 
     if [[ $validate == *ipinfo* ]]; then
-        mcmd=echo
+        mcmd="echo"
         if is_connected; then
 	    connected=true
 	    if [[ $assert == "disconnected" ]]; then
-		mcmd=merror
+		mcmd="merror"
 	    elif [[ $assert == "connected" ]]; then
-		mcmd=mok
+		mcmd="mok"
             fi	
         else
 	    connected=false
 	    if [[ $assert == "disconnected" ]]; then
-		mcmd=mok
+		mcmd="mok"
 	    elif [[ $assert == "connected" ]]; then
-		mcmd=merror
+		mcmd="merror"
 	    fi
         fi
         eval "$mcmd" "Public IP information: $(public_info)"
