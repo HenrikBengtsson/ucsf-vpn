@@ -32,7 +32,7 @@
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
 ###
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --validate=<how> Either 'full' (default) or 'none'.
+###  --validate=<how> Either 'full' (default) or 'pid'.
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -1296,7 +1296,7 @@ if [[ ! $theme =~ ^(cli|none)$ ]]; then
 fi
 
 ## Validate 'validate'
-if [[ ! $validate =~ ^(full|none)$ ]]; then
+if [[ ! $validate =~ ^(full|pid)$ ]]; then
     merror "Unknown --validate value: '$validate'"
 fi
 

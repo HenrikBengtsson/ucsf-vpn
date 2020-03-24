@@ -5,11 +5,6 @@ ucsf-vpn
 
 ### New Features
 
- * Add `ucsf vpn status --quick`, which reports whether there is an active
-   OpenConnect process or not.  In contrast, `ucsf vpn status` queries the
-   public IP information (through a third-party service) to infer whether
-   the machine is on the UCSF network or not.
- 
  * The server used for testing the internet connection by pinging it, can
    now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
  
@@ -20,7 +15,7 @@ ucsf-vpn
 
  * The validation toward the third-party https://ipinfo.io/ service done by
    `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
-   by specifying option `--validate=none`, or by setting environment variable
+   by specifying option `--validate=pid`, or by setting environment variable
    `UCSF_VPN_VALIDATE=none`.
 
 ### Bug Fixes
