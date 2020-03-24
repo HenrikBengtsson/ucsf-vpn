@@ -16,7 +16,7 @@ ucsf-vpn
  * The validation toward the third-party https://ipinfo.io/ service done by
    `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
    by specifying option `--validate=pid`, or by setting environment variable
-   `UCSF_VPN_VALIDATE=none`.
+   `UCSF_VPN_VALIDATE=pid`.
 
 ### Bug Fixes
 
