@@ -135,6 +135,8 @@ function pii_cleanup() {
 }
 
 function _exit() {
+    local value
+    
     value=${1:-0}
     pii_cleanup
     mdebug "Exiting with exit code $value"
@@ -204,9 +206,9 @@ function version() {
 }
 
 function help() {
-    what=$1
+    local what res
     
-    local res=
+    what=$1
     res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
     if [[ $what == "full" ]]; then
@@ -260,6 +262,8 @@ function public_org() {
 }
 
 function public_info() {
+    local ip hostname org
+    
     mdebug "public_info()"
     ip=$(public_ip)
     hostname=$(public_hostname)
@@ -268,6 +272,8 @@ function public_info() {
 }
 
 function is_online() {
+    local ping_server
+    
     ping_server=${UCSF_VPN_PING_SERVER:-8.8.8.8}
     minfo "Pinging '$ping_server' once"
     ping -c 1 -W 1 "$ping_server" > /dev/null
@@ -283,6 +289,8 @@ function is_connected() {
 
 
 function status() {
+    local assert connected mcmd pid msg
+    
     assert=$1
     mdebug "assert='$assert'"
     minfo "validate='$validate'"
@@ -346,7 +354,9 @@ function status() {
 # Credentials, e.g. .netrc, prompting for password etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local rcfile=${NETRC:-~/.netrc}
+    local rcfile pattern found bfr
+    
+    rcfile=${NETRC:-~/.netrc}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
         mdebug "No .netrc file: $rcfile"
@@ -357,8 +367,7 @@ function source_netrc() {
     chmod go-rwx "${rcfile}"
 
     mdebug "- search: ${netrc_machines[*]}"
-    local pattern
-    local found=false
+    found=false
     for machine in "${netrc_machines[@]}"; do
         pattern="^[ \\t]*machine[ \\t]+${machine}([ \\t]+|$)"
         mdebug "- search pattern: ${pattern}"
@@ -434,6 +443,8 @@ function prompt_pwd() {
 }
 
 function type_of_token() {
+    local token
+    
     token=$1
 
     ## Hardcoded methods
@@ -483,6 +494,8 @@ function type_of_token() {
 }
 
 function prompt_token() {
+    local type
+    
     token=$1
     if [[ ${token} == "prompt" || ${token} == "true" ]]; then token=; fi
     if [[ -n "${token}" ]]; then return; fi
@@ -531,6 +544,8 @@ function div() {
 }
 
 function pulsesvc_version() {
+    local res
+    
     res=$(pulsesvc --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
@@ -545,8 +560,10 @@ function is_pulseUi_running() {
 }
 
 function pulseUi_find_connection() {
-    local config_home="$HOME/.pulse_secure/pulse"
-    local confile="$config_home/.pulse_Connections.txt"
+    local config_home confile idx ii con  # IFS too?
+    
+    config_home="$HOME/.pulse_secure/pulse"
+    confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || pulseUi_add_connection
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mdebug "Pulse connections file: $confile"
@@ -557,7 +574,7 @@ function pulseUi_find_connection() {
     mdebug "Number of connections: ${#cons[@]}"
     mdebug "Searching for VPN URL: $url"
     
-    local idx=-1
+    idx=-1
     for ii in "${!cons[@]}"; do
         con="${cons[$ii]/^ */}"
         mdebug "- connection $ii: $con"
@@ -573,8 +590,10 @@ function pulseUi_find_connection() {
 }
 
 function pulseUi_add_connection() {
-    local config_home="$HOME/.pulse_secure/pulse"
-    local confile="$config_home/.pulse_Connections.txt"
+    local config_home confile name con
+    
+    config_home="$HOME/.pulse_secure/pulse"
+    confile="$config_home/.pulse_Connections.txt"
     name="UCSF"
     mdebug "Pulse connections file: $confile"
     con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
@@ -631,6 +650,8 @@ function pulse_close_gui() {
 }
 
 function wait_for_pulse_window_to_close() {
+    local wid wids
+    
     wid=$1
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
     while true; do
@@ -642,6 +663,8 @@ function wait_for_pulse_window_to_close() {
 }
 
 function pulse_start() {
+    local conidx step wid wid2 wid3 cmd opts extra
+    
     ## Validate request    
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
         if ! $gui; then
@@ -666,7 +689,7 @@ function pulse_start() {
     fi
 
     ## Check for valid connection in Pulse Secure GUI
-    local conidx=-1
+    conidx=-1
     if $gui; then
         ## If Pulse Secure GUI is open, we need to close it
         ## before peeking at its connections config file.
@@ -694,7 +717,7 @@ function pulse_start() {
     fi
 
     if $gui; then
-        local step=1
+        step=1
         
         ## Check for 'xdotool'        
         command -v xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
@@ -746,7 +769,7 @@ function pulse_start() {
         xdotool windowactivate --sync "$wid2" type "$user"
         xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
         ## Single- or Dual-Factor Pulse Clients?
-        local extra=
+        extra=
         [[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
         cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab $extra Tab Return"
         mdebug " - $cmd"
@@ -853,6 +876,8 @@ function pulse_stop() {
 
 
 function pulse_troubleshoot() {
+    local config_home confile match ii con prefix logfile ## IFS too?
+    
     minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
@@ -900,6 +925,8 @@ function pulse_troubleshoot() {
 # OpenConnect
 # -------------------------------------------------------------------------
 function openconnect_version() {
+    local res
+    
     res=$(openconnect --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
@@ -910,6 +937,8 @@ function openconnect_version() {
 }
 
 function openconnect_pid() {
+    local pid
+    
     ## Is there a PID file?
     if [[ ! -f "$pid_file" ]]; then
         mdebug "PID file does not exists: $pid_file"
@@ -935,6 +964,8 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
+    local pid opts two_pwds pid
+    
     mdebug "openconnect_start() ..."
     
     pid=$(openconnect_pid)
@@ -1057,6 +1088,8 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
+    local pid kill_timeout
+    
     mdebug "openconnect_stop() ..."
     
     pid=$(openconnect_pid)
@@ -1094,7 +1127,8 @@ function openconnect_stop() {
 }
 
 xdg_config_path() {
-    local path 
+    local path
+    
     ## https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     path=${XDG_CONFIG_HOME:-$HOME/.config}/ucsf-vpn
     if [ ! -d "$path" ]; then
@@ -1107,6 +1141,7 @@ make_pii_file() {
     pii_cleanup
     mktemp --dry-run --tmpdir="$(xdg_config_path)" --suffix=-ipinfo.json
 }
+
 
 pid_file="$(xdg_config_path)/openconnect.pid"
 pii_file=$(make_pii_file)
