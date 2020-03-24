@@ -293,7 +293,7 @@ function status() {
     if [[ $validate == *pid* ]]; then
         pid=$(openconnect_pid)
         if [[ $pid == "-1" ]]; then
-	    connected=true
+	    connected=false
             msg="No \'openconnect\' process running"
             if [[ $assert == "connected" ]]; then
 		mcmd="merror"
@@ -301,7 +301,7 @@ function status() {
 		mcmd="mok"
 	    fi
         else
-	    connected=false
+	    connected=true
             msg="\'openconnect\' process running \(PID=$pid\)"
             if [[ $assert == "connected" ]]; then
 		mcmd="mok"
