@@ -3,7 +3,7 @@
 For recent updates, see [NEWS].
 
 
-# UCSF VPN client (Linux)
+# A UCSF VPN Client for Linux
 
 The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
@@ -13,13 +13,16 @@ To connect to the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn start --user=alice --token=prompt
+WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
-Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <valid token>
-[sudo] password for alice: NNNNNNN
+Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
-OK: Successfully connected to the UCSF network [ip=128.218.43.191, hostname='', org='AS5653 University of California San Francisco']
+OK: OpenConnect status: 'openconnect' process running (PID=16409)
+OK: Public IP information: ip=128.218.42.191, hostname=, org=AS5653 University of California San Francisco
+OK: Connected to the VPN
 ```
 
 If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy].
@@ -28,7 +31,8 @@ Alternatively to command-line options, the username and password can also be spe
 
 ```sh
 $ ucsf-vpn start
-[sudo] password for alice: NNNNNNN
+WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
@@ -42,7 +46,9 @@ To disconnect from the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn stop
-OK: Successfully disconnected from the UCSF network [ip=135.180.135.100, hostname='135-180-135-100.fiber.dynamic.sonic.net', org='AS46375 Sonic Telecom LLC']
+OK: OpenConnect status: No 'openconnect' process running
+OK: Public IP information: ip=123.145.254.42, hostname=123.145.254.42.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
+OK: Not connected to the VPN
 ```
 
 
@@ -52,8 +58,9 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-Connected to the UCSF network [ip=128.218.43.53, hostname='',
-org='AS5653 University of California San Francisco']
+OpenConnect status: 'openconnect' process running (PID=17419)
+Public IP information: ip=128.218.43.58, hostname=, org=AS5653 University of California San Francisco
+Connected to the VPN
 ```
 
 To get full details of your current internet connection in JSON format, call:
@@ -95,12 +102,11 @@ Usage:
  ucsf-vpn <command> [flags] [options]
 
 Commands:
- start            Connect to UCSF VPN
- stop             Disconnect from UCSF VPN
- restart          Disconnect and reconnect to UCSF VPN
- toggle           Connect to or disconnect from UCSF VPN
-
- status           Display UCSF VPN connection status
+ start            Connect to VPN
+ stop             Disconnect from VPN
+ restart          Disconnect and reconnect to VPN
+ toggle           Connect to or disconnect from VPN
+ status           Display VPN connection status
  details          Display connection details in JSON format
  log              Display log file
  troubleshoot     Scan log file for errors (only for '--method=pulse')
@@ -111,7 +117,7 @@ Options:
                    - 'push' ("approve and confirm" in Duo app; default),
                    - 'phone' (receive phone call and "press any key"),
                    - 'sms' (receive code via text message),
-                   -  6 or 7 digit Duo token (from Duo app), or
+                   -  6 or 7 digit token (from Duo app), or
                    -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
@@ -120,7 +126,7 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
-
+ --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
  --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
@@ -132,16 +138,18 @@ Flags:
 Examples:
  ucsf-vpn start --user=alice --token=push
  ucsf-vpn stop
-
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
 
 
 Environment variables:
- UCSF_VPN_METHOD  Default value for --method
- UCSF_VPN_SERVER  Default value for --server
- UCSF_VPN_TOKEN   Default value for --token
- UCSF_VPN_THEME   Default value for --theme
+ UCSF_VPN_METHOD       Default value for --method
+ UCSF_VPN_SERVER       Default value for --server
+ UCSF_VPN_TOKEN        Default value for --token
+ UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_VALIDATE     Default value for --validate
+ UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+ UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
 Commands and Options for Pulse Security Client only (--method=pulse):
  open-gui         Open the Pulse Secure GUI
@@ -179,7 +187,7 @@ Requirements:
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
-automatically add a valid UCSF VPN connection to the Pulse Secure GUI
+automatically add a valid VPN connection to the Pulse Secure GUI
 with the following details:
  - Name: UCSF
  - URL: https://remote.ucsf.edu/pulse
@@ -205,7 +213,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.0.0
+Version: 5.1.0
 Copyright: Henrik Bengtsson (2016-2020)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -240,10 +248,20 @@ Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the P
 
 ## Privacy
 
-The `ucsf-vpn` software uses the https://ipinfo.io/ service to infer whether
-a VPN connection is established or not, and to provide you with details on
-your public internet connection.  The software does _not_ collect or attempt
-to collect any of your UCSF credentials.
+The `ucsf-vpn` software pings 8.8.8.8 (<https://dns.google/>; owned by
+Google Inc.) to check whether there is a working internet connection or not.
+Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
+ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
+
+The `ucsf-vpn` software also queries the https://ipinfo.io/ service to infer
+whether a VPN connection is established or not, and to provide public IP
+information on your current internet connection.  To disable this check, use
+`--validate=pid`, or environment variable `UCSF_VPN_VALIDATE=pid`, which
+uses the PID file of OpenConnect to decide whether a VPN connection is
+established or not.  This only works for `--method=openconnect`.
+
+The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
+credentials.
 
 
 [NEWS]: NEWS.md

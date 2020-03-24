@@ -1,6 +1,32 @@
 ucsf-vpn
 ========
 
+## Version 5.1.0 (2020-03-24)
+
+### New Features
+
+ * The server used for testing the internet connection by pinging it, can
+   now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
+ 
+ * The prompt asking for type of token now echoes type of token requested.
+
+ * If OpenConnect requires additional options, then these can be specified
+   also via environment variable `UCSF_VPN_EXTRAS`.
+
+ * The validation toward the third-party https://ipinfo.io/ service done by
+   `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
+   by specifying option `--validate=pid`, or by setting environment variable
+   `UCSF_VPN_VALIDATE=pid`.
+
+ * Sudo rights are now established upfront with an informative message.
+
+### Bug Fixes
+
+ * It was not possible to pass additional options of kind `--key value` to
+   the `openconnect` client; they were dropped with an incorrect warning on
+   using `--key=value` instead.
+ 
+
 ## Version 5.0.0 (2020-03-20)
 
 ### Significant changes
