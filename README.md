@@ -122,6 +122,7 @@ Options:
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
 
  --theme=<theme>  Either 'cli' (default) or 'none'
+ --validate=<how> Either 'full' (default) or 'pid'.
 
 Flags:
  --verbose        More verbose output
