@@ -13,9 +13,10 @@ To connect to the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn start --user=alice --token=prompt
+WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-[sudo] password for alice: NNNNNNN
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
@@ -30,7 +31,8 @@ Alternatively to command-line options, the username and password can also be spe
 
 ```sh
 $ ucsf-vpn start
-[sudo] password for alice: NNNNNNN
+WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
