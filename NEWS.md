@@ -5,16 +5,22 @@ ucsf-vpn
 
 ### New Features
 
-* Add `ucsf vpn status --quick`, which reports whether there is an active
-  OpenConnect process or not.  In contrast, `ucsf vpn status` queries the
-  public IP information (through a third-party service) to infer whether
-  the machine is on the UCSF network or not.
+ * Add `ucsf vpn status --quick`, which reports whether there is an active
+   OpenConnect process or not.  In contrast, `ucsf vpn status` queries the
+   public IP information (through a third-party service) to infer whether
+   the machine is on the UCSF network or not.
+ 
+ * The server used for testing the internet connection by pinging it, can
+   now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
+ 
+ * The prompt asking for type of token now echoes type of token requested.
 
-* The server used for testing the internet connection by pinging it, can
-  now be controlled by environment variable `UCSF_VPN_PING_SERVER`.
+### Bug Fixes
 
-* The prompt asking for type of token now echoes type of token requested.
-
+ * It was not possible to pass additional options of kind `--key value` to
+   the `openconnect` client; they were dropped with an incorrect warning on
+   using `--key=value` instead.
+ 
 
 ## Version 5.0.0 (2020-03-20)
 

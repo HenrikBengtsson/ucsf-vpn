@@ -957,8 +957,19 @@ function openconnect_start() {
     fi
 
     if [[ -n $pwd && -n $token ]]; then
+        case "${UCSF_VPN_TWO_PWDS:-password-token}" in
+            "password-token")
+                two_pwds="$pwd\n$token\n"
+                ;;
+            "token-password")
+                two_pwds="$token\n$pwd\n"
+                ;;
+            *)
+                merror "Unknown value of USCF_VPN_TWO_PWDS: '$UCSF_VPN_TWO_PWDS'"
+		;;
+        esac
         # shellcheck disable=SC2086
-        sudo printf "$pwd\n$token\n" | sudo openconnect $opts --authgroup="$realm"
+        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm"
     else
         # shellcheck disable=SC2086
         sudo openconnect $opts --authgroup="$realm"
@@ -1129,7 +1140,7 @@ while [[ $# -gt 0 ]]; do
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" == "--skip" ]]; then
 	mdeprecated "Command-line option $1 is deprecated and ignored."
-    elif [[ "$1" =~ ^--[[:alpha:]]+$ ]]; then
+    elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
 	mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
 	key=$1
         shift

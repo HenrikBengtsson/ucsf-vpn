@@ -111,7 +111,7 @@ Options:
                    - 'push' ("approve and confirm" in Duo app; default),
                    - 'phone' (receive phone call and "press any key"),
                    - 'sms' (receive code via text message),
-                   -  6 or 7 digit Duo token (from Duo app), or
+                   -  6 or 7 digit token (from Duo app), or
                    -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
