@@ -14,12 +14,14 @@ To connect to the UCSF VPN, call:
 ```sh
 $ ucsf-vpn start --user=alice --token=prompt
 Enter your UCSF Active Directory password: <password>
-Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <valid token>
+Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
 [sudo] password for alice: NNNNNNN
 WARNING: Juniper Network Connect support is experimental.
 It will probably be superseded by Junos Pulse support.
 password#2:
-OK: Successfully connected to the UCSF network [ip=128.218.43.191, hostname='', org='AS5653 University of California San Francisco']
+OK: OpenConnect status: 'openconnect' process running (PID=16409)
+OK: Public IP information: ip=128.218.42.191, hostname=, org=AS5653 University of California San Francisco
+OK: Connected to the VPN
 ```
 
 If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy].
@@ -42,7 +44,9 @@ To disconnect from the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn stop
-OK: Successfully disconnected from the UCSF network [ip=135.180.135.100, hostname='135-180-135-100.fiber.dynamic.sonic.net', org='AS46375 Sonic Telecom LLC']
+OK: OpenConnect status: No 'openconnect' process running
+OK: Public IP information: ip=135.180.135.100, hostname=135-180-135-100.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
+OK: Not connected to the VPN
 ```
 
 
@@ -52,8 +56,9 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-Connected to the UCSF network [ip=128.218.43.53, hostname='',
-org='AS5653 University of California San Francisco']
+OpenConnect status: 'openconnect' process running (PID=17419)
+Public IP information: ip=128.218.43.58, hostname=, org=AS5653 University of California San Francisco
+Connected to the VPN
 ```
 
 To get full details of your current internet connection in JSON format, call:
@@ -99,7 +104,6 @@ Commands:
  stop             Disconnect from VPN
  restart          Disconnect and reconnect to VPN
  toggle           Connect to or disconnect from VPN
-
  status           Display VPN connection status
  details          Display connection details in JSON format
  log              Display log file
@@ -120,9 +124,8 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
-
- --theme=<theme>  Either 'cli' (default) or 'none'
  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
+ --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
  --verbose        More verbose output
@@ -133,7 +136,6 @@ Flags:
 Examples:
  ucsf-vpn start --user=alice --token=push
  ucsf-vpn stop
-
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
 

@@ -9,7 +9,6 @@
 ###  stop             Disconnect from VPN
 ###  restart          Disconnect and reconnect to VPN
 ###  toggle           Connect to or disconnect from VPN
-###
 ###  status           Display VPN connection status
 ###  details          Display connection details in JSON format
 ###  log              Display log file
@@ -30,9 +29,8 @@
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
-###
-###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
+###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -43,7 +41,6 @@
 ### Examples:
 ###  ucsf-vpn start --user=alice --token=push
 ###  ucsf-vpn stop
-###
 ###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
 ###  ucsf-vpn start
 ###
