@@ -32,6 +32,7 @@
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
 ###
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
+###  --validate=<how> Either 'full' (default) or 'none'.
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -280,6 +281,60 @@ function is_connected() {
     ## calling it multiple times in a row some calls done report that field.
     ## Because of this, we test the status on the field 'org' instead.
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
+}
+
+
+function status() {
+    assert=$1
+    mdebug "assert='$assert'"
+
+    if [[ $validate == "full" ]]; then
+        if is_connected; then
+	    if [[ $assert == "disconnected" ]]; then
+		merror "Failed to disconnect from the UCSF network [$(public_info)]"
+	    elif [[ $assert == "connected" ]]; then
+                mok "Successfully connected to the UCSF network [$(public_info)]"
+		_exit 0
+            fi	
+            echo "Connected to the UCSF network [$(public_info)]"
+            _exit 0
+        else
+	    if [[ $assert == "disconnected" ]]; then
+                mok "Successfully disconnected from the UCSF network [$(public_info)]"
+		_exit 0
+	    elif [[ $assert == "connected" ]]; then
+		merror "Failed to connect to the UCSF network [$(public_info)]"
+	    fi
+            echo "Not connected to the UCSF network [$(public_info)]"
+            _exit 1
+        fi
+     else
+         if [[ $method != "openconnect" ]]; then
+             mwarn "Cannot check VPN connection status without --validate=full when using --method=$method"
+ 	     _exit 0
+         fi
+    
+         pid=$(openconnect_pid)
+         if [[ $pid != "-1" ]]; then
+ 	    if [[ $assert == "disconnected" ]]; then
+ 		merror "Failed to disconnect from the UCSF network (OpenConnect process $pid still running)"
+ 	    elif [[ $assert == "connected" ]]; then
+                 mok "Successfully connected to the UCSF network (OpenConnect process $pid running)"
+ 		_exit 0
+             fi	
+             echo "Connected to the UCSF network (OpenConnect process $pid running)"
+             _exit 0
+ 	else
+ 	    if [[ $assert == "disconnected" ]]; then
+                 mok "Successfully disconnected from the UCSF network (OpenConnect process not running)"
+ 		_exit 0
+ 	    elif [[ $assert == "connected" ]]; then
+ 		merror "Failed to connect to the UCSF network (OpenConnect process not running)"
+ 	    fi
+             echo "Not connected to the UCSF network (OpenConnect process not running)"
+             _exit 1
+ 	fi
+    fi	
 }
 
 
@@ -917,7 +972,7 @@ function openconnect_start() {
 
     ## Assert that OpenConnect is not already running
     if [[ -f "$pid_file" ]]; then
-        merror "Do you already have an active UCSF VPN connection? Detected PID file: $pid_file"
+        merror "Do you already have an active UCSF VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
     fi
         
     opts="$opts --pid-file=$pid_file"
@@ -981,7 +1036,7 @@ function openconnect_start() {
     
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
-        merror "Failed to connect to VPN server"
+        merror "Failed to connect to VPN server (no running OpenConnect process). Check your username, password, and token."
     fi
     minfo "Connected to VPN server"
 }
@@ -1052,7 +1107,7 @@ theme=${UCSF_VPN_THEME:-cli}
 force=false
 debug=false
 verbose=false
-validate=false
+validate=${UCSF_VPN_VALIDATE:-full}
 dryrun=false
 realm=
 extras=${UCSF_VPN_EXTRAS}
@@ -1101,8 +1156,6 @@ while [[ $# -gt 0 ]]; do
         debug=true
     elif [[ "$1" == "--verbose" ]]; then
         verbose=true
-    elif [[ "$1" == "--validate" ]]; then
-        validate=true
     elif [[ "$1" == "--force" ]]; then
         force=true 
     elif [[ "$1" == "--dry-run" ]]; then
@@ -1137,6 +1190,8 @@ while [[ $# -gt 0 ]]; do
         speed=${1//--[[:alpha:]]*=}
     elif [[ "$1" =~ ^--theme=.*$ ]]; then
         theme=${1//--[[:alpha:]]*=}
+    elif [[ "$1" =~ ^--validate=.*$ ]]; then
+        validate=${1//--[[:alpha:]]*=}
 	
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" == "--skip" ]]; then
@@ -1232,6 +1287,11 @@ if [[ ! $theme =~ ^(cli|none)$ ]]; then
     merror "Unknown --theme value: '$theme'"
 fi
 
+## Validate 'validate'
+if [[ ! $validate =~ ^(full|none)$ ]]; then
+    merror "Unknown --validate value: '$validate'"
+fi
+
 ## Validate 'speed'
 if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
     merror "Invalid --speed argument: '$speed'"
@@ -1284,24 +1344,7 @@ if [[ $action == "version" ]]; then
 fi    
 
 if [[ $action == "status" ]]; then
-    if ! $validate; then
-	pid=$(openconnect_pid)
-        if [[ $pid != "-1" ]]; then
-            echo "Connected to the UCSF network (OpenConnect process $pid running)"
-            _exit 0
-	else
-            echo "Not connected to the UCSF network (OpenConnect process not running)"
-            _exit 1
-	fi
-    else
-        if is_connected; then
-            echo "Connected to the UCSF network [$(public_info)]"
-            _exit 0
-        else
-            echo "Not connected to the UCSF network [$(public_info)]"
-            _exit 1
-        fi
-    fi	
+    status
 elif [[ $action == "details" ]]; then
     connection_details
     _exit $?
@@ -1328,10 +1371,7 @@ elif [[ $action == "start" ]]; then
         res=$?
         sleep "$(div 4.0 "$speed")"
     fi
-    if ! is_connected; then
-        merror "Failed to connect to the UCSF network [$(public_info)]"
-    fi	
-    mok "Successfully connected to the UCSF network [$(public_info)]"
+    status "connected"
 elif [[ $action == "stop" ]]; then
     if [[ $method == "openconnect" ]]; then
         openconnect_stop
@@ -1341,10 +1381,7 @@ elif [[ $action == "stop" ]]; then
         res=$?
         sleep "$(div 1.0 "$speed")"
     fi
-    if is_connected; then
-        merror "Failed to disconnect from the UCSF network [$(public_info)]"
-    fi	
-    mok "Successfully disconnected from the UCSF network [$(public_info)]"
+    status "disconnected"
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
 	if is_connected; then
@@ -1360,10 +1397,7 @@ elif [[ $action == "restart" ]]; then
         sleep "$(div 4.0 "$speed")"
         res=$?
     fi
-    if ! is_connected; then
-        merror "Failed to connect to the UCSF network [$(public_info)]"
-    fi	
-    mok "Successfully connected to the UCSF network [$(public_info)]"
+    status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
       if [[ $method == "openconnect" ]]; then
@@ -1372,10 +1406,7 @@ elif [[ $action == "toggle" ]]; then
           pulse_start
           sleep "$(div 4.0 "$speed")"
       fi
-      if ! is_connected; then
-          merror "Failed to connect to the UCSF network [$(public_info)]"
-      fi	
-      mok "Successfully connected to the UCSF network [$(public_info)]"
+      status "connected"
     else
       if [[ $method == "openconnect" ]]; then
           openconnect_stop
@@ -1383,10 +1414,7 @@ elif [[ $action == "toggle" ]]; then
           pulse_stop
           sleep "$(div 1.0 "$speed")"
       fi
-      if is_connected; then
-          merror "Failed to disconnect from the UCSF network [$(public_info)]"
-      fi	
-      mok "Successfully disconnected from the UCSF network [$(public_info)]"
+      status "disconnected"
     fi
 elif [[ $action == "log" ]]; then
     if [[ $method == "openconnect" ]]; then

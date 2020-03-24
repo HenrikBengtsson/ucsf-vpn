@@ -18,6 +18,10 @@ ucsf-vpn
  * If OpenConnect requires additional options, then these can be specified
    also via environment variable `UCSF_VPN_EXTRAS`.
 
+ * The validation toward the third-party https://ipinfo.io/ service done by
+   `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
+   by specifying option `--validate=none`, or by setting environment variable
+   `UCSF_VPN_VALIDATE=none`.
 
 ### Bug Fixes
 
