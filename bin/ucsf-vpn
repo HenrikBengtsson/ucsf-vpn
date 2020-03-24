@@ -951,6 +951,11 @@ function openconnect_start() {
         fi
     fi
 
+    ## Assert that OpenConnect is not already running
+    if [[ -f "$pid_file" ]]; then
+        merror "Do you already have an active UCSF VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
+    fi
+        
     ## Load user credentials from file?
     source_netrc
 
@@ -976,11 +981,6 @@ function openconnect_start() {
         opts="$opts --passwd-on-stdin"
     fi
 
-    ## Assert that OpenConnect is not already running
-    if [[ -f "$pid_file" ]]; then
-        merror "Do you already have an active UCSF VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
-    fi
-        
     opts="$opts --pid-file=$pid_file"
     
     if ! $debug; then
