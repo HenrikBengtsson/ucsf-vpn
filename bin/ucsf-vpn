@@ -127,22 +127,9 @@ export PULSEPATH=${PULSEPATH:-/usr/local/pulse}
 export PATH="${PULSEPATH}:${PATH}"
 export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 
-function pii_cleanup() {
-    if [[ -f "$pii_file" ]]; then
-         mdebug "Removing file: $pii_file"
-        rm "$pii_file"
-    fi
-}
-
-function _exit() {
-    local value
-    
-    value=${1:-0}
-    pii_cleanup
-    mdebug "Exiting with exit code $value"
-    exit "$value"
-}
-
+# -------------------------------------------------------------------------
+# Output utility functions
+# -------------------------------------------------------------------------
 function _tput() {
     if [[ $theme == "none" ]]; then
 	return
@@ -201,6 +188,19 @@ function mdeprecated() {
     } 1>&2
 }
 
+function _exit() {
+    local value
+    
+    value=${1:-0}
+    pii_cleanup
+    mdebug "Exiting with exit code $value"
+    exit "$value"
+}
+
+
+# -------------------------------------------------------------------------
+# CLI utility functions
+# -------------------------------------------------------------------------
 function version() {
     grep -E "^###[ ]*Version:[ ]*" "$0" | sed 's/###[ ]*Version:[ ]*//g'
 }
@@ -287,7 +287,6 @@ function is_connected() {
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
 }
 
-
 function status() {
     local assert connected mcmd pid msg
     
@@ -351,7 +350,7 @@ function status() {
 
 
 # -------------------------------------------------------------------------
-# Credentials, e.g. .netrc, prompting for password etc.
+# Credentials, e.g. .netrc, prompting for password, etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
     local rcfile pattern found bfr
@@ -1126,7 +1125,11 @@ function openconnect_stop() {
     minfo "Disconnected from VPN server"
 }
 
-xdg_config_path() {
+
+# -------------------------------------------------------------------------
+# XDG and cache utility functions
+# -------------------------------------------------------------------------
+function xdg_config_path() {
     local path
     
     ## https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
@@ -1137,12 +1140,22 @@ xdg_config_path() {
     echo "$path"
 }
 
-make_pii_file() {
+function make_pii_file() {
     pii_cleanup
     mktemp --dry-run --tmpdir="$(xdg_config_path)" --suffix=-ipinfo.json
 }
 
+function pii_cleanup() {
+    if [[ -f "$pii_file" ]]; then
+         mdebug "Removing file: $pii_file"
+        rm "$pii_file"
+    fi
+}
 
+
+# -------------------------------------------------------------------------
+# MAIN
+# -------------------------------------------------------------------------
 pid_file="$(xdg_config_path)/openconnect.pid"
 pii_file=$(make_pii_file)
 
@@ -1300,6 +1313,10 @@ fi
 ## Use default URL?
 [[ -z "$url" ]] && url=https://${server}/pulse
 
+
+# -------------------------------------------------------------------------
+# Validate options
+# -------------------------------------------------------------------------
 ## Validate 'method'
 if [[ ${method} == "openconnect" ]]; then
     mdebug "Method: $method"
@@ -1369,13 +1386,15 @@ if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
 fi
 
 
+# -------------------------------------------------------------------------
+# Initiate
+# -------------------------------------------------------------------------
 ## Regular expression for locating the proper netrc entry
 if [[ "$server" == "remote.ucsf.edu" ]]; then
     netrc_machines=${server}
 else
     netrc_machines=("${server}" remote.ucsf.edu)
 fi
-
 
 mdebug "call: $call"
 mdebug "action: $action"
@@ -1409,6 +1428,10 @@ mdebug "pid_file: $pid_file"
 mdebug "openconnect_pid: $(openconnect_pid)"
 mdebug "pii_file: $pii_file"
 
+
+# -------------------------------------------------------------------------
+# Actions
+# -------------------------------------------------------------------------
 if [[ $action == "version" ]]; then
     version
     _exit 0
