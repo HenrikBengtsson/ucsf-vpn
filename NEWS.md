@@ -65,7 +65,7 @@ ucsf-vpn
 ### Deprecated
 
  * Legacy, non-standard key-value pair CLI option without equal signs such
-   as `--user alice` are no deprecated. Use `--user=alice` instead.
+   as `--user alice` are now deprecated. Use `--user=alice` instead.
 
  * CLI option `--skip` has been dropped.  It is now the default behavior.
  
