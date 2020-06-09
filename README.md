@@ -194,6 +194,8 @@ with the following details:
 You may change the name to you own liking.
 
 Troubleshooting:
+* If you get 'fgets (stdin): Inappropriate ioctl for device', you most
+  likely have entered the wrong username or password.
 * Verify your username and password at https://remote.ucsf.edu/.
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
