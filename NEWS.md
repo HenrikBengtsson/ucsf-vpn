@@ -1,9 +1,11 @@
 ucsf-vpn
 ========
 
-## Version 5.1.0-9000 (2020-03-24)
+## Version 5.1.0-9000 (2020-06-09)
 
- * ...
+### New Features
+
+ * Error messages now include the version of ucsf-vpn and OpenConnect.
  
 
 ## Version 5.1.0 (2020-03-24)

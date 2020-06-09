@@ -99,7 +99,7 @@
 ###
 ### Troubleshooting:
 ### * If you get 'fgets (stdin): Inappropriate ioctl for device', you most
-###   likely have entered the wrong username or password.
+###   likely have entered the wrong username, password, or 2FA token.
 ### * Verify your username and password at https://remote.ucsf.edu/.
 ###   This should be your UCSF Active Directory ID (username); neither
 ###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
@@ -151,9 +151,18 @@ function mdebug() {
     } 1>&2
 }
 function merror() {
+    local info version
     {
+        info="ucsf-vpn $(version)"
+        version=$(openconnect_version 2> /dev/null)
+        if [[ -n $version ]]; then
+            info="$info, OpenConnect $version"
+        else
+            info="$info, OpenConnect version unknown"
+        fi    
+        [[ -n $info ]] && info=" [$info]"
         _tput setaf 1 ## red
-        echo "ERROR: $*"
+        echo "ERROR: $*$info"
         _tput sgr0    ## reset
     } 1>&2
     _exit 1
