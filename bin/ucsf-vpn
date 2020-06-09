@@ -712,11 +712,11 @@ function pulse_start() {
             merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
         fi
     elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
-        if [ -n "${token}" ] && [ ${token} != "false" ]; then
+        if [ -n "${token}" ] && [ "${token}" != "false" ]; then
             merror "Passing a --token='$token' with --realm='$realm' (two-factor authentication; 2FA) does not make sense"
         fi
     fi
-    if [ -n "${token}" ] && [ ${token} != "false" ]; then
+    if [ -n "${token}" ] && [ "${token}" != "false" ]; then
         if ! $gui; then
             merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
         fi
@@ -853,7 +853,7 @@ function pulse_start() {
       if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
           merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
       fi
-      if [ -n "${token}" ] && [ ${token} != "false" ]; then
+      if [ -n "${token}" ] && [ "${token}" != "false" ]; then
           merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
       fi
       ## Pulse Secure options
