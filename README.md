@@ -141,7 +141,7 @@ Environment variables:
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
  UCSF_VPN_VALIDATE     Default value for --validate
- UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+ UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
 Commands and Options for Pulse Security Client only (--method=pulse):
@@ -241,8 +241,8 @@ Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the P
 
 ## Privacy
 
-The `ucsf-vpn` software pings 8.8.8.8 (<https://dns.google/>; owned by
-Google Inc.) to check whether there is a working internet connection or not.
+The `ucsf-vpn` software pings 9.9.9.9 (<https://www.quad9.net/>; a nonprofit
+organization) to check whether there is a working internet connection or not.
 Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
 ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
 

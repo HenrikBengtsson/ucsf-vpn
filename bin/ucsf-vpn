@@ -52,7 +52,7 @@
 ###  UCSF_VPN_TOKEN        Default value for --token
 ###  UCSF_VPN_THEME        Default value for --theme
 ###  UCSF_VPN_VALIDATE     Default value for --validate
-###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 ###
 ### Commands and Options for Pulse Security Client only (--method=pulse):
@@ -330,7 +330,7 @@ function public_info() {
 function is_online() {
     local ping_server
     
-    ping_servers=${UCSF_VPN_PING_SERVER:-8.8.8.8}
+    ping_servers=${UCSF_VPN_PING_SERVER:-9.9.9.9}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
     for ping_server in $ping_servers; do
       mdebug "Ping server: '$ping_server'"

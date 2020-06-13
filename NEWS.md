@@ -20,6 +20,7 @@ ucsf-vpn
  * Environment variable 'UCSF_VPN_PING_SERVER' now supports specifying
    multiple servers (separated by space).
    
+ * The default ping server is now 9.9.9.9 (Quad9.net).
  
 
 ## Version 5.1.0 (2020-03-24)
