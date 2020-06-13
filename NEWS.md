@@ -1,6 +1,28 @@
 ucsf-vpn
 ========
 
+## Version 5.2.0 (2020-06-13)
+
+### New Features
+
+ * An informative message prompts the users what additional action needs
+   to be done whenever `--token=push` or `--token=phone` is used.
+
+ * If the connection fails, the likely reason for the failure is now given as
+   part of the error message, e.g. 'Incorrect username or password' or
+   '2FA token not accepted'.
+
+ * The verbose standard error messages from OpenConnect is only displayed
+   if the connected fails, otherwise it is muffled.
+
+ * Error messages now include the version of ucsf-vpn and OpenConnect.
+
+ * Environment variable `UCSF_VPN_PING_SERVER` now supports specifying
+   multiple servers (separated by space).
+   
+ * The default ping server is now 9.9.9.9 (Quad9.net).
+ 
+
 ## Version 5.1.0 (2020-03-24)
 
 ### New Features
@@ -14,7 +36,7 @@ ucsf-vpn
    also via environment variable `UCSF_VPN_EXTRAS`.
 
  * The validation toward the third-party https://ipinfo.io/ service done by
-   `ucsf vpn status`, `ucsf vpn start` and `ucsf vpn stop` can be disabled
+   `ucsf-vpn status`, `ucsf-vpn start` and `ucsf-vpn stop` can be disabled
    by specifying option `--validate=pid`, or by setting environment variable
    `UCSF_VPN_VALIDATE=pid`.
 
@@ -31,7 +53,7 @@ ucsf-vpn
 
 ### Significant changes
 
- * `ucsf vpn start` and `ucsf vpn stop` is significantly faster because in
+ * `ucsf-vpn start` and `ucsf-vpn stop` is significantly faster because in
    previous versions there was a bug (see below) causing it to query for
    public IP information multiple times, which was slow.
 
@@ -39,9 +61,9 @@ ucsf-vpn
  
 ### New Features
 
- * `ucsf vpn stop` makes sure to terminate the process that `ucsf vpn start`
+ * `ucsf-vpn stop` makes sure to terminate the process that `ucsf-vpn start`
    started, which works by having OpenConnect record the process ID to file.
-   Previously, `ucsf vpn stop` terminated _all_ `openconnect` process found.
+   Previously, `ucsf-vpn stop` terminated _all_ `openconnect` process found.
 
  * Messages are now outputted in different colors if the terminal supports it.
    Success message are outputted in green, warnings in yellow, errors in red,
@@ -50,17 +72,17 @@ ucsf-vpn
    are highlighted in bright yellow.  Disable with `--theme=none` or set
    environment variable `UCSF_VPN_THEME=none`.
 
- * Now `ucsf vpn` displays parts of the help and `ucsf vpn --help` the full.
+ * Now `ucsf-vpn` displays parts of the help and `ucsf-vpn --help` the full.
 
 ### Bug Fixes
 
- * `ucsf vpn` failed to cache collected public IP information resulting in
+ * `ucsf-vpn` failed to cache collected public IP information resulting in
    it queried the same public IP information multiple times.
 
 ### Deprecated
 
- * Legacy, non-standard key-value pair CLI option without equal signs such
-   as `--user alice` are no deprecated. Use `--user=alice` instead.
+ * Legacy, non-standard key-value pair CLI options without equal signs such
+   as `--user alice` are now deprecated. Use `--user=alice` instead.
 
  * CLI option `--skip` has been dropped.  It is now the default behavior.
  
@@ -70,12 +92,12 @@ ucsf-vpn
 ### New Features
 
  * The VPN server can now be set via environment variable `UCSF_VPN_SERVER` as
-   an alternative to specifying option `--server`. `ucsf vpn start` will output
+   an alternative to specifying option `--server`. `ucsf-vpn start` will output
    'Connection to server <server> ...' to indicate which server is used.
 
  * If a custom VPN server is used, then the ~/.netrc file is search for that
    first with a fallback to 'remote.ucsf.edu'.  This avoids having to update
-   the .netrc file when using an alternative UCSF VPN server.
+   the .netrc file when using an alternative UCSF-VPN server.
 
  
 
@@ -84,7 +106,7 @@ ucsf-vpn
 ### New Features
 
  * Updated how the information on the current connection is reported by
-   for instance `ucsf vpn status`.
+   for instance `ucsf-vpn status`.
 
 ### Bug Fixes
 
@@ -100,7 +122,7 @@ ucsf-vpn
 
 ### Bug Fixes
 
- * `ucsf vpn --token <digits>` only supported six-digit tokens; now seven-digit
+ * `ucsf-vpn --token <digits>` only supported six-digit tokens; now seven-digit
    tokens are also supported.
    
 
@@ -142,11 +164,11 @@ ucsf-vpn
 
 ### New Features
 
- * Now `ucsf vpn start --gui` gives more information about the steps
+ * Now `ucsf-vpn start --gui` gives more information about the steps
    taken and how to force or skip a UCSF notification popup, if such
    exists (which they add once in a while to notify users).
 
- * Now `ucsf vpn start --gui` defaults to `--no-notification`, since
+ * Now `ucsf-vpn start --gui` defaults to `--no-notification`, since
    UCSF has now removed the notification about the new 2FA requirements.
 
 
@@ -154,7 +176,7 @@ ucsf-vpn
 
 ### New Features
 
- * Now `ucsf vpn start --gui` looks in the Pulse Secure GUI config file
+ * Now `ucsf-vpn start --gui` looks in the Pulse Secure GUI config file
    to identify which of several connections is for the target VPN URL.
    If none matches, a proper connection is automatically added to the
    settings.
@@ -165,7 +187,7 @@ ucsf-vpn
  * Now `--realm <realm>` is acknowledged also for `--gui` (though UCSF VPN
    still only 'Dual Factor Pulse Clients').
 
- * Now `ucsf vpn troubleshoot` reports on the configured connections
+ * Now `ucsf-vpn troubleshoot` reports on the configured connections
    available in the Pulse Secure GUI.  If a connection to the UCSF-specific
    VPN URL is missing, then a warning is displayed.
 

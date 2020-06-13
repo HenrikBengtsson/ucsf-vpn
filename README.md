@@ -7,21 +7,21 @@ For recent updates, see [NEWS].
 
 The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
+![](screencast.gif)
+
+
 ## Connect to the VPN
 
 To connect to the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn start --user=alice --token=prompt
-WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-WARNING: Juniper Network Connect support is experimental.
-It will probably be superseded by Junos Pulse support.
-password#2:
-OK: OpenConnect status: 'openconnect' process running (PID=16409)
-OK: Public IP information: ip=128.218.42.191, hostname=, org=AS5653 University of California San Francisco
+OK: OpenConnect status: 'openconnect' process running (PID=14549)
+OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
 
@@ -31,11 +31,7 @@ Alternatively to command-line options, the username and password can also be spe
 
 ```sh
 $ ucsf-vpn start
-WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
-Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
-WARNING: Juniper Network Connect support is experimental.
-It will probably be superseded by Junos Pulse support.
-password#2:
+NOTE: Open the Duo Mobile app on your smartphone or tablet to confirm ...
 ```
 after approving the push notification on your Duo Mobile app (the default is `--token=push`).
 
@@ -59,7 +55,7 @@ To check whether you are connected to the UCSF VPN or not, call:
 ```sh
 $ ucsf-vpn status
 OpenConnect status: 'openconnect' process running (PID=17419)
-Public IP information: ip=128.218.43.58, hostname=, org=AS5653 University of California San Francisco
+Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 Connected to the VPN
 ```
 
@@ -68,7 +64,7 @@ To get full details of your current internet connection in JSON format, call:
 ```sh
 $ ucsf-vpn details
 {
-  "ip": "128.218.43.123",
+  "ip": "128.218.43.42",
   "city": "San Francisco",
   "region": "California",
   "country": "US",
@@ -148,7 +144,7 @@ Environment variables:
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
  UCSF_VPN_VALIDATE     Default value for --validate
- UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+ UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
 Commands and Options for Pulse Security Client only (--method=pulse):
@@ -213,7 +209,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.1.0
+Version: 5.2.0
 Copyright: Henrik Bengtsson (2016-2020)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -237,7 +233,7 @@ OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beav
 
 ### Pulse Secure Client (legacy)
 
-If you don't have OpenConnect (>= 7.08) you can use `ucsf vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
+If you don't have OpenConnect (>= 7.08) you can use `ucsf-vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
 
 * https://software.ucsf.edu/content/vpn-virtual-private-network
 
@@ -248,8 +244,8 @@ Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the P
 
 ## Privacy
 
-The `ucsf-vpn` software pings 8.8.8.8 (<https://dns.google/>; owned by
-Google Inc.) to check whether there is a working internet connection or not.
+The `ucsf-vpn` software pings 9.9.9.9 (<https://www.quad9.net/>; a nonprofit
+organization) to check whether there is a working internet connection or not.
 Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
 ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
 

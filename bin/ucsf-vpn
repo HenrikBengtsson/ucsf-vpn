@@ -52,7 +52,7 @@
 ###  UCSF_VPN_TOKEN        Default value for --token
 ###  UCSF_VPN_THEME        Default value for --theme
 ###  UCSF_VPN_VALIDATE     Default value for --validate
-###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 8.8.8.8)
+###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 ###
 ### Commands and Options for Pulse Security Client only (--method=pulse):
@@ -117,7 +117,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.1.0
+### Version: 5.2.0
 ### Copyright: Henrik Bengtsson (2016-2020)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -149,9 +149,18 @@ function mdebug() {
     } 1>&2
 }
 function merror() {
+    local info version
     {
+        info="ucsf-vpn $(version)"
+        version=$(openconnect_version 2> /dev/null)
+        if [[ -n $version ]]; then
+            info="$info, OpenConnect $version"
+        else
+            info="$info, OpenConnect version unknown"
+        fi    
+        [[ -n $info ]] && info=" [$info]"
         _tput setaf 1 ## red
-        echo "ERROR: $*"
+        echo "ERROR: $*$info"
         _tput sgr0    ## reset
     } 1>&2
     _exit 1
@@ -184,6 +193,13 @@ function mdeprecated() {
     {
         _tput setaf 3 ## yellow
         echo "DEPRECATED: $*"
+        _tput sgr0    ## reset
+    } 1>&2
+}
+function mnote() {
+    {
+        _tput setaf 11  ## bright yellow
+        echo "NOTE: $*"
         _tput sgr0    ## reset
     } 1>&2
 }
@@ -314,9 +330,16 @@ function public_info() {
 function is_online() {
     local ping_server
     
-    ping_server=${UCSF_VPN_PING_SERVER:-8.8.8.8}
-    minfo "Pinging '$ping_server' once"
-    ping -c 1 -W 1 "$ping_server" > /dev/null
+    ping_servers=${UCSF_VPN_PING_SERVER:-9.9.9.9}
+    mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    for ping_server in $ping_servers; do
+      mdebug "Ping server: '$ping_server'"
+      minfo "Pinging '$ping_server' once"
+      if ping -c 1 -W 1 "$ping_server" > /dev/null 2> /dev/null; then
+          return 0
+      fi
+    done
+    return 1
 }
 
 function is_connected() {
@@ -710,11 +733,11 @@ function pulse_start() {
             merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
         fi
     elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
-        if [ -n "${token}" ] && [ ${token} != "false" ]; then
+        if [ -n "${token}" ] && [ "${token}" != "false" ]; then
             merror "Passing a --token='$token' with --realm='$realm' (two-factor authentication; 2FA) does not make sense"
         fi
     fi
-    if [ -n "${token}" ] && [ ${token} != "false" ]; then
+    if [ -n "${token}" ] && [ "${token}" != "false" ]; then
         if ! $gui; then
             merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
         fi
@@ -851,7 +874,7 @@ function pulse_start() {
       if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
           merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
       fi
-      if [ -n "${token}" ] && [ ${token} != "false" ]; then
+      if [ -n "${token}" ] && [ "${token}" != "false" ]; then
           merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
       fi
       ## Pulse Secure options
@@ -1003,7 +1026,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid
+    local pid opts two_pwds pid fh_stderr stderr reason
     
     mdebug "openconnect_start() ..."
     
@@ -1089,7 +1112,11 @@ function openconnect_start() {
     mdebug "opts: $opts"
     mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
     
-    if [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
+    if [[ $token == "push" ]]; then
+         mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
+    elif [[ $token =~ ^phone[1-9]*$ ]]; then
+         mnote "Be prepared to answer your phone to confirm ..."
+    elif [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
          merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 
@@ -1099,6 +1126,8 @@ function openconnect_start() {
         _exit 0
     fi
 
+    fh_stderr=$(mktemp)
+    
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
             "password-token")
@@ -1112,18 +1141,47 @@ function openconnect_start() {
 		;;
         esac
         # shellcheck disable=SC2086
-        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm"
+        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
     else
         # shellcheck disable=SC2086
-        sudo openconnect $opts --authgroup="$realm"
+        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
     fi
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
+
+    ## Cleanup
+    if [[ -f "$fh_stderr" ]]; then
+        stderr=$(cat "$fh_stderr")
+        sudo rm "$fh_stderr"
+    else
+        stderr=
+    fi
+    mdebug "OpenConnect standard error:"
+    mdebug "$stderr"
     
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
-        merror "Failed to connect to VPN server (no running OpenConnect process). Check your username, password, and token."
+        echo "$stderr"
+        
+        ## Post-mortem analysis of the standard error.
+        ## (a) When the wrong username or password is entered, we will get:
+        ##       username:password:
+        ##       fgets (stdin): Inappropriate ioctl for device
+        ## (b) When the username and password is correct but the wrong token
+        ##     is provided, or user declines, we will get:
+        ##       password#2:
+        ##       username:fgets (stdin): Resource temporarily unavailable
+
+        ## Was the wrong token given?
+        if echo "$stderr" | grep -q -E "password#2"; then
+            reason="Likely reason: 2FA token not accepted"
+        elif echo "$stderr" | grep -q -F "username:password"; then
+            reason="Likely reason: Incorrect username or password"
+        else
+            reason="Check your username, password, and token"
+        fi
+        merror "Failed to connect to VPN server (no running OpenConnect process). ${reason}"
     fi
     minfo "Connected to VPN server"
 }
