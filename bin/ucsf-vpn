@@ -98,8 +98,6 @@
 ### You may change the name to you own liking.
 ###
 ### Troubleshooting:
-### * If you get 'fgets (stdin): Inappropriate ioctl for device', you most
-###   likely have entered the wrong username, password, or 2FA token.
 ### * Verify your username and password at https://remote.ucsf.edu/.
 ###   This should be your UCSF Active Directory ID (username); neither
 ###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
@@ -1021,7 +1019,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid
+    local pid opts two_pwds pid fh_stderr stderr reason
     
     mdebug "openconnect_start() ..."
     
@@ -1108,9 +1106,9 @@ function openconnect_start() {
     mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
     
     if [[ $token == "push" ]]; then
-         mnote "Open the Duo Mobile app on your smartphone or tablet to confirm"
+         mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
     elif [[ $token =~ ^phone[1-9]*$ ]]; then
-         mnote "Be prepared to answer your phone to confirm"
+         mnote "Be prepared to answer your phone to confirm ..."
     elif [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
          merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
@@ -1121,6 +1119,8 @@ function openconnect_start() {
         _exit 0
     fi
 
+    fh_stderr=$(mktemp)
+    
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
             "password-token")
@@ -1134,18 +1134,47 @@ function openconnect_start() {
 		;;
         esac
         # shellcheck disable=SC2086
-        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm"
+        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
     else
         # shellcheck disable=SC2086
-        sudo openconnect $opts --authgroup="$realm"
+        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
     fi
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
+
+    ## Cleanup
+    if [[ -f "$fh_stderr" ]]; then
+        stderr=$(cat "$fh_stderr")
+        sudo rm "$fh_stderr"
+    else
+        stderr=
+    fi
+    mdebug "OpenConnect standard error:"
+    mdebug "$stderr"
     
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
-        merror "Failed to connect to VPN server (no running OpenConnect process). Check your username, password, and token."
+        echo "$stderr"
+        
+        ## Post-mortem analysis of the standard error.
+        ## (a) When the wrong username or password is entered, we will get:
+        ##       username:password:
+        ##       fgets (stdin): Inappropriate ioctl for device
+        ## (b) When the username and password is correct but the wrong token
+        ##     is provided, or user declines, we will get:
+        ##       password#2:
+        ##       username:fgets (stdin): Resource temporarily unavailable
+
+        ## Was the wrong token given?
+        if echo "$stderr" | grep -q -E "password#2"; then
+            reason="Likely reason: 2FA token not accepted"
+        elif echo "$stderr" | grep -q -F "username:password"; then
+            reason="Likely reason: Incorrect username or password"
+        else
+            reason="Check your username, password, and token"
+        fi
+        merror "Failed to connect to VPN server (no running OpenConnect process). ${reason}"
     fi
     minfo "Connected to VPN server"
 }

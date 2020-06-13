@@ -8,6 +8,13 @@ ucsf-vpn
  * An informative message prompts the users what additional action needs
    to be done whenever `--token=push` or `--token=phone` is used.
 
+ * If the connection fails, the likely reason for the failure is now given as
+   part of the error message, e.g. 'Incorrect username or password' or
+   '2FA token not accepted'.
+
+ * The verbose standard error messages from OpenConnect is only displayed
+   if the connected fails, otherwise it is muffled.
+
  * Error messages now include the version of ucsf-vpn and OpenConnect.
  
 
