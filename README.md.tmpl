@@ -17,11 +17,8 @@ WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-WARNING: Juniper Network Connect support is experimental.
-It will probably be superseded by Junos Pulse support.
-password#2:
-OK: OpenConnect status: 'openconnect' process running (PID=16409)
-OK: Public IP information: ip=128.218.42.191, hostname=, org=AS5653 University of California San Francisco
+OK: OpenConnect status: 'openconnect' process running (PID=14549)
+OK: Public IP information: ip=128.218.43.137, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
 
@@ -31,11 +28,7 @@ Alternatively to command-line options, the username and password can also be spe
 
 ```sh
 $ ucsf-vpn start
-WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
-Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
-WARNING: Juniper Network Connect support is experimental.
-It will probably be superseded by Junos Pulse support.
-password#2:
+NOTE: Open the Duo Mobile app on your smartphone or tablet to confirm ...
 ```
 after approving the push notification on your Duo Mobile app (the default is `--token=push`).
 
