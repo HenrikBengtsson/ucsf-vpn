@@ -198,6 +198,13 @@ function mdeprecated() {
         _tput sgr0    ## reset
     } 1>&2
 }
+function mnote() {
+    {
+        _tput setaf 11  ## bright yellow
+        echo "NOTE: $*"
+        _tput sgr0    ## reset
+    } 1>&2
+}
 
 function _exit() {
     local value
@@ -1100,7 +1107,11 @@ function openconnect_start() {
     mdebug "opts: $opts"
     mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
     
-    if [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
+    if [[ $token == "push" ]]; then
+         mnote "Open the Duo Mobile app on your smartphone or tablet to confirm"
+    elif [[ $token =~ ^phone[1-9]*$ ]]; then
+         mnote "Be prepared to answer your phone to confirm"
+    elif [[ $token =~ ^(sms|text)[1-9]*$ ]]; then
          merror "Sending tokens via SMS is not supported by the OpenConnect interface"
     fi
 

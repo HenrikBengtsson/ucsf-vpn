@@ -1,9 +1,12 @@
 ucsf-vpn
 ========
 
-## Version 5.1.0-9000 (2020-06-09)
+## Version 5.1.0-9000 (2020-06-12)
 
 ### New Features
+
+ * An informative message prompts the users what additional action needs
+   to be done whenever `--token=push` or `--token=phone` is used.
 
  * Error messages now include the version of ucsf-vpn and OpenConnect.
  
