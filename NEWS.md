@@ -16,6 +16,10 @@ ucsf-vpn
    if the connected fails, otherwise it is muffled.
 
  * Error messages now include the version of ucsf-vpn and OpenConnect.
+
+ * Environment variable 'UCSF_VPN_PING_SERVER' now supports specifying
+   multiple servers (separated by space).
+   
  
 
 ## Version 5.1.0 (2020-03-24)

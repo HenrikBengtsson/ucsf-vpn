@@ -330,9 +330,16 @@ function public_info() {
 function is_online() {
     local ping_server
     
-    ping_server=${UCSF_VPN_PING_SERVER:-8.8.8.8}
-    minfo "Pinging '$ping_server' once"
-    ping -c 1 -W 1 "$ping_server" > /dev/null
+    ping_servers=${UCSF_VPN_PING_SERVER:-8.8.8.8}
+    mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    for ping_server in $ping_servers; do
+      mdebug "Ping server: '$ping_server'"
+      minfo "Pinging '$ping_server' once"
+      if ping -c 1 -W 1 "$ping_server" > /dev/null 2> /dev/null; then
+          return 0
+      fi
+    done
+    return 1
 }
 
 function is_connected() {
