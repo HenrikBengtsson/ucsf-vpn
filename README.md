@@ -21,7 +21,7 @@ Enter the password for your account ('alice84') on your local computer ('alice-l
 Enter your UCSF Active Directory password: <password>
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
 OK: OpenConnect status: 'openconnect' process running (PID=14549)
-OK: Public IP information: ip=128.218.43.137, hostname=, org=AS5653 University of California San Francisco
+OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
 
@@ -55,7 +55,7 @@ To check whether you are connected to the UCSF VPN or not, call:
 ```sh
 $ ucsf-vpn status
 OpenConnect status: 'openconnect' process running (PID=17419)
-Public IP information: ip=128.218.43.58, hostname=, org=AS5653 University of California San Francisco
+Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 Connected to the VPN
 ```
 
@@ -64,7 +64,7 @@ To get full details of your current internet connection in JSON format, call:
 ```sh
 $ ucsf-vpn details
 {
-  "ip": "128.218.43.123",
+  "ip": "128.218.43.42",
   "city": "San Francisco",
   "region": "California",
   "country": "US",
