@@ -17,5 +17,5 @@ check:
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
 
-spelling:
+spell:
 	Rscript -e 'spelling::spell_check_files(c("NEWS.md", "README.md"), ignore = readLines("WORDLIST"))'
