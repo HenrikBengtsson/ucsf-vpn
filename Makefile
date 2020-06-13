@@ -19,3 +19,24 @@ check:
 
 spell:
 	Rscript -e 'spelling::spell_check_files(c("NEWS.md", "README.md"), ignore = readLines("WORDLIST"))'
+
+asciinema-record:
+	@rm -f ~/screencast.cast
+	@cd ~ ; \
+	asciinema rec -i 0.5 screencast.cast
+	mv ~/screencast.cast screencast.cast
+
+asciinema-prune:
+	@sed -i -E "s/$$USER@$$HOSTNAME/alice@alice-laptop/g" screencast.cast
+	@sed -i -E "s/'$$USER'/'alice'/g" screencast.cast
+	@sed -i -E "s/'$$HOSTNAME'/'alice-laptop'/g" screencast.cast
+#	@sed -i -E "/file:[/][/]$$HOSTNAME/d" ~/screencast.cast
+	@sed -i -E "/exit/d" screencast.cast
+	@echo "Next, manually edit 'screencast.cast'"
+
+asciinema-play:
+	asciinema play screencast.cast
+
+screencast.gif:
+	asciicast2gif -S 2 -h 12 -w 80 ~/screencast.cast screencast.gif
+
