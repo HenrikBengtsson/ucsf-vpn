@@ -16,7 +16,7 @@ To connect to the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn start --user=alice --token=prompt
-WARNING: This action ('ucsf vpn start') requires administrative ("sudo") rights.
+WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push', 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
@@ -233,7 +233,7 @@ OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beav
 
 ### Pulse Secure Client (legacy)
 
-If you don't have OpenConnect (>= 7.08) you can use `ucsf vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
+If you don't have OpenConnect (>= 7.08) you can use `ucsf-vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
 
 * https://software.ucsf.edu/content/vpn-virtual-private-network
 
