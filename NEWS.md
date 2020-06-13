@@ -17,7 +17,7 @@ ucsf-vpn
 
  * Error messages now include the version of ucsf-vpn and OpenConnect.
 
- * Environment variable 'UCSF_VPN_PING_SERVER' now supports specifying
+ * Environment variable `UCSF_VPN_PING_SERVER` now supports specifying
    multiple servers (separated by space).
    
  * The default ping server is now 9.9.9.9 (Quad9.net).
