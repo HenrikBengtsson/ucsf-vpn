@@ -132,7 +132,7 @@ export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 # -------------------------------------------------------------------------
 function _tput() {
     if [[ $theme == "none" ]]; then
-	return
+        return
     fi
     tput "$@" 2> /dev/null
 }
@@ -157,7 +157,7 @@ function merror() {
             info="$info, OpenConnect $version"
         else
             info="$info, OpenConnect version unknown"
-        fi    
+        fi
         [[ -n $info ]] && info=" [$info]"
         _tput setaf 1 ## red
         echo "ERROR: $*$info"
@@ -206,7 +206,7 @@ function mnote() {
 
 function _exit() {
     local value
-    
+
     value=${1:-0}
     pii_cleanup
     mdebug "Exiting with exit code $value"
@@ -223,16 +223,16 @@ function version() {
 
 function help() {
     local what res
-    
+
     what=$1
     res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
     if [[ $what == "full" ]]; then
-	res=$(echo "$res" | sed '/^---/d')
+        res=$(echo "$res" | sed '/^---/d')
     else
-	res=$(echo "$res" | sed '/^---/Q')
+        res=$(echo "$res" | sed '/^---/Q')
     fi
-    
+
     if [[ ${UCSF_TOOLS} == "true" ]]; then
         res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
@@ -247,26 +247,26 @@ function assert_sudo() {
     local cmd
 
     cmd=$1
-    
+
     if sudo -v -n 2> /dev/null; then
         mdebug "'sudo' is already active"
-	minfo "Administrative (\"sudo\") rights already establish"
-	return
+        minfo "Administrative (\"sudo\") rights already establish"
+        return
     fi
     mdebug "'sudo' is not active"
 
     if [[ -n $cmd ]]; then
         if [[ ${UCSF_TOOLS} == "true" ]]; then
-	    cmd=" ('ucsf vpn $cmd')"
-	else
-	    cmd=" ('ucsf-vpn $cmd')"
-	fi
+            cmd=" ('ucsf vpn $cmd')"
+        else
+            cmd=" ('ucsf-vpn $cmd')"
+        fi
     fi
-    
+
     {
         mwarn "This action$cmd requires administrative (\"sudo\") rights."
         _tput setaf 11  ## bright yellow
-	sudo -v -p "Enter the password for your account ('$USER') on your local computer ('$HOSTNAME'): "
+        sudo -v -p "Enter the password for your account ('$USER') on your local computer ('$HOSTNAME'): "
 #        _tput setaf 15  ## bright white
         _tput sgr0      ## reset
     } 1>&2
@@ -277,7 +277,7 @@ function assert_sudo() {
     fi
 
     minfo "Administrative (\"sudo\") rights establish"
-}    
+}
 
 
 # -------------------------------------------------------------------------
@@ -288,7 +288,7 @@ function connection_details() {
     if [[ ! -f "$pii_file" ]]; then
         if ! is_online; then
             merror "Internet connection is not working"
-	fi
+        fi
         minfo "Verified that internet connection works"
         minfo "Getting public IP (from https://ipinfo.io/ip)"
         mdebug "Calling: curl --silent https://ipinfo.io/json > \"$pii_file\""
@@ -314,12 +314,12 @@ function public_hostname() {
 
 function public_org() {
     mdebug "public_org()"
-    connection_details | grep -F '"org":' | cut -d : -f 2 | sed -E 's/(^[ ]*"|",[ ]*$)//g' 
+    connection_details | grep -F '"org":' | cut -d : -f 2 | sed -E 's/(^[ ]*"|",[ ]*$)//g'
 }
 
 function public_info() {
     local ip hostname org
-    
+
     mdebug "public_info()"
     ip=$(public_ip)
     hostname=$(public_hostname)
@@ -329,7 +329,7 @@ function public_info() {
 
 function is_online() {
     local ping_server
-    
+
     ping_servers=${UCSF_VPN_PING_SERVER:-9.9.9.9}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
     for ping_server in $ping_servers; do
@@ -352,7 +352,7 @@ function is_connected() {
 
 function status() {
     local assert connected mcmd pid msg
-    
+
     assert=$1
     mdebug "assert='$assert'"
     minfo "validate='$validate'"
@@ -363,51 +363,51 @@ function status() {
     if [[ $validate == *pid* ]]; then
         pid=$(openconnect_pid)
         if [[ $pid == "-1" ]]; then
-	    connected=false
+            connected=false
             msg="No \'openconnect\' process running"
             if [[ $assert == "connected" ]]; then
-		mcmd="merror"
+                mcmd="merror"
             elif [[ $assert == "disconnected" ]]; then
-		mcmd="mok"
-	    fi
+                mcmd="mok"
+            fi
         else
-	    connected=true
+            connected=true
             msg="\'openconnect\' process running \(PID=$pid\)"
             if [[ $assert == "connected" ]]; then
-		mcmd="mok"
+                mcmd="mok"
             elif [[ $assert == "disconnected" ]]; then
-		mcmd="merror"
-	    fi
-        fi	
+                mcmd="merror"
+            fi
+        fi
         eval "$mcmd" "OpenConnect status: $msg"
     fi
 
     if [[ $validate == *ipinfo* ]]; then
         mcmd="echo"
         if is_connected; then
-	    connected=true
-	    if [[ $assert == "disconnected" ]]; then
-		mcmd="merror"
-	    elif [[ $assert == "connected" ]]; then
-		mcmd="mok"
-            fi	
+            connected=true
+            if [[ $assert == "disconnected" ]]; then
+                mcmd="merror"
+            elif [[ $assert == "connected" ]]; then
+                mcmd="mok"
+            fi
         else
-	    connected=false
-	    if [[ $assert == "disconnected" ]]; then
-		mcmd="mok"
-	    elif [[ $assert == "connected" ]]; then
-		mcmd="merror"
-	    fi
+            connected=false
+            if [[ $assert == "disconnected" ]]; then
+                mcmd="mok"
+            elif [[ $assert == "connected" ]]; then
+                mcmd="merror"
+            fi
         fi
         eval "$mcmd" "Public IP information: $(public_info)"
      fi
 
     if $connected; then
-	msg="Connected to the VPN"
+        msg="Connected to the VPN"
     else
         msg="Not connected to the VPN"
     fi
-    
+
     eval "$mcmd" "$msg"
 }
 
@@ -417,7 +417,7 @@ function status() {
 # -------------------------------------------------------------------------
 function source_netrc() {
     local rcfile pattern found bfr
-    
+
     rcfile=${NETRC:-~/.netrc}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
@@ -449,10 +449,10 @@ function source_netrc() {
         mdebug "- no such machine: $machine"
         return 0
     fi
-    
+
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
     [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
-    
+
     user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
     pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
 
@@ -469,13 +469,13 @@ function prompt_user() {
     if [[ -n "${user}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter username:"
     while [ -z "${user}" ]; do
-	{
+        {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory username: "
             _tput setaf 15  ## bright white
             read -r user
             _tput sgr0      ## reset
-	} 1>&2
+        } 1>&2
         user=${user/ /}
     done
     mdebug "- user=${user}"
@@ -486,13 +486,13 @@ function prompt_pwd() {
     if [[ -n "${pwd}" ]]; then return; fi
     mdebug "PROMPT: Asking user to enter password:"
     while [ -z "${pwd}" ]; do
-	{
+        {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory password: "
             _tput setaf 15  ## bright white
             read -r -s pwd
             _tput sgr0      ## reset
-	} 1>&2
+        } 1>&2
         pwd=${pwd/ /}
     done
     mecho "<password>"
@@ -506,7 +506,7 @@ function prompt_pwd() {
 
 function type_of_token() {
     local token
-    
+
     token=$1
 
     ## Hardcoded methods
@@ -531,14 +531,14 @@ function type_of_token() {
         echo "none"
         return
     fi
-    
+
     ## YubiKey token (44 lower-case letters)
     if [[ ${#token} -eq 44 ]] && [[ ${token} =~ ^[a-z]+$ ]]; then
         mdebug "YubiKey token detected"
         echo "YubiKey token"
         return
     fi
-    
+
     ## Digital token
     if [[ ${token} =~ ^[0-9]+$ ]]; then
         if [[ ${#token} -eq 6 ]]; then
@@ -557,25 +557,25 @@ function type_of_token() {
 
 function prompt_token() {
     local type
-    
+
     token=$1
     if [[ ${token} == "prompt" || ${token} == "true" ]]; then token=; fi
     if [[ -n "${token}" ]]; then return; fi
-  
+
     mdebug "PROMPT: Asking user to enter one-time token:"
     type="unknown token"
     while [ -z "${token}" ]; do
-	{
+        {
             _tput setaf 11  ## bright yellow
             printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit token, or press your YubiKey: "
             _tput setaf 15  ## bright white
             read -r -s token
             _tput sgr0      ## reset
-	} 1>&2
+        } 1>&2
         token=${token/ /}
-	type=$(type_of_token "$token")
+        type=$(type_of_token "$token")
         if [[ $type == "unknown token" ]]; then
-	    {
+            {
                 _tput setaf 1 ## red
                 printf "\\nERROR: Not a valid token ('push', 'phone', 'sms', 6 or 7 digits, or 44-letter YubiKey sequence)\\n"
                 _tput sgr0      ## reset
@@ -607,7 +607,7 @@ function div() {
 
 function pulsesvc_version() {
     local res
-    
+
     res=$(pulsesvc --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
@@ -623,19 +623,19 @@ function is_pulseUi_running() {
 
 function pulseUi_find_connection() {
     local config_home confile idx ii con  # IFS too?
-    
+
     config_home="$HOME/.pulse_secure/pulse"
     confile="$config_home/.pulse_Connections.txt"
     [[ -f "$confile" ]] || pulseUi_add_connection
     [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
     mdebug "Pulse connections file: $confile"
     mdebug "$(< "$confile")"
-       
+
     # shellcheck disable=SC2207
     IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
     mdebug "Number of connections: ${#cons[@]}"
     mdebug "Searching for VPN URL: $url"
-    
+
     idx=-1
     for ii in "${!cons[@]}"; do
         con="${cons[$ii]/^ */}"
@@ -647,13 +647,13 @@ function pulseUi_find_connection() {
     done
 
     mdebug "Index of connection found: $idx"
-    
+
     echo "$idx"
 }
 
 function pulseUi_add_connection() {
     local config_home confile name con
-    
+
     config_home="$HOME/.pulse_secure/pulse"
     confile="$config_home/.pulse_Connections.txt"
     name="UCSF"
@@ -669,7 +669,7 @@ function pulse_start_gui() {
         mwarn "Pulse Secure GUI is already running"
         return
     fi
-    
+
     ## Start the Pulse Secure GUI
     ## NOTE: Sending stderr to dev null to silence warnings on
     ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
@@ -689,7 +689,7 @@ function pulse_open_gui() {
 
     mdebug "call: $call"
     mdebug "call: pulseUi"
-    
+
     if $dryrun; then
         _exit 0
     fi
@@ -713,7 +713,7 @@ function pulse_close_gui() {
 
 function wait_for_pulse_window_to_close() {
     local wid wids
-    
+
     wid=$1
     mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
     while true; do
@@ -726,8 +726,8 @@ function wait_for_pulse_window_to_close() {
 
 function pulse_start() {
     local conidx step wid wid2 wid3 cmd opts extra
-    
-    ## Validate request    
+
+    ## Validate request
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
         if ! $gui; then
             merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
@@ -742,7 +742,7 @@ function pulse_start() {
             merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
         fi
     fi
-    
+
     if ! $force; then
       if is_connected; then
           mwarn "Already connected to the VPN [$(public_info)]"
@@ -759,9 +759,9 @@ function pulse_start() {
             close_gui
             sleep "$(div 0.5 "$speed")"
         fi
-        conidx=$(pulseUi_find_connection)        
+        conidx=$(pulseUi_find_connection)
         [[ $conidx -eq -1 ]] && pulseUi_add_connection
-        conidx=$(pulseUi_find_connection)        
+        conidx=$(pulseUi_find_connection)
         [[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the VPN: $url"
     fi
 
@@ -780,13 +780,13 @@ function pulse_start() {
 
     if $gui; then
         step=1
-        
-        ## Check for 'xdotool'        
+
+        ## Check for 'xdotool'
         command -v xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
 
         ## Start Pulse Secure GUI
         pulse_start_gui
-        
+
         sleep "$(div 1.0 "$speed")"
         wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
         if [[ -z "$wid" ]]; then
@@ -800,10 +800,10 @@ function pulse_start() {
         mecho " ${step}. selecting connection"
         step=$((step + 1))
         eval "$cmd"
-        
+
         mdebug "Minimizing Pulse Secure GUI"
         xdotool windowminimize "$wid"
-        
+
         sleep "$(div 2.0 "$speed")"
         wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
         mdebug "Pulse Secure Window IDs: $wid2"
@@ -826,7 +826,7 @@ function pulse_start() {
             mecho " ${step}. skipping UCSF notification popup window (--notification if it exists)"
             step=$((step + 1))
         fi
-        
+
         mdebug "Entering user credentials (username and password)"
         xdotool windowactivate --sync "$wid2" type "$user"
         xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
@@ -842,7 +842,7 @@ function pulse_start() {
 
         if [[ ${token} != "false" ]]; then
             mdebug "Using two-factor authentication (2FA) token"
-            
+
             sleep "$(div 1.0 "$speed")"
             wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
             mdebug "Pulse Secure Window IDs: $wid3"
@@ -851,7 +851,7 @@ function pulse_start() {
             if [[ -z "$wid3" ]]; then
                 merror "Failed to locate the Pulse Secure GUI popup window"
             fi
-            
+
             mdebug "Entering token"
             mecho " ${step}. entering 2FA token"
             step=$((step + 1))
@@ -880,15 +880,15 @@ function pulse_start() {
       ## Pulse Secure options
       opts="$extras"
       opts="$opts -h ${server}"
-      
+
       if [[ -n $user ]]; then
           opts="-u $user $opts"
       fi
-      
+
       if ! $debug; then
           opts="-log-level 5 $opts"
       fi
-  
+
       mdebug "call: $call"
       mdebug "user: $user"
       if [[ -n $pwd ]]; then
@@ -898,7 +898,7 @@ function pulse_start() {
       fi
       mdebug "opts: $opts"
       mdebug "call: pulsesvc $opts -r \"${realm}\""
-      
+
       if $dryrun; then
           if [[ -n $pwd ]]; then
               echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
@@ -907,7 +907,7 @@ function pulse_start() {
           fi
           _exit 0
       fi
-      
+
       if [[ -n $pwd ]]; then
           echo "$pwd" | pulsesvc "$opts" -r "${realm}" | grep -viF password &
       else
@@ -921,7 +921,7 @@ function pulse_stop() {
       if is_connected; then
           ## Close/kill the Pulse Secure GUI
           pulse_close_gui
-    
+
           mwarn "Already connected to the VPN [$(public_info)]"
           _exit 0
       fi
@@ -930,7 +930,7 @@ function pulse_stop() {
 
     ## Close/kill the Pulse Secure GUI
     pulse_close_gui
-    
+
     ## Kill any running pulsesvc processes
     pulsesvc -Kill
     mdebug "Killed local ('pulsesvc') VPN process"
@@ -939,7 +939,7 @@ function pulse_stop() {
 
 function pulse_troubleshoot() {
     local config_home confile match ii con prefix logfile ## IFS too?
-    
+
     minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
 
@@ -988,7 +988,7 @@ function pulse_troubleshoot() {
 # -------------------------------------------------------------------------
 function openconnect_version() {
     local res
-    
+
     res=$(openconnect --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
@@ -1000,25 +1000,25 @@ function openconnect_version() {
 
 function openconnect_pid() {
     local pid
-    
+
     ## Is there a PID file?
     if [[ ! -f "$pid_file" ]]; then
         mdebug "PID file does not exists: $pid_file"
         echo "-1"
         return
     fi
-    
+
     mdebug "PID file exists: $pid_file"
     pid=$(cat "$pid_file")
     mdebug "PID recorded in file: $pid"
-    
+
     ## Is the process still running?
     if ps -p "$pid" > /dev/null; then
         mdebug "Process is running: $pid"
         echo "$pid"
         return
     fi
-    
+
     ## Remove stray PID file
     rm "$pid_file"
     mwarn "Removed stray PID file with non-existing process (PID=$pid): $pid_file"
@@ -1027,9 +1027,9 @@ function openconnect_pid() {
 
 function openconnect_start() {
     local pid opts two_pwds pid fh_stderr stderr reason
-    
+
     mdebug "openconnect_start() ..."
-    
+
     pid=$(openconnect_pid)
     if [[ "$pid" != "-1" ]]; then
         if [[ ! $force ]]; then
@@ -1038,15 +1038,15 @@ function openconnect_start() {
     fi
 
     if ! $force; then
-	if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != "-1" ]]; then
+        if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != "-1" ]]; then
            mwarn "Skipping - already connected to the VPN"
            return
-	elif [[ $validate == *ipinfo* ]] && is_connected; then
+        elif [[ $validate == *ipinfo* ]] && is_connected; then
            mwarn "Skipping - already connected to the VPN"
            return
         fi
     fi
-    
+
     ## Assert that OpenConnect is not already running
     if [[ -f "$pid_file" ]]; then
         merror "Hmm, this might be a bug. Do you already have an active VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
@@ -1059,7 +1059,7 @@ function openconnect_start() {
     minfo "Preparing to connect to VPN server '$server'"
 
     assert_sudo "start"
-    
+
     ## Load user credentials from file?
     source_netrc
 
@@ -1086,7 +1086,7 @@ function openconnect_start() {
     fi
 
     opts="$opts --pid-file=$pid_file"
-    
+
     if ! $debug; then
         opts="$opts --quiet"
     fi
@@ -1111,7 +1111,7 @@ function openconnect_start() {
     fi
     mdebug "opts: $opts"
     mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
-    
+
     if [[ $token == "push" ]]; then
          mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
     elif [[ $token =~ ^phone[1-9]*$ ]]; then
@@ -1121,13 +1121,13 @@ function openconnect_start() {
     fi
 
     minfo "Connecting to VPN server '${server}'"
-    
+
     if $dryrun; then
         _exit 0
     fi
 
     fh_stderr=$(mktemp)
-    
+
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
             "password-token")
@@ -1138,7 +1138,7 @@ function openconnect_start() {
                 ;;
             *)
                 merror "Unknown value of UCSF_VPN_TWO_PWDS: '$UCSF_VPN_TWO_PWDS'"
-		;;
+                ;;
         esac
         # shellcheck disable=SC2086
         sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
@@ -1159,11 +1159,11 @@ function openconnect_start() {
     fi
     mdebug "OpenConnect standard error:"
     mdebug "$stderr"
-    
+
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
         echo "$stderr"
-        
+
         ## Post-mortem analysis of the standard error.
         ## (a) When the wrong username or password is entered, we will get:
         ##       username:password:
@@ -1188,30 +1188,30 @@ function openconnect_start() {
 
 function openconnect_stop() {
     local pid kill_timeout
-    
+
     mdebug "openconnect_stop() ..."
-    
+
     pid=$(openconnect_pid)
     if [[ "$pid" == "-1" ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
         return
         merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
-    
+
     minfo "Disconnecting from VPN server"
 
     assert_sudo "stop"
-    
+
     mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
     sudo kill -s INT "$pid" 2> /dev/null
-    
+
      ## Wait for process to terminate
     kill_timeout=10
     timeout $kill_timeout tail --pid="$pid" -f /dev/null
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
-    
+
     ## Assert that the process was terminated
     if ps -p "$pid" > /dev/null; then
         merror "Failed to terminate VPN process ('openconnect' with PID $pid). You could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
@@ -1233,7 +1233,7 @@ function openconnect_stop() {
 # -------------------------------------------------------------------------
 function xdg_config_path() {
     local path
-    
+
     ## https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     path=${XDG_CONFIG_HOME:-$HOME/.config}/ucsf-vpn
     if [ ! -d "$path" ]; then
@@ -1313,7 +1313,7 @@ while [[ $# -gt 0 ]]; do
         action=open-gui
     elif [[ "$1" == "close-gui" ]]; then
         action=close-gui
-	
+
     ## Options (--flags):
     elif [[ "$1" == "--help" ]]; then
         action=help
@@ -1324,7 +1324,7 @@ while [[ $# -gt 0 ]]; do
     elif [[ "$1" == "--verbose" ]]; then
         verbose=true
     elif [[ "$1" == "--force" ]]; then
-        force=true 
+        force=true
     elif [[ "$1" == "--dry-run" ]]; then
         dryrun=true
     elif [[ "$1" == "--dryrun" ]]; then
@@ -1337,16 +1337,16 @@ while [[ $# -gt 0 ]]; do
         gui=true
     elif [[ "$1" == "--no-gui" ]]; then
         gui=false
-	
+
     ## Options (--key=value):
     elif [[ "$1" =~ ^--.*=.*$ ]]; then
         key=${1//--}
         key=${key//=*}
         value=${1//--[[:alpha:]]*=}
-	mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
+        mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
         if [[ -z $value ]]; then
-	    merror "Option '--$key' must not be empty"
-	fi
+            merror "Option '--$key' must not be empty"
+        fi
         if [[ "$key" == "method" ]]; then
             method=$value
         elif [[ "$key" == "url" ]]; then
@@ -1367,14 +1367,14 @@ while [[ $# -gt 0 ]]; do
             theme=$value
         elif [[ "$key" == "validate" ]]; then
             validate=$value
-	fi    
+        fi
 
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" == "--skip" ]]; then
-	mdeprecated "Command-line option '$1' is deprecated and ignored."
+        mdeprecated "Command-line option '$1' is deprecated and ignored."
     elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
-	mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
-	key=${1//--}
+        mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
+        key=${1//--}
         shift
         if [[ "$key" == "method" ]]; then
             method=$1
@@ -1392,8 +1392,8 @@ while [[ $# -gt 0 ]]; do
             token=$1
         elif [[ "$key" == "speed" ]]; then
             speed=$1
-	fi
-	
+        fi
+
     ## Additional options to be appended (rarely needed)
     else
         extras="$extras $1"
@@ -1468,15 +1468,15 @@ if [[ ! $theme =~ ^(cli|none)$ ]]; then
 fi
 
 ## Validate 'validate'
-if [[ $method == "openconnect" ]]; then  
+if [[ $method == "openconnect" ]]; then
     if [[ -z $validate ]]; then
-	validate=${UCSF_VPN_VALIDATE:-pid,ipinfo}
+        validate=${UCSF_VPN_VALIDATE:-pid,ipinfo}
     elif [[ ! $validate =~ ^(ipinfo|pid|pid,ipinfo)$ ]]; then
         merror "Unknown --validate value: '$validate'"
     fi
-elif [[ $method == "pulse" ]]; then  
+elif [[ $method == "pulse" ]]; then
     if [[ -z $validate ]]; then
-	validate=${UCSF_VPN_VALIDATE:-ipinfo}
+        validate=${UCSF_VPN_VALIDATE:-ipinfo}
     elif [[ ! $validate =~ ^(ipinfo)$ ]]; then
         merror "Unknown --validate value: '$validate'"
     fi
@@ -1537,7 +1537,7 @@ mdebug "pii_file: $pii_file"
 if [[ $action == "version" ]]; then
     version
     _exit 0
-fi    
+fi
 
 if [[ $action == "status" ]]; then
     status
@@ -1580,9 +1580,9 @@ elif [[ $action == "stop" ]]; then
     status "disconnected"
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
-	if is_connected; then
+        if is_connected; then
             openconnect_stop
-	fi
+        fi
         openconnect_start
         res=$?
     elif [[ $method == "pulse" ]]; then
