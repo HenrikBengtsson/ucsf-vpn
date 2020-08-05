@@ -567,10 +567,14 @@ function prompt_token() {
     while [ -z "${token}" ]; do
         {
             _tput setaf 11  ## bright yellow
-            printf "Enter 'push', 'phone', 'sms', a 6 or 7 digit token, or press your YubiKey: "
+            printf "Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit token, or press your YubiKey: "
             _tput setaf 15  ## bright white
             read -r -s token
             _tput sgr0      ## reset
+            ## Default?
+            if [[ -z $token ]]; then
+                token="push"
+            fi
         } 1>&2
         token=${token/ /}
         type=$(type_of_token "$token")

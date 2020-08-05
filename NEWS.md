@@ -1,9 +1,13 @@
 ucsf-vpn
 ========
 
-## Version 5.2.0-9000 (2020-06-13)
+## Version 5.2.0-9000 (2020-08-05)
 
- * ...
+### New Features
+
+ * When prompted for a token (e.g. --token=prompt`) and pressing only ENTER
+   (without entering anything), it will default ot 'push'.  This will make
+   it easier to switch between the 2FA mobile application and the YubiKey.
  
 
 ## Version 5.2.0 (2020-06-13)
