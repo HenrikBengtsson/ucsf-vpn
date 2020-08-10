@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 5.2.0-9000 (2020-08-05)
+## Version 5.3.0 (2020-08-10)
 
 ### New Features
 
