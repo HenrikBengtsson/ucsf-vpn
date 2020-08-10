@@ -10,7 +10,7 @@ ucsf-vpn
 
 ### New Features
 
- * When prompted for a token (e.g. --token=prompt`) and pressing only ENTER
+ * When prompted for a token (e.g. `--token=prompt`) and pressing only ENTER
    (without entering anything), it will default to 'push'.  This will make
    it easier to switch between the 2FA mobile application and the YubiKey.
  
