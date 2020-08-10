@@ -27,7 +27,7 @@ asciinema-record:
 	mv ~/screencast.cast screencast.cast
 
 asciinema-prune:
-	@sed -i -E "s/$$USER@$$HOSTNAME/alice@alice-laptop/g" screencast.cast
+	@sed -i -E "s/$$USER@$$HOSTNAME/alice84@alice-laptop/g" screencast.cast
 	@sed -i -E "s/'$$USER'/'alice84'/g" screencast.cast
 	@sed -i -E "s/'$$HOSTNAME'/'alice-laptop'/g" screencast.cast
 #	@sed -i -E "/file:[/][/]$$HOSTNAME/d" ~/screencast.cast
@@ -37,6 +37,6 @@ asciinema-prune:
 asciinema-play:
 	asciinema play screencast.cast
 
-screencast.gif:
-	asciicast2gif -S 2 -h 12 -w 80 screencast.cast screencast.gif
+screencast.gif: screencast.cast
+	asciicast2gif -S 2 -h 12 -w 80 $< $@
 
