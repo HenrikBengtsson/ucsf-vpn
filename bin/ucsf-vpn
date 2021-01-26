@@ -330,7 +330,7 @@ function public_info() {
 function is_online() {
     local ping_server
 
-    ping_servers=${UCSF_VPN_PING_SERVER:-9.9.9.9}
+    ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
     for ping_server in $ping_servers; do
       mdebug "Ping server: '$ping_server'"
@@ -1030,7 +1030,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid fh_stderr stderr reason
+    local pid opts two_pwds pid fh_stderr stderr main_reason reason post_reason
 
     mdebug "openconnect_start() ..."
 
@@ -1169,6 +1169,13 @@ function openconnect_start() {
     if [[ "$pid" == "-1" ]]; then
         echo "$stderr"
 
+        ## Report on ping for VPN server
+        if ! is_online "$server"; then
+            main_reason="Most likely reason: The VPN server ($server) does not respond to ping; check your internet connection."
+        else
+            post_reason="Miscellaneous: The VPN server ($server) responds to ping"
+        fi
+
         ## Post-mortem analysis of the standard error.
         ## (a) When the wrong username or password is entered, we will get:
         ##       username:password:
@@ -1178,17 +1185,27 @@ function openconnect_start() {
         ##       password#2:
         ##       username:fgets (stdin): Resource temporarily unavailable
 
-        ## Was the wrong token given?
+        ## Was the wrong credentials given?
         if echo "$stderr" | grep -q -E "password#2"; then
-            reason="Likely reason: 2FA token not accepted"
+            reason="2FA token not accepted"
         elif echo "$stderr" | grep -q -F "username:password"; then
-            reason="Likely reason: Incorrect username or password"
-            reason="$reason. Suggestion: You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+            reason="Incorrect username or password"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
         else
             reason="Check your username, password, and token"
-            reason="$reason. Suggestion: You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
         fi
-        merror "Failed to connect to VPN server (no running OpenConnect process). ${reason}"
+        
+        if [[ -n "${main_reason}" ]]; then
+            reason="${main_reason} Possible other reason: ${reason}"
+        else
+            reason="Likely reason: ${reason}"
+        fi
+        reason="Failed to connect to VPN server. ${reason}"
+        if [[ -n "${post_reason}" ]]; then
+            reason="${reason}. ${post_reason}"
+        fi
+        merror "${reason}"
     fi
     minfo "Connected to VPN server"
 }
