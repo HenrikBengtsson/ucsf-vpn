@@ -1,9 +1,13 @@
 ucsf-vpn
 ========
 
-## Version 5.3.0-9000 (2020-08-10)
+## Version 5.3.0-9000 (2021-01-26)
 
- * ...
+### New Features
+
+ * Error messages now provide a URL to the UCSF Web VPN for validation
+   credentials when it is likely that the connection failed due to an
+   incorrect username, password, or 2FA was given.
  
 
 ## Version 5.3.0 (2020-08-10)
@@ -210,7 +214,7 @@ ucsf-vpn
 
 ## Version 3.1.1 (2017-12-12)
  
-SOFTWARE QUALITY:
+### Software Quality
 
  * Fixed Bash code according to ShellCheck suggestions.
 
