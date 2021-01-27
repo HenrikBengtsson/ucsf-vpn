@@ -5,13 +5,13 @@ ucsf-vpn
 
 ### Significant changes
 
- * Arguments '--user=<user>' and '--pwd=<pwd>' now take precedence over
+ * Options `--user=<user>` and `--pwd=<pwd>` now take precedence over
    their corresponding entries in the ~/.netrc file.
 
 ### New Features
 
- * Now the error message reports on also the ping status of the VPN server,
-   in case the setup of the VPN connection failed.
+ * Error messages now report on also the ping status of the VPN server,
+   in case the VPN setup failed.
 
  * Error messages now provide a URL to the UCSF Web VPN for validation
    credentials when it is likely that the connection failed due to an
