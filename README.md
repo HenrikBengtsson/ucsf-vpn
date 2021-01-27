@@ -172,7 +172,7 @@ set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Requirements when using OpenConnect (CLI):
-  - OpenConnect (>= 7.08) (installed: 7.08-3ubuntu0.18.04.1)
+  - OpenConnect (>= 7.08) (installed: 7.08-3ubuntu0.18.04.2)
   - sudo
 * Requirements when using Junos Pulse Secure Client (GUI):
   - Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
@@ -210,7 +210,7 @@ Useful resources:
   - https://it.ucsf.edu/services/managing-your-passwords
 
 Version: 5.3.0-9000
-Copyright: Henrik Bengtsson (2016-2020)
+Copyright: Henrik Bengtsson (2016-2021)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
 ```

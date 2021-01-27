@@ -118,7 +118,7 @@
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
 ### Version: 5.3.0-9000
-### Copyright: Henrik Bengtsson (2016-2020)
+### Copyright: Henrik Bengtsson (2016-2021)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -425,6 +425,13 @@ function source_netrc() {
         return;
     fi
     mdebug "Detected .netrc file: $rcfile"
+
+    ## Nothing to do?
+    if [[ -n "$user" && -n "$pwd" ]]; then
+        mdebug "Both 'user' and 'pwd' already set. Skipping .netrc file"
+        return
+    fi
+    
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
@@ -453,8 +460,13 @@ function source_netrc() {
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
     [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
 
-    user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
-    pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    if [[ -z "$user" ]]; then
+        user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    fi
+    
+    if [[ -z "$pwd" ]]; then
+        pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    fi
 
     mdebug "- user=${user}"
     if [[ -z "${pwd}" ]]; then
@@ -1549,7 +1561,7 @@ mdebug "extras: $extras"
 mdebug "method: $method"
 mdebug "gui: $gui"
 mdebug "speed: $speed"
-mdebug "netrc machines: ${netrc_machines[*]}"
+mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "openconnect_pid: $(openconnect_pid)"
 mdebug "pii_file: $pii_file"

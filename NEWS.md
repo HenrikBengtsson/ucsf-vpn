@@ -3,6 +3,11 @@ ucsf-vpn
 
 ## Version 5.3.0-9000 (2021-01-26)
 
+### Significant changes
+
+ * Arguments '--user=<user>' and '--pwd=<pwd>' now take precedence over
+   their corresponding entries in the ~/.netrc file.
+
 ### New Features
 
  * Now the error message reports on also the ping status of the VPN server,
