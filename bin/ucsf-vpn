@@ -29,6 +29,7 @@
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+###  --protocol=<ptl> VPN protocol, e.g. 'juniper' (default) and 'pulse'
 ###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###
@@ -48,6 +49,7 @@
 ###
 ### Environment variables:
 ###  UCSF_VPN_METHOD       Default value for --method
+###  UCSF_VPN_PROTOCOL     Default value for --protocol
 ###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_TOKEN        Default value for --token
 ###  UCSF_VPN_THEME        Default value for --theme
@@ -89,6 +91,15 @@
 ###   - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
 ###   - No need for sudo rights
 ###
+### VPN Protocol:
+### Different versions of OpenConnect support different VPN protocols.
+### Specifying '--protocol=juniper' (default), results in using 'openconnect'
+### option '--juniper' which has been confirmed to work when using
+### OpenConnect 7.08.
+### Specifying '--protocol=pulse' results in 'openconnect' option
+### '--protocol=pulse' which has been confirmed to work when using
+### OpenConnect 8.10 but does not work with OpenConnect 7.08.
+###
 ### Pulse Secure GUI configuration:
 ### Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
 ### automatically add a valid VPN connection to the Pulse Secure GUI
@@ -117,7 +128,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.3.0-9000
+### Version: 5.3.0-9001
 ### Copyright: Henrik Bengtsson (2016-2021)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1091,7 +1102,14 @@ function openconnect_start() {
 
     ## openconnect options
     opts="$extras"
-    opts="$opts --juniper ${url}"
+
+    ## VPN protocol
+    if [[ "$protocol" == "juniper" ]]; then
+        opts="$opts --juniper ${url}"
+    else
+        opts="$opts --protocol=${protocol} ${url}"
+    fi
+    
     opts="$opts --background"
 
     if [[ -n $user ]]; then
@@ -1203,6 +1221,8 @@ function openconnect_start() {
         elif echo "$stderr" | grep -q -F "username:password"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
+            reason="$stderr (option --protocol=<ptl>)"
         else
             reason="Check your username, password, and token"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
@@ -1314,6 +1334,7 @@ validate=
 dryrun=false
 realm=
 extras=${UCSF_VPN_EXTRAS}
+protocol=${UCSF_VPN_PROTOCOL:-juniper}
 gui=true
 notification=false
 speed=1.0
@@ -1393,6 +1414,8 @@ while [[ $# -gt 0 ]]; do
             realm=$value
         elif [[ "$key" == "user" ]]; then
             user=$value
+        elif [[ "$key" == "protocol" ]]; then
+            protocol=$value
         elif [[ "$key" == "pwd" ]]; then
             pwd=$value
         elif [[ "$key" == "token" ]]; then
@@ -1538,6 +1561,7 @@ mdebug "call: $call"
 mdebug "action: $action"
 mdebug "VPN server: $server"
 mdebug "Realm: '$realm'"
+mdebug "protocol: $protocol"
 mdebug "user: $user"
 if [[ -z "${pwd}" ]]; then
     mdebug "pwd=<missing>"

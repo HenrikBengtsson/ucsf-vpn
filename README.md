@@ -122,6 +122,7 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+ --protocol=<ptl> VPN protocol, e.g. 'juniper' (default) and 'pulse'
  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
  --theme=<theme>  Either 'cli' (default) or 'none'
 
@@ -140,6 +141,7 @@ Examples:
 
 Environment variables:
  UCSF_VPN_METHOD       Default value for --method
+ UCSF_VPN_PROTOCOL     Default value for --protocol
  UCSF_VPN_SERVER       Default value for --server
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
@@ -181,6 +183,15 @@ Requirements:
   - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
   - No need for sudo rights
 
+VPN Protocol:
+Different versions of OpenConnect support different VPN protocols.
+Specifying '--protocol=juniper' (default), results in using 'openconnect'
+option '--juniper' which has been confirmed to work when using
+OpenConnect 7.08.
+Specifying '--protocol=pulse' results in 'openconnect' option
+'--protocol=pulse' which has been confirmed to work when using
+OpenConnect 8.10 but does not work with OpenConnect 7.08.
+
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
 automatically add a valid VPN connection to the Pulse Secure GUI
@@ -209,7 +220,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.3.0-9000
+Version: 5.3.0-9001
 Copyright: Henrik Bengtsson (2016-2021)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

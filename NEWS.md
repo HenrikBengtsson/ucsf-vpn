@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 5.3.0-9000 (2021-01-26)
+## Version 5.3.0-9000 (2021-04-06)
 
 ### Significant changes
 
@@ -9,6 +9,12 @@ ucsf-vpn
    their corresponding entries in the ~/.netrc file.
 
 ### New Features
+
+ * Added option `--protocol=<ptl>` for setting the VPN protocol, which can
+   also be set via environment variable 'UCSF_VPN_PROTOCOL'.  The default is
+   '--protocol=juniper', which is what has been used in previous versions
+   too.  An alternative protocol is `--protocol=pulse`, which may work better
+   and might become the new default in a future release.
 
  * Error messages now report on also the ping status of the VPN server,
    in case the VPN setup failed.
