@@ -1091,7 +1091,7 @@ function openconnect_start() {
 
     ## openconnect options
     opts="$extras"
-    opts="$opts --juniper ${url}"
+    opts="$opts --protocol=pulse ${url}"
     opts="$opts --background"
 
     if [[ -n $user ]]; then
