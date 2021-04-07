@@ -122,7 +122,7 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
- --protocol=<ptl> VPN protocol, e.g. 'juniper' (default) and 'pulse'
+ --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
  --theme=<theme>  Either 'cli' (default) or 'none'
 
@@ -185,12 +185,12 @@ Requirements:
 
 VPN Protocol:
 Different versions of OpenConnect support different VPN protocols.
-Specifying '--protocol=juniper' (default), results in using 'openconnect'
-option '--juniper' which has been confirmed to work when using
-OpenConnect 7.08.
-Specifying '--protocol=pulse' results in 'openconnect' option
-'--protocol=pulse' which has been confirmed to work when using
-OpenConnect 8.10 but does not work with OpenConnect 7.08.
+Using '--protocol=nc' (default) has been confirmed to work when using
+OpenConnect 7.08, and '--protocol=pulse' for OpenConnect 8.10.
+The 'nc' protocol specifies the old "Juniper Network Connect" protocol,
+and 'pulse' the newer "Pulse Secure" protocol.  For older version of
+OpenConnect that recognizes neither, specify '--protocol=juniper',
+which will results in using 'openconnect' legacy option '--juniper'.
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,

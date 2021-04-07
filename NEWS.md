@@ -8,13 +8,19 @@ ucsf-vpn
  * Options `--user=<user>` and `--pwd=<pwd>` now take precedence over
    their corresponding entries in the ~/.netrc file.
 
+ * Switch from using `openconnect` option `--juniper` to `--protocol=nc`.
+   The former is a legacy option that resolves to the latter, meaning this
+   should be a backward compatible change.  However, it might be that older
+   versions of OpenConnect only recognizes `--juniper`.  If that is the
+   case, then specify option `ucsf vpn --protocol=juniper start` to revert
+   back to the old behavior.
+
 ### New Features
 
  * Added option `--protocol=<ptl>` for setting the VPN protocol, which can
    also be set via environment variable `UCSF_VPN_PROTOCOL`.  The default is
-   `--protocol=juniper`, which is what has been used in previous versions
-   too.  An alternative protocol is `--protocol=pulse`, which may be needed
-   with newer versions of OpenConnect.
+   `--protocol=nc` with the alternative protocol being `--protocol=pulse`,
+   which _may_ be needed with newer versions of OpenConnect, such as 8.10.
 
  * Error messages now report on also the ping status of the VPN server,
    in case the VPN setup failed.
