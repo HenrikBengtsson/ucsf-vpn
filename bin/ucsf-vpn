@@ -636,7 +636,7 @@ function div() {
         echo "$1"
     else
         # shellcheck disable=SC2003
-        expr "$1/$2" | bc -l
+        echo "$1/$2" | bc -l
     fi
 }
 
