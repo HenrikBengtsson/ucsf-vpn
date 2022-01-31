@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/HenrikBengtsson/ucsf-vpn.svg?branch=develop)](https://travis-ci.org/HenrikBengtsson/ucsf-vpn)
+[![shellcheck](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml)
 
 For recent updates, see [NEWS].
 
@@ -122,6 +122,7 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+ --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
  --theme=<theme>  Either 'cli' (default) or 'none'
 
@@ -140,6 +141,7 @@ Examples:
 
 Environment variables:
  UCSF_VPN_METHOD       Default value for --method
+ UCSF_VPN_PROTOCOL     Default value for --protocol
  UCSF_VPN_SERVER       Default value for --server
  UCSF_VPN_TOKEN        Default value for --token
  UCSF_VPN_THEME        Default value for --theme
@@ -172,7 +174,7 @@ set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Requirements when using OpenConnect (CLI):
-  - OpenConnect (>= 7.08) (installed: 7.08-3ubuntu0.18.04.1)
+  - OpenConnect (>= 7.08) (installed: 7.08-3ubuntu0.18.04.2)
   - sudo
 * Requirements when using Junos Pulse Secure Client (GUI):
   - Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
@@ -180,6 +182,15 @@ Requirements:
   - `curl`
   - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
   - No need for sudo rights
+
+VPN Protocol:
+Different versions of OpenConnect support different VPN protocols.
+Using '--protocol=nc' (default) has been confirmed to work when using
+OpenConnect 7.08, and '--protocol=pulse' for OpenConnect 8.10.
+The 'nc' protocol specifies the old "Juniper Network Connect" protocol,
+and 'pulse' the newer "Pulse Secure" protocol.  For older version of
+OpenConnect that recognizes neither, specify '--protocol=juniper',
+which will results in using 'openconnect' legacy option '--juniper'.
 
 Pulse Secure GUI configuration:
 Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
@@ -209,8 +220,8 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.3.0
-Copyright: Henrik Bengtsson (2016-2020)
+Version: 5.4.0
+Copyright: Henrik Bengtsson (2016-2022)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
 ```

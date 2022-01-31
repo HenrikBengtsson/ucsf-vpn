@@ -1,11 +1,48 @@
 ucsf-vpn
 ========
 
+## Version 5.4.0 (2022-01-30)
+
+### Significant changes
+
+ * Options `--user=<user>` and `--pwd=<pwd>` now take precedence over
+   their corresponding entries in the ~/.netrc file.
+
+ * Switch from using `openconnect` option `--juniper` to `--protocol=nc`.
+   The former is a legacy option that resolves to the latter, meaning this
+   should be a backward compatible change.  However, it might be that older
+   versions of OpenConnect only recognizes `--juniper`.  If that is the
+   case, then specify option `ucsf vpn --protocol=juniper start` to revert
+   back to the old behavior.
+
+### New Features
+
+ * Added option `--protocol=<ptl>` for setting the VPN protocol, which can
+   also be set via environment variable `UCSF_VPN_PROTOCOL`.  The default is
+   `--protocol=nc` with the alternative protocol being `--protocol=pulse`,
+   which _may_ be needed with newer versions of OpenConnect, such as 8.10.
+
+ * Error messages now report on also the ping status of the VPN server,
+   in case the VPN setup failed.
+
+ * Error messages now provide a URL to the UCSF Web VPN for validation
+   credentials when it is likely that the connection failed due to an
+   incorrect username, password, or 2FA was given.
+
+ * Now 'ucsf vpn stop' tries to terminate OpenConnect a second time if the
+   first attempt was not successful after 10 seconds.
+
+### Defunct
+
+ * Legacy, non-standard key-value pair CLI options without equal signs such
+   as `--user alice` are now defunct. Use `--user=alice` instead.
+
+
 ## Version 5.3.0 (2020-08-10)
 
 ### New Features
 
- * When prompted for a token (e.g. --token=prompt`) and pressing only ENTER
+ * When prompted for a token (e.g. `--token=prompt`) and pressing only ENTER
    (without entering anything), it will default to 'push'.  This will make
    it easier to switch between the 2FA mobile application and the YubiKey.
  
@@ -205,7 +242,7 @@ ucsf-vpn
 
 ## Version 3.1.1 (2017-12-12)
  
-SOFTWARE QUALITY:
+### Software Quality
 
  * Fixed Bash code according to ShellCheck suggestions.
 

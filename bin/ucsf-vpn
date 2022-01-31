@@ -29,6 +29,7 @@
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
 ###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###
@@ -48,6 +49,7 @@
 ###
 ### Environment variables:
 ###  UCSF_VPN_METHOD       Default value for --method
+###  UCSF_VPN_PROTOCOL     Default value for --protocol
 ###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_TOKEN        Default value for --token
 ###  UCSF_VPN_THEME        Default value for --theme
@@ -89,6 +91,15 @@
 ###   - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
 ###   - No need for sudo rights
 ###
+### VPN Protocol:
+### Different versions of OpenConnect support different VPN protocols.
+### Using '--protocol=nc' (default) has been confirmed to work when using
+### OpenConnect 7.08, and '--protocol=pulse' for OpenConnect 8.10.
+### The 'nc' protocol specifies the old "Juniper Network Connect" protocol,
+### and 'pulse' the newer "Pulse Secure" protocol.  For older version of
+### OpenConnect that recognizes neither, specify '--protocol=juniper',
+### which will results in using 'openconnect' legacy option '--juniper'.
+###
 ### Pulse Secure GUI configuration:
 ### Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
 ### automatically add a valid VPN connection to the Pulse Secure GUI
@@ -117,8 +128,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.3.0
-### Copyright: Henrik Bengtsson (2016-2020)
+### Version: 5.4.0
+### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -194,6 +205,14 @@ function mdeprecated() {
         _tput setaf 3 ## yellow
         echo "DEPRECATED: $*"
         _tput sgr0    ## reset
+    } 1>&2
+}
+function mdefunct() {
+    {
+        _tput setaf 1 ## red
+        echo "DEFUNCT: $*"
+        _tput sgr0    ## reset
+        exit 1
     } 1>&2
 }
 function mnote() {
@@ -330,7 +349,7 @@ function public_info() {
 function is_online() {
     local ping_server
 
-    ping_servers=${UCSF_VPN_PING_SERVER:-9.9.9.9}
+    ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
     for ping_server in $ping_servers; do
       mdebug "Ping server: '$ping_server'"
@@ -425,6 +444,13 @@ function source_netrc() {
         return;
     fi
     mdebug "Detected .netrc file: $rcfile"
+
+    ## Nothing to do?
+    if [[ -n "$user" && -n "$pwd" ]]; then
+        mdebug "Both 'user' and 'pwd' already set. Skipping .netrc file"
+        return
+    fi
+    
     ## Force file to be accessible only by user
     chmod go-rwx "${rcfile}"
 
@@ -453,8 +479,13 @@ function source_netrc() {
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
     [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
 
-    user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
-    pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    if [[ -z "$user" ]]; then
+        user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
+    fi
+    
+    if [[ -z "$pwd" ]]; then
+        pwd=$(echo "${bfr}" | grep -F "password" | sed -E 's/.*password[[:space:]]+([^[:space:]]+).*/\1/g')
+    fi
 
     mdebug "- user=${user}"
     if [[ -z "${pwd}" ]]; then
@@ -605,7 +636,7 @@ function div() {
         echo "$1"
     else
         # shellcheck disable=SC2003
-        expr "$1/$2" | bc -l
+        echo "$1/$2" | bc -l
     fi
 }
 
@@ -1030,7 +1061,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid fh_stderr stderr reason
+    local pid opts two_pwds pid fh_stderr stderr main_reason reason post_reason
 
     mdebug "openconnect_start() ..."
 
@@ -1079,7 +1110,14 @@ function openconnect_start() {
 
     ## openconnect options
     opts="$extras"
-    opts="$opts --juniper ${url}"
+
+    ## VPN protocol
+    if [[ "$protocol" == "juniper" ]]; then
+        opts="$opts --juniper ${url}"
+    else
+        opts="$opts --protocol=${protocol} ${url}"
+    fi
+    
     opts="$opts --background"
 
     if [[ -n $user ]]; then
@@ -1165,8 +1203,16 @@ function openconnect_start() {
     mdebug "$stderr"
 
     pid=$(openconnect_pid)
+    mdebug "pid=$pid"
     if [[ "$pid" == "-1" ]]; then
         echo "$stderr"
+
+        ## Report on ping for VPN server
+        if ! is_online "$server"; then
+            main_reason="Most likely reason: The VPN server ($server) does not respond to ping; check your internet connection."
+        else
+            post_reason="Miscellaneous: The VPN server ($server) responds to ping"
+        fi
 
         ## Post-mortem analysis of the standard error.
         ## (a) When the wrong username or password is entered, we will get:
@@ -1177,21 +1223,35 @@ function openconnect_start() {
         ##       password#2:
         ##       username:fgets (stdin): Resource temporarily unavailable
 
-        ## Was the wrong token given?
+        ## Was the wrong credentials given?
         if echo "$stderr" | grep -q -E "password#2"; then
-            reason="Likely reason: 2FA token not accepted"
+            reason="2FA token not accepted"
         elif echo "$stderr" | grep -q -F "username:password"; then
-            reason="Likely reason: Incorrect username or password"
+            reason="Incorrect username or password"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
+            reason="$stderr (option --protocol=<ptl>)"
         else
             reason="Check your username, password, and token"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
         fi
-        merror "Failed to connect to VPN server (no running OpenConnect process). ${reason}"
+        
+        if [[ -n "${main_reason}" ]]; then
+            reason="${main_reason} Possible other reason: ${reason}"
+        else
+            reason="Likely reason: ${reason}"
+        fi
+        reason="Failed to connect to VPN server. ${reason}"
+        if [[ -n "${post_reason}" ]]; then
+            reason="${reason}. ${post_reason}"
+        fi
+        merror "${reason}"
     fi
     minfo "Connected to VPN server"
 }
 
 function openconnect_stop() {
-    local pid kill_timeout
+    local kk pid kill_timeout
 
     mdebug "openconnect_stop() ..."
 
@@ -1206,12 +1266,25 @@ function openconnect_stop() {
 
     assert_sudo "stop"
 
-    mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
-    sudo kill -s INT "$pid" 2> /dev/null
-
-     ## Wait for process to terminate
-    kill_timeout=10
-    timeout $kill_timeout tail --pid="$pid" -f /dev/null
+    ## Signal SIGINT to terminate OpenConnect. If the first one fails,
+    ## try another one
+    # shellcheck disable=SC2034
+    for kk in {1..2}; do
+        ## From 'man openconnect': SIGINT performs a clean shutdown by logging the
+        ## session off, disconnecting from the gateway, and running the vpnc-script
+        ## to restore the network configuration.
+        mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+        sudo kill -s INT "$pid" 2> /dev/null
+    
+         ## Wait for process to terminate
+        kill_timeout=10
+        timeout $kill_timeout tail --pid="$pid" -f /dev/null
+    
+        ## Was the process terminated?
+        if ! ps -p "$pid" > /dev/null; then
+            break
+        fi
+    done
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
@@ -1282,6 +1355,7 @@ validate=
 dryrun=false
 realm=
 extras=${UCSF_VPN_EXTRAS}
+protocol=${UCSF_VPN_PROTOCOL:-nc}
 gui=true
 notification=false
 speed=1.0
@@ -1361,6 +1435,8 @@ while [[ $# -gt 0 ]]; do
             realm=$value
         elif [[ "$key" == "user" ]]; then
             user=$value
+        elif [[ "$key" == "protocol" ]]; then
+            protocol=$value
         elif [[ "$key" == "pwd" ]]; then
             pwd=$value
         elif [[ "$key" == "token" ]]; then
@@ -1375,29 +1451,9 @@ while [[ $# -gt 0 ]]; do
 
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" == "--skip" ]]; then
-        mdeprecated "Command-line option '$1' is deprecated and ignored."
+        mdefunct "Command-line option '$1' is defunct."
     elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
-        mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
-        key=${1//--}
-        shift
-        if [[ "$key" == "method" ]]; then
-            method=$1
-        elif [[ "$key" == "url" ]]; then
-            url=$1
-        elif [[ "$key" == "server" ]]; then
-            server=$1
-        elif [[ "$key" == "realm" ]]; then
-            realm=$1
-        elif [[ "$key" == "user" ]]; then
-            user=$1
-        elif [[ "$key" == "pwd" ]]; then
-            pwd=$1
-        elif [[ "$key" == "token" ]]; then
-            token=$1
-        elif [[ "$key" == "speed" ]]; then
-            speed=$1
-        fi
-
+        mdefunct "Command-line option format '$1 $2' is defunct. Use '$1=$2' instead."
     ## Additional options to be appended (rarely needed)
     else
         extras="$extras $1"
@@ -1506,6 +1562,7 @@ mdebug "call: $call"
 mdebug "action: $action"
 mdebug "VPN server: $server"
 mdebug "Realm: '$realm'"
+mdebug "protocol: $protocol"
 mdebug "user: $user"
 if [[ -z "${pwd}" ]]; then
     mdebug "pwd=<missing>"
@@ -1529,7 +1586,7 @@ mdebug "extras: $extras"
 mdebug "method: $method"
 mdebug "gui: $gui"
 mdebug "speed: $speed"
-mdebug "netrc machines: ${netrc_machines[*]}"
+mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "openconnect_pid: $(openconnect_pid)"
 mdebug "pii_file: $pii_file"
