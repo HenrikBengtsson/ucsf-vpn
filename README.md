@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/HenrikBengtsson/ucsf-vpn.svg?branch=develop)](https://travis-ci.org/HenrikBengtsson/ucsf-vpn)
+[![shellcheck](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml)
 
 For recent updates, see [NEWS].
 

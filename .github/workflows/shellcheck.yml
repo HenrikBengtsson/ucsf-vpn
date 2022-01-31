@@ -1,0 +1,31 @@
+on: [push, pull_request]
+
+name: shellcheck
+
+jobs:
+  checks:
+    if: "! contains(github.event.head_commit.message, '[ci skip]')"
+    
+    runs-on: ubuntu-20.04
+    
+    name: shellcheck
+
+    strategy:
+      fail-fast: false
+      
+    steps:
+    - name: Checkout git repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y shellcheck
+        shellcheck --version
+        curl -L -O https://github.com/koalaman/shellcheck/releases/download/v0.8.0/shellcheck-v0.8.0.linux.x86_64.tar.xz
+        tar Jxf shellcheck-v0.8.0.linux.x86_64.tar.xz
+        mv shellcheck-v0.8.0/shellcheck .
+        PATH=".:$PATH" shellcheck --version
+
+    - name: ShellCheck
+      run: |
+        make check
