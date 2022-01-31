@@ -128,8 +128,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.3.0-9001
-### Copyright: Henrik Bengtsson (2016-2021)
+### Version: 5.3.0-9002
+### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -205,6 +205,14 @@ function mdeprecated() {
         _tput setaf 3 ## yellow
         echo "DEPRECATED: $*"
         _tput sgr0    ## reset
+    } 1>&2
+}
+function mdefunct() {
+    {
+        _tput setaf 1 ## red
+        echo "DEFUNCT: $*"
+        _tput sgr0    ## reset
+        exit 1
     } 1>&2
 }
 function mnote() {
@@ -1430,29 +1438,9 @@ while [[ $# -gt 0 ]]; do
 
     ## DEPRECATED: Options (--key value):
     elif [[ "$1" == "--skip" ]]; then
-        mdeprecated "Command-line option '$1' is deprecated and ignored."
+        mdefunct "Command-line option '$1' is defunct."
     elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
-        mdeprecated "Command-line option format '$1 $2' is deprecated. Use '$1=$2' instead."
-        key=${1//--}
-        shift
-        if [[ "$key" == "method" ]]; then
-            method=$1
-        elif [[ "$key" == "url" ]]; then
-            url=$1
-        elif [[ "$key" == "server" ]]; then
-            server=$1
-        elif [[ "$key" == "realm" ]]; then
-            realm=$1
-        elif [[ "$key" == "user" ]]; then
-            user=$1
-        elif [[ "$key" == "pwd" ]]; then
-            pwd=$1
-        elif [[ "$key" == "token" ]]; then
-            token=$1
-        elif [[ "$key" == "speed" ]]; then
-            speed=$1
-        fi
-
+        mdefunct "Command-line option format '$1 $2' is defunct. Use '$1=$2' instead."
     ## Additional options to be appended (rarely needed)
     else
         extras="$extras $1"

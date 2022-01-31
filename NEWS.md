@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 5.3.0-9001 (2021-04-06)
+## Version 5.3.0-9002 (2022-01-30)
 
 ### Significant changes
 
@@ -28,7 +28,12 @@ ucsf-vpn
  * Error messages now provide a URL to the UCSF Web VPN for validation
    credentials when it is likely that the connection failed due to an
    incorrect username, password, or 2FA was given.
- 
+
+### Defunct
+
+ * Legacy, non-standard key-value pair CLI options without equal signs such
+   as `--user alice` are now defunct. Use `--user=alice` instead.
+
 
 ## Version 5.3.0 (2020-08-10)
 
