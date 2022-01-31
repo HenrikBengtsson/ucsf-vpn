@@ -29,6 +29,9 @@ ucsf-vpn
    credentials when it is likely that the connection failed due to an
    incorrect username, password, or 2FA was given.
 
+ * Now 'ucsf vpn stop' tries to terminate OpenConnect a second time if the
+   first attempt was not successful after 10 seconds.
+
 ### Defunct
 
  * Legacy, non-standard key-value pair CLI options without equal signs such

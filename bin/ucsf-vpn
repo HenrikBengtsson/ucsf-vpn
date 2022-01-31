@@ -1251,7 +1251,7 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
-    local pid kill_timeout
+    local kk pid kill_timeout
 
     mdebug "openconnect_stop() ..."
 
@@ -1266,12 +1266,25 @@ function openconnect_stop() {
 
     assert_sudo "stop"
 
-    mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
-    sudo kill -s INT "$pid" 2> /dev/null
-
-     ## Wait for process to terminate
-    kill_timeout=10
-    timeout $kill_timeout tail --pid="$pid" -f /dev/null
+    ## Signal SIGINT to terminate OpenConnect. If the first one fails,
+    ## try another one
+    # shellcheck disable=SC2034
+    for kk in {1..2}; do
+        ## From 'man openconnect': SIGINT performs a clean shutdown by logging the
+        ## session off, disconnecting from the gateway, and running the vpnc-script
+        ## to restore the network configuration.
+        mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+        sudo kill -s INT "$pid" 2> /dev/null
+    
+         ## Wait for process to terminate
+        kill_timeout=10
+        timeout $kill_timeout tail --pid="$pid" -f /dev/null
+    
+        ## Was the process terminated?
+        if ! ps -p "$pid" > /dev/null; then
+            break
+        fi
+    done
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
