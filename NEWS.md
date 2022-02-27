@@ -1,9 +1,10 @@
 ucsf-vpn
 ========
 
-## Version 5.4.0-9000 (2022-01-30)
+## Version 5.4.0-9001 (2022-02-26)
 
-* ...
+* `ucsf-vpn` now respected environment variable `NO_COLOR`. Set it to any
+  non-empty value to disable colored output.
 
 
 ## Version 5.4.0 (2022-01-30)

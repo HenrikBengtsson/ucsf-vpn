@@ -128,7 +128,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.4.0-9000
+### Version: 5.4.0-9001
 ### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -142,7 +142,7 @@ export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 # Output utility functions
 # -------------------------------------------------------------------------
 function _tput() {
-    if [[ $theme == "none" ]]; then
+    if [[ $theme == "none" ]] || [[ -n ${NO_COLOR} ]]; then
         return
     fi
     tput "$@" 2> /dev/null
