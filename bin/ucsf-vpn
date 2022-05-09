@@ -37,9 +37,11 @@
 ###  --verbose        More verbose output
 ###  --help           Display full help
 ###  --version        Display version
+###  --full           Display more version information
 ###  --force          Force command
 ###
 ### Examples:
+###  ucsf-vpn --version --full
 ###  ucsf-vpn start --user=alice --token=push
 ###  ucsf-vpn stop
 ###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
@@ -128,7 +130,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.4.0-9001
+### Version: 5.4.0-9002
 ### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1349,6 +1351,7 @@ server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
 url=
 theme=${UCSF_VPN_THEME:-cli}
 force=false
+full=false
 debug=false
 verbose=false
 validate=
@@ -1403,6 +1406,8 @@ while [[ $# -gt 0 ]]; do
         verbose=true
     elif [[ "$1" == "--force" ]]; then
         force=true
+    elif [[ "$1" == "--full" ]]; then
+        full=true
     elif [[ "$1" == "--dry-run" ]]; then
         dryrun=true
     elif [[ "$1" == "--dryrun" ]]; then
@@ -1596,7 +1601,12 @@ mdebug "pii_file: $pii_file"
 # Actions
 # -------------------------------------------------------------------------
 if [[ $action == "version" ]]; then
-    version
+    if $full; then
+        echo "ucsf-vpn $(version)"
+        echo "OpenConnect $(openconnect_version)"
+    else
+        version
+    fi
     _exit 0
 fi
 
