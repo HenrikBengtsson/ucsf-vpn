@@ -130,7 +130,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.4.0-9002
+### Version: 5.4.0-9003
 ### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -372,57 +372,75 @@ function is_connected() {
 }
 
 function status() {
-    local assert connected mcmd pid msg
+    local assert connected mcmd pid msg count ok
 
     assert=$1
     mdebug "assert='$assert'"
     minfo "validate='$validate'"
 
     connected=false
-    mcmd="echo"
 
-    if [[ $validate == *pid* ]]; then
-        pid=$(openconnect_pid)
-        if [[ $pid == "-1" ]]; then
-            connected=false
-            msg="No \'openconnect\' process running"
-            if [[ $assert == "connected" ]]; then
-                mcmd="merror"
-            elif [[ $assert == "disconnected" ]]; then
-                mcmd="mok"
+    ok=false    
+    count=1
+    while ! $ok; do
+        mdebug "Checking status (attempt #${count})"
+        if [[ $validate == *pid* ]]; then
+            pid=$(openconnect_pid)
+            if [[ $pid == "-1" ]]; then
+                connected=false
+                msg="No \'openconnect\' process running"
+                if [[ $assert == "disconnected" ]]; then
+                    ok=true
+                elif [[ $assert == "connected" ]]; then
+                    ok=false
+                fi
+            else
+                connected=true
+                msg="\'openconnect\' process running \(PID=$pid\)"
+                if [[ $assert == "connected" ]]; then
+                    ok=true
+                elif [[ $assert == "disconnected" ]]; then
+                    ok=false
+                fi
             fi
-        else
-            connected=true
-            msg="\'openconnect\' process running \(PID=$pid\)"
-            if [[ $assert == "connected" ]]; then
-                mcmd="mok"
-            elif [[ $assert == "disconnected" ]]; then
-                mcmd="merror"
+            msg="OpenConnect status: $msg"
+        elif [[ $validate == *ipinfo* ]]; then
+            if is_connected; then
+                connected=true
+                if [[ $assert == "connected" ]]; then
+                    ok=true
+                fi
+            else
+                connected=false
+                if [[ $assert == "disconnected" ]]; then
+                    ok=true
+                fi
             fi
+  
+            msg="Public IP information: $(public_info)"
         fi
-        eval "$mcmd" "OpenConnect status: $msg"
-    fi
 
-    if [[ $validate == *ipinfo* ]]; then
+        if $ok || [[ -z $assert ]]; then
+            break
+        fi
+
+        count=$((count + 1))
+        if (( count <= 5 )); then
+            sleep 0.5
+        fi
+    done
+
+    if [[ -n $assert ]]; then
+        if $ok; then
+            mcmd="mok"
+        else
+            mcmd="merror"
+        fi
+    else
         mcmd="echo"
-        if is_connected; then
-            connected=true
-            if [[ $assert == "disconnected" ]]; then
-                mcmd="merror"
-            elif [[ $assert == "connected" ]]; then
-                mcmd="mok"
-            fi
-        else
-            connected=false
-            if [[ $assert == "disconnected" ]]; then
-                mcmd="mok"
-            elif [[ $assert == "connected" ]]; then
-                mcmd="merror"
-            fi
-        fi
-        eval "$mcmd" "Public IP information: $(public_info)"
-     fi
-
+    fi        
+    eval "$mcmd" "$msg"
+    
     if $connected; then
         msg="Connected to the VPN"
     else
