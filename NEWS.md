@@ -1,6 +1,23 @@
 ucsf-vpn
 ========
 
+## Version 5.5.0 (2022-06-14)
+
+### New Features
+
+ * `ucsf-vpn --version --full` now reports on both the `ucsf-vpn` 
+   version and the OpenConnect version.
+
+ * `ucsf-vpn` now respected environment variable `NO_COLOR`. Set it to 
+   any non-empty value to disable colored output.
+
+### Bug Fixes
+
+ * `ucsf-vpn start` could give a false error saying connection to the 
+   VPN failed. Now it retries several times if the status is not what it
+   expects.
+
+
 ## Version 5.4.0 (2022-01-30)
 
 ### Significant changes

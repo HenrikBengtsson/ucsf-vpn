@@ -130,9 +130,11 @@ Flags:
  --verbose        More verbose output
  --help           Display full help
  --version        Display version
+ --full           Display more version information
  --force          Force command
 
 Examples:
+ ucsf-vpn --version --full
  ucsf-vpn start --user=alice --token=push
  ucsf-vpn stop
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
@@ -174,7 +176,7 @@ set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
 * Requirements when using OpenConnect (CLI):
-  - OpenConnect (>= 7.08) (installed: 7.08-3ubuntu0.18.04.2)
+  - OpenConnect (>= 7.08) (installed: 8.05-1)
   - sudo
 * Requirements when using Junos Pulse Secure Client (GUI):
   - Junos Pulse Secure client (>= 5.3) (installed: 5.3-3-Build553)
@@ -220,7 +222,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.4.0
+Version: 5.5.0
 Copyright: Henrik Bengtsson (2016-2022)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
