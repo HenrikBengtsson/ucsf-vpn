@@ -1362,7 +1362,9 @@ validate=
 dryrun=false
 realm=
 extras=${UCSF_VPN_EXTRAS}
-protocol=${UCSF_VPN_PROTOCOL:-nc}
+# RB changes
+#protocol=${UCSF_VPN_PROTOCOL:-nc}
+protocol=${UCSF_VPN_PROTOCOL:-pulse}
 gui=true
 notification=false
 speed=1.0
