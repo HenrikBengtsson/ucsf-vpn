@@ -464,7 +464,7 @@ function source_netrc() {
 
     # eval is another solution, but a security risk
     # https://stackoverflow.com/questions/7358611/get-users-home-directory-when-they-run-a-script-as-root
-    defaultrc=$(getent passwd $(logname) | cut -d: -f6)/.netrc
+    defaultrc=$(getent passwd "$(logname)" | cut -d: -f6)/.netrc
     rcfile=${NETRC:-${defaultrc}}
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
