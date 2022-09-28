@@ -22,7 +22,7 @@ check:
 	shellcheck bin/ucsf-vpn
 
 ## Check spelling
-spell:
+spelling:
 	Rscript -e 'spelling::spell_check_files(c("NEWS.md", "README.md"), ignore = readLines("WORDLIST"))'
 
 ## Record asciinema screencast
