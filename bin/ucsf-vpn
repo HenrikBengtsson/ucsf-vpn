@@ -130,7 +130,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.5.0-9000
+### Version: 5.5.0-9001
 ### Copyright: Henrik Bengtsson (2016-2022)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1203,7 +1203,7 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo printf "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
+        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
     else
         # shellcheck disable=SC2086
         sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"

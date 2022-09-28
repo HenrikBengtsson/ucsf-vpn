@@ -3,7 +3,11 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### Bug Fixes
+
+ * `ucsf-vpn` gave an obscure error (e.g. `printf: %*R: invalid
+   conversion specification`) if the password comprised of one or more
+   `%` symbols.
 
 
 ## Version 5.5.0 (2022-06-14)
