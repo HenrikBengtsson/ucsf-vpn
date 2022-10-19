@@ -3,7 +3,11 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### New Features
+
+ * `ucsf vpn restart --force` restarts the VPN connection regardless
+   of it is active or not.  This can be useful if the internet connection
+   is completely broken.
  
 
 ## Version 5.5.1 (2022-09-28)
