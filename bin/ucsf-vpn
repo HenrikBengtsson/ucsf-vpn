@@ -1275,10 +1275,10 @@ function openconnect_stop() {
     mdebug "openconnect_stop() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" == "-1" ]]; then
+    if [[ "$pid" == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
         return
-        merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
+#        merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
     minfo "Disconnecting from VPN server"
