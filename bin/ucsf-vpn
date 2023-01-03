@@ -130,8 +130,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.5.1-9001
-### Copyright: Henrik Bengtsson (2016-2022)
+### Version: 5.5.1-9002
+### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -226,7 +226,7 @@ function mnote() {
 }
 
 function _exit() {
-    local value
+    local -i value
 
     value=${1:-0}
     pii_cleanup
@@ -372,7 +372,8 @@ function is_connected() {
 }
 
 function status() {
-    local assert connected mcmd pid msg count ok
+    local assert connected mcmd msg ok
+    local -i pid count
 
     assert=$1
     mdebug "assert='$assert'"
@@ -386,7 +387,7 @@ function status() {
         mdebug "Checking status (attempt #${count})"
         if [[ $validate == *pid* ]]; then
             pid=$(openconnect_pid)
-            if [[ $pid == "-1" ]]; then
+            if [[ $pid == -1 ]]; then
                 connected=false
                 msg="No \'openconnect\' process running"
                 if [[ $assert == "disconnected" ]]; then
@@ -677,7 +678,8 @@ function is_pulseUi_running() {
 }
 
 function pulseUi_find_connection() {
-    local config_home confile idx ii con  # IFS too?
+    local config_home confile con  # IFS too?
+    local -i idx ii
 
     config_home="$HOME/.pulse_secure/pulse"
     confile="$config_home/.pulse_Connections.txt"
@@ -780,7 +782,8 @@ function wait_for_pulse_window_to_close() {
 }
 
 function pulse_start() {
-    local conidx step wid wid2 wid3 cmd opts extra
+    local wid wid2 wid3 cmd opts extra
+    local -i conidx step
 
     ## Validate request
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
@@ -993,7 +996,8 @@ function pulse_stop() {
 
 
 function pulse_troubleshoot() {
-    local config_home confile match ii con prefix logfile ## IFS too?
+    local config_home confile match con prefix logfile ## IFS too?
+    local -i ii
 
     minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
@@ -1054,7 +1058,7 @@ function openconnect_version() {
 }
 
 function openconnect_pid() {
-    local pid
+    local -i pid
 
     ## Is there a PID file?
     if [[ ! -f "$pid_file" ]]; then
@@ -1081,19 +1085,20 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid fh_stderr stderr main_reason reason post_reason
+    local opts two_pwds fh_stderr stderr main_reason reason post_reason
+    local -i pid
 
     mdebug "openconnect_start() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" != "-1" ]]; then
+    if [[ "$pid" != -1 ]]; then
         if [[ ! $force ]]; then
             merror "A VPN process ('openconnect' PID $pid) is already running."
         fi
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != "-1" ]]; then
+        if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != -1 ]]; then
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
@@ -1271,7 +1276,8 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
-    local kk pid kill_timeout
+    local kill_timeout
+    local -i kk pid
 
     mdebug "openconnect_stop() ..."
 
@@ -1298,7 +1304,7 @@ function openconnect_stop() {
     
          ## Wait for process to terminate
         kill_timeout=10
-        timeout $kill_timeout tail --pid="$pid" -f /dev/null
+        timeout "$kill_timeout" tail --pid="$pid" -f /dev/null
     
         ## Was the process terminated?
         if ! ps -p "$pid" > /dev/null; then
