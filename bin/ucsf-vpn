@@ -202,13 +202,6 @@ function mok() {
         _tput sgr0    ## reset
     } 1>&2
 }
-function mdeprecated() {
-    {
-        _tput setaf 3 ## yellow
-        echo "DEPRECATED: $*"
-        _tput sgr0    ## reset
-    } 1>&2
-}
 function mdefunct() {
     {
         _tput setaf 1 ## red
