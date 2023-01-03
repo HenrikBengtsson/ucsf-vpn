@@ -130,7 +130,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.5.1-9002
+### Version: 5.5.1-9003
 ### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -224,7 +224,7 @@ function _exit() {
     value=${1:-0}
     pii_cleanup
     mdebug "Exiting with exit code $value"
-    exit "$value"
+    exit $value
 }
 
 
@@ -698,7 +698,7 @@ function pulseUi_find_connection() {
 
     mdebug "Index of connection found: $idx"
 
-    echo "$idx"
+    echo $idx
 }
 
 function pulseUi_add_connection() {
@@ -1065,16 +1065,16 @@ function openconnect_pid() {
     mdebug "PID recorded in file: $pid"
 
     ## Is the process still running?
-    if ps -p "$pid" > /dev/null; then
+    if ps -p $pid > /dev/null; then
         mdebug "Process is running: $pid"
-        echo "$pid"
+        echo $pid
         return
     fi
 
     ## Remove stray PID file
     rm "$pid_file"
     mwarn "Removed stray PID file with non-existing process (PID=$pid): $pid_file"
-    echo "-1"
+    echo -1
 }
 
 function openconnect_start() {
@@ -1084,7 +1084,7 @@ function openconnect_start() {
     mdebug "openconnect_start() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" != -1 ]]; then
+    if [[ $pid != -1 ]]; then
         if [[ ! $force ]]; then
             merror "A VPN process ('openconnect' PID $pid) is already running."
         fi
@@ -1222,7 +1222,7 @@ function openconnect_start() {
 
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
-    if [[ "$pid" == "-1" ]]; then
+    if [[ $pid == -1 ]]; then
         echo "$stderr"
 
         ## Report on ping for VPN server
@@ -1275,7 +1275,7 @@ function openconnect_stop() {
     mdebug "openconnect_stop() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" == -1 ]]; then
+    if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
         return
 #        merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
@@ -1293,14 +1293,14 @@ function openconnect_stop() {
         ## session off, disconnecting from the gateway, and running the vpnc-script
         ## to restore the network configuration.
         mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
-        sudo kill -s INT "$pid" 2> /dev/null
+        sudo kill -s INT $pid 2> /dev/null
     
          ## Wait for process to terminate
         kill_timeout=10
-        timeout "$kill_timeout" tail --pid="$pid" -f /dev/null
+        timeout "$kill_timeout" tail --pid=$pid -f /dev/null
     
         ## Was the process terminated?
-        if ! ps -p "$pid" > /dev/null; then
+        if ! ps -p $pid > /dev/null; then
             break
         fi
     done
@@ -1309,7 +1309,7 @@ function openconnect_stop() {
     pii_file=$(make_pii_file)
 
     ## Assert that the process was terminated
-    if ps -p "$pid" > /dev/null; then
+    if ps -p $pid > /dev/null; then
         merror "Failed to terminate VPN process ('openconnect' with PID $pid). You could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
