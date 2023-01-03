@@ -30,4 +30,4 @@ jobs:
 
     - name: ShellCheck
       run: |
-        make check
+        PATH=".:$PATH" make check
