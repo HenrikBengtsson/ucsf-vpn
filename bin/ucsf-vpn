@@ -130,7 +130,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.5.1-9003
+### Version: 5.5.1-9004
 ### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1078,7 +1078,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local opts two_pwds fh_stderr stderr main_reason reason post_reason
+    local opts two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
     local -i pid
 
     mdebug "openconnect_start() ..."
@@ -1187,6 +1187,7 @@ function openconnect_start() {
     fi
 
     fh_stderr=$(mktemp)
+    fh_stdout=$(mktemp)
 
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
@@ -1201,10 +1202,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
+        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
+        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1217,12 +1218,21 @@ function openconnect_start() {
     else
         stderr=
     fi
+    if [[ -f "$fh_stdout" ]]; then
+        stdout=$(cat "$fh_stdout")
+        sudo rm "$fh_stdout"
+    else
+        stdout=
+    fi
+    mdebug "OpenConnect standard output:"
+    mdebug "$stdout"
     mdebug "OpenConnect standard error:"
     mdebug "$stderr"
 
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
     if [[ $pid == -1 ]]; then
+        echo "$stdout"
         echo "$stderr"
 
         ## Report on ping for VPN server

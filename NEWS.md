@@ -8,7 +8,12 @@ ucsf-vpn
  * `ucsf vpn restart --force` restarts the VPN connection regardless
    of it is active or not.  This can be useful if the internet connection
    is completely broken.
- 
+
+### Bug Fixes
+
+ * `ucsf vpn start` would display lots of OpenConnect output, at least
+   with OpenConnect 8.20-1 on Ubuntu 22.04.  This output is now silenced.
+
 
 ## Version 5.5.1 (2022-09-28)
 
