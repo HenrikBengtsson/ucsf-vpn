@@ -130,8 +130,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.5.1
-### Copyright: Henrik Bengtsson (2016-2022)
+### Version: 5.6.0
+### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -202,13 +202,6 @@ function mok() {
         _tput sgr0    ## reset
     } 1>&2
 }
-function mdeprecated() {
-    {
-        _tput setaf 3 ## yellow
-        echo "DEPRECATED: $*"
-        _tput sgr0    ## reset
-    } 1>&2
-}
 function mdefunct() {
     {
         _tput setaf 1 ## red
@@ -226,12 +219,12 @@ function mnote() {
 }
 
 function _exit() {
-    local value
+    local -i value
 
     value=${1:-0}
     pii_cleanup
     mdebug "Exiting with exit code $value"
-    exit "$value"
+    exit $value
 }
 
 
@@ -372,7 +365,8 @@ function is_connected() {
 }
 
 function status() {
-    local assert connected mcmd pid msg count ok
+    local assert connected mcmd msg ok
+    local -i pid count
 
     assert=$1
     mdebug "assert='$assert'"
@@ -386,7 +380,7 @@ function status() {
         mdebug "Checking status (attempt #${count})"
         if [[ $validate == *pid* ]]; then
             pid=$(openconnect_pid)
-            if [[ $pid == "-1" ]]; then
+            if [[ $pid == -1 ]]; then
                 connected=false
                 msg="No \'openconnect\' process running"
                 if [[ $assert == "disconnected" ]]; then
@@ -677,7 +671,8 @@ function is_pulseUi_running() {
 }
 
 function pulseUi_find_connection() {
-    local config_home confile idx ii con  # IFS too?
+    local config_home confile con  # IFS too?
+    local -i idx ii
 
     config_home="$HOME/.pulse_secure/pulse"
     confile="$config_home/.pulse_Connections.txt"
@@ -703,7 +698,7 @@ function pulseUi_find_connection() {
 
     mdebug "Index of connection found: $idx"
 
-    echo "$idx"
+    echo $idx
 }
 
 function pulseUi_add_connection() {
@@ -780,7 +775,8 @@ function wait_for_pulse_window_to_close() {
 }
 
 function pulse_start() {
-    local conidx step wid wid2 wid3 cmd opts extra
+    local wid wid2 wid3 cmd opts extra
+    local -i conidx step
 
     ## Validate request
     if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
@@ -993,7 +989,8 @@ function pulse_stop() {
 
 
 function pulse_troubleshoot() {
-    local config_home confile match ii con prefix logfile ## IFS too?
+    local config_home confile match con prefix logfile ## IFS too?
+    local -i ii
 
     minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
     command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
@@ -1054,7 +1051,7 @@ function openconnect_version() {
 }
 
 function openconnect_pid() {
-    local pid
+    local -i pid
 
     ## Is there a PID file?
     if [[ ! -f "$pid_file" ]]; then
@@ -1068,32 +1065,33 @@ function openconnect_pid() {
     mdebug "PID recorded in file: $pid"
 
     ## Is the process still running?
-    if ps -p "$pid" > /dev/null; then
+    if ps -p $pid > /dev/null; then
         mdebug "Process is running: $pid"
-        echo "$pid"
+        echo $pid
         return
     fi
 
     ## Remove stray PID file
     rm "$pid_file"
     mwarn "Removed stray PID file with non-existing process (PID=$pid): $pid_file"
-    echo "-1"
+    echo -1
 }
 
 function openconnect_start() {
-    local pid opts two_pwds pid fh_stderr stderr main_reason reason post_reason
+    local opts two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local -i pid
 
     mdebug "openconnect_start() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" != "-1" ]]; then
+    if [[ $pid != -1 ]]; then
         if [[ ! $force ]]; then
             merror "A VPN process ('openconnect' PID $pid) is already running."
         fi
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != "-1" ]]; then
+        if [[ $validate == *pid* ]] && [[ $(openconnect_pid) != -1 ]]; then
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
@@ -1189,6 +1187,7 @@ function openconnect_start() {
     fi
 
     fh_stderr=$(mktemp)
+    fh_stdout=$(mktemp)
 
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
@@ -1203,10 +1202,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
+        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr"
+        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1219,12 +1218,21 @@ function openconnect_start() {
     else
         stderr=
     fi
+    if [[ -f "$fh_stdout" ]]; then
+        stdout=$(cat "$fh_stdout")
+        sudo rm "$fh_stdout"
+    else
+        stdout=
+    fi
+    mdebug "OpenConnect standard output:"
+    mdebug "$stdout"
     mdebug "OpenConnect standard error:"
     mdebug "$stderr"
 
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
-    if [[ "$pid" == "-1" ]]; then
+    if [[ $pid == -1 ]]; then
+        echo "$stdout"
         echo "$stderr"
 
         ## Report on ping for VPN server
@@ -1271,15 +1279,16 @@ function openconnect_start() {
 }
 
 function openconnect_stop() {
-    local kk pid kill_timeout
+    local kill_timeout
+    local -i kk pid
 
     mdebug "openconnect_stop() ..."
 
     pid=$(openconnect_pid)
-    if [[ "$pid" == "-1" ]]; then
+    if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
         return
-        merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
+#        merror "Failed to located a VPN ('openconnect') process. Are you really connected by VPN? If so, you could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
     minfo "Disconnecting from VPN server"
@@ -1294,14 +1303,14 @@ function openconnect_stop() {
         ## session off, disconnecting from the gateway, and running the vpnc-script
         ## to restore the network configuration.
         mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
-        sudo kill -s INT "$pid" 2> /dev/null
+        sudo kill -s INT $pid 2> /dev/null
     
          ## Wait for process to terminate
         kill_timeout=10
-        timeout $kill_timeout tail --pid="$pid" -f /dev/null
+        timeout "$kill_timeout" tail --pid=$pid -f /dev/null
     
         ## Was the process terminated?
-        if ! ps -p "$pid" > /dev/null; then
+        if ! ps -p $pid > /dev/null; then
             break
         fi
     done
@@ -1310,7 +1319,7 @@ function openconnect_stop() {
     pii_file=$(make_pii_file)
 
     ## Assert that the process was terminated
-    if ps -p "$pid" > /dev/null; then
+    if ps -p $pid > /dev/null; then
         merror "Failed to terminate VPN process ('openconnect' with PID $pid). You could manually kill *all* OpenConnect processes by calling 'sudo pkill -INT openconnect'. CAREFUL!"
     fi
 
@@ -1669,7 +1678,7 @@ elif [[ $action == "stop" ]]; then
     status "disconnected"
 elif [[ $action == "restart" ]]; then
     if [[ $method == "openconnect" ]]; then
-        if is_connected; then
+        if $force || is_connected; then
             openconnect_stop
         fi
         openconnect_start
