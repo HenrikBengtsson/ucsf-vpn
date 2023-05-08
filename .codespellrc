@@ -1,0 +1,4 @@
+[codespell]
+skip = *./.git
+count =
+quiet-level = 35

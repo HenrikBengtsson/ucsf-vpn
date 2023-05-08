@@ -57,6 +57,7 @@
 ###  UCSF_VPN_THEME        Default value for --theme
 ###  UCSF_VPN_VALIDATE     Default value for --validate
 ###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
+###  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 ###
 ### Commands and Options for Pulse Security Client only (--method=pulse):
@@ -130,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.6.0
+### Version: 5.6.1
 ### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -342,14 +343,16 @@ function public_info() {
 }
 
 function is_online() {
-    local ping_server
+    local ping_server ping_timeout
 
     ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
+    mdebug "Ping timeout (in seconds): $ping_timeout"
     for ping_server in $ping_servers; do
       mdebug "Ping server: '$ping_server'"
       minfo "Pinging '$ping_server' once"
-      if ping -c 1 -W 1 "$ping_server" > /dev/null 2> /dev/null; then
+      if ping -c 1 -W "$ping_timeout" "$ping_server" > /dev/null 2> /dev/null; then
           return 0
       fi
     done
@@ -1549,7 +1552,7 @@ if [[ $realm != "Dual-Factor Pulse Clients" ]]; then
 elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
     mdebug "Will prompt user for 2FA token"
 elif [[ ${token} == "false" ]]; then
-    mdebug "Will not use 2FA authenatication"
+    mdebug "Will not use 2FA authentication"
 elif [[ $(type_of_token "$token") == "unknown" ]]; then
     merror "The token (--token) must be 6 or 7 digits or 44 letters (YubiKey)"
 fi

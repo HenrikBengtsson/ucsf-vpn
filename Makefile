@@ -21,6 +21,9 @@ check:
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
 
+codespell:
+	codespell
+
 ## Check spelling
 spelling:
 	Rscript -e 'spelling::spell_check_files(c("NEWS.md", "README.md"), ignore = readLines("WORDLIST"))'
