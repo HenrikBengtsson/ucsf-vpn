@@ -1552,7 +1552,7 @@ if [[ $realm != "Dual-Factor Pulse Clients" ]]; then
 elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
     mdebug "Will prompt user for 2FA token"
 elif [[ ${token} == "false" ]]; then
-    mdebug "Will not use 2FA authenatication"
+    mdebug "Will not use 2FA authentication"
 elif [[ $(type_of_token "$token") == "unknown" ]]; then
     merror "The token (--token) must be 6 or 7 digits or 44 letters (YubiKey)"
 fi
