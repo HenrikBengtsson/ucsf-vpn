@@ -1,7 +1,6 @@
 [![shellcheck](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/shellcheck.yml)
 [![codespell](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/codespell.yml/badge.svg)](https://github.com/HenrikBengtsson/ucsf-vpn/actions/workflows/codespell.yml)
 
-
 For recent updates, see [NEWS].
 
 
@@ -151,6 +150,7 @@ Environment variables:
  UCSF_VPN_THEME        Default value for --theme
  UCSF_VPN_VALIDATE     Default value for --validate
  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
+ UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
 Commands and Options for Pulse Security Client only (--method=pulse):
@@ -224,7 +224,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.6.0
+Version: 5.6.1
 Copyright: Henrik Bengtsson (2016-2023)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
