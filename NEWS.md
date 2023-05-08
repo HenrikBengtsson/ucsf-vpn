@@ -1,13 +1,14 @@
 ucsf-vpn
 ========
 
-## Version (development version)
+## Version 5.6.1 (2023-05-09)
 
 ### New Features
 
  * Add support for controlling the ping timeout via environment
    variable `UCSF_VPN_PING_TIMEOUT`. This can be useful on very slow
    internet connections. Default is 1.0 seconds.
+
 
 ## Version 5.6.0 (2023-03-01)
 
