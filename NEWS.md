@@ -3,7 +3,10 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### Bug Fixes
+
+ * When `ucsf vpn start` fails, it would no longer detect when a wrong
+   username of password was enter.
  
 
 ## Version 5.6.1 (2023-05-09)

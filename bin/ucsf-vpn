@@ -131,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.6.1-9000
+### Version: 5.6.1-9001
 ### Copyright: Henrik Bengtsson (2016-2023)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1255,11 +1255,14 @@ function openconnect_start() {
         ##       username:fgets (stdin): Resource temporarily unavailable
 
         ## Was the wrong credentials given?
-        if echo "$stderr" | grep -q -E "password#2"; then
-            reason="2FA token not accepted"
-        elif echo "$stderr" | grep -q -F "username:password"; then
+        if echo "$stderr" | grep -q -F "username:password"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -F "Inappropriate ioctl for device"; then
+            reason="Incorrect username or password"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -E "password#2"; then
+            reason="2FA token not accepted"
         elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
             reason="$stderr (option --protocol=<ptl>)"
         else
