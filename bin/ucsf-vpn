@@ -28,7 +28,7 @@
 ###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
-###  --method=<mth>   Either 'openconnect' (default) or 'pulse'
+###  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
 ###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
@@ -131,8 +131,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.6.1
-### Copyright: Henrik Bengtsson (2016-2023)
+### Version: 5.7.0
+### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -1255,11 +1255,14 @@ function openconnect_start() {
         ##       username:fgets (stdin): Resource temporarily unavailable
 
         ## Was the wrong credentials given?
-        if echo "$stderr" | grep -q -E "password#2"; then
-            reason="2FA token not accepted"
-        elif echo "$stderr" | grep -q -F "username:password"; then
+        if echo "$stderr" | grep -q -F "username:password"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -F "Inappropriate ioctl for device"; then
+            reason="Incorrect username or password"
+            reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
+        elif echo "$stderr" | grep -q -E "password#2"; then
+            reason="2FA token not accepted"
         elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
             reason="$stderr (option --protocol=<ptl>)"
         else
@@ -1519,6 +1522,7 @@ if [[ ${method} == "openconnect" ]]; then
     mdebug "Method: $method"
 elif [[ ${method} == "pulse" ]]; then
     mdebug "Method: $method"
+    mwarn "Using Pulse Secure is deprecated as of ucsf-vpn 5.7.0 (2024-04-27) in favor of the default --method=openconnect. Support for --method=pulse will be removed in a near-future release."
 else
     merror "Unknown value on option --method: '$method'"
 fi

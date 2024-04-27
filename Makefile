@@ -1,6 +1,6 @@
 SHELL:=/bin/bash
 
-all: README.md check spelling
+all: README.md shellcheck spelling
 
 .PHONY: help
 
@@ -16,7 +16,7 @@ README.md: README.md.tmpl bin/ucsf-vpn
 .PHONY: test
 
 ## Check code using static-code analysis
-check:
+shellcheck:
 	echo "ShellCheck $$(shellcheck --version | grep version:)"
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
