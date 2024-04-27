@@ -122,7 +122,7 @@ Options:
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
- --method=<mth>   Either 'openconnect' (default) or 'pulse'
+ --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
  --theme=<theme>  Either 'cli' (default) or 'none'
@@ -224,8 +224,8 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.6.1
-Copyright: Henrik Bengtsson (2016-2023)
+Version: 5.6.1-9002
+Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
 ```
