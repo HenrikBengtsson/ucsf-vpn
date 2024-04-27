@@ -7,6 +7,13 @@ ucsf-vpn
 
  * When `ucsf vpn start` fails, it would no longer detect when a wrong
    username of password was enter.
+
+### Deprecated and Defunct
+
+ * The use of `--method=pulse`, which uses the Pulse Secure GUI client
+   to establish a VPN connection, is deprecated and will become
+   defunct in a near-future release. Please use the default
+   `--method=openconnect` instead.
  
 
 ## Version 5.6.1 (2023-05-09)
