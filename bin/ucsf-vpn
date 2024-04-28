@@ -131,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9003
+### Version: 5.7.0-9004
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1190,6 +1190,7 @@ function openconnect_start() {
         _exit 0
     fi
 
+    ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
     fh_stderr=$(mktemp)
@@ -1295,14 +1296,18 @@ function openconnect_start() {
         fi
         sleep 0.1
     done
-    default_route_after=$(grep -E '^default[[:space:]].*tun' <(ip route show) | sed 's/default //' | sed -E 's/ +$//')
+
+    ## Record IP routing table after having connected to the VPN
+    ip route show > "${ip_route_vpn_file}"
+
+    default_route_after=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
     
     if $debug; then
         mdebug "Changes made to the IP routing table:"
         {
             _tput setaf 8 ## gray
-            diff -u -w "${ip_route_novpn_file}" <(ip route show)
+            diff -u -w "${ip_route_novpn_file}" "${ip_route_vpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi
@@ -1333,6 +1338,7 @@ function openconnect_stop() {
 
     assert_sudo "stop"
 
+    ## Record IP routing table while still connected to the VPN
     ip route show > "${ip_route_vpn_file}"
     
     ## Signal SIGINT to terminate OpenConnect. If the first one fails,
@@ -1379,14 +1385,20 @@ function openconnect_stop() {
         fi
         sleep 0.1
     done
-    default_route_after=$(grep -E '^default[[:space:]]' <(ip route show) | sed 's/default //' | sed -E 's/ +$//')
+
+    
+    ## Record IP routing table after being diconnected from the VPN
+    ip route show > "${ip_route_novpn_file}"
+    
+    default_route_after=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
+
     
     if $debug; then
         mdebug "Changes made to the IP routing table:"
         {
             _tput setaf 8 ## gray
-            diff -u -w "${ip_route_vpn_file}" <(ip route show)
+            diff -u -w "${ip_route_vpn_file}" "${ip_route_novpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi
