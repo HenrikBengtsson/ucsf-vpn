@@ -131,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9000
+### Version: 5.7.0-9001
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1083,6 +1083,7 @@ function openconnect_pid() {
 function openconnect_start() {
     local opts two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
     local -i pid
+    local -a ip_route_before ip_route_after ip_route_diff
 
     mdebug "openconnect_start() ..."
 
@@ -1189,6 +1190,10 @@ function openconnect_start() {
         _exit 0
     fi
 
+    if $debug; then
+        mapfile -t ip_route_before < <(ip route)
+    fi
+    
     fh_stderr=$(mktemp)
     fh_stdout=$(mktemp)
 
@@ -1281,12 +1286,26 @@ function openconnect_start() {
         fi
         merror "${reason}"
     fi
+
+    if $debug; then
+        sleep 2.0
+        mapfile -t ip_route_after < <(ip route)
+        mapfile -t ip_route_diff < <(diff -u -w <(printf "%s\n" "${ip_route_before[@]}") <(printf "%s\n" "${ip_route_after[@]}"))
+        mdebug "Changes made to the IP routing table:"
+        {
+            _tput setaf 8 ## gray
+            printf "%s\n" "${ip_route_diff[@]}"
+            _tput sgr0    ## reset
+        } 1>&2
+    fi
+    
     minfo "Connected to VPN server"
 }
 
 function openconnect_stop() {
     local kill_timeout
     local -i kk pid
+    local -a ip_route_before ip_route_after ip_route_diff
 
     mdebug "openconnect_stop() ..."
 
@@ -1301,6 +1320,10 @@ function openconnect_stop() {
 
     assert_sudo "stop"
 
+    if $debug; then
+        mapfile -t ip_route_before < <(ip route)
+    fi
+    
     ## Signal SIGINT to terminate OpenConnect. If the first one fails,
     ## try another one
     # shellcheck disable=SC2034
@@ -1336,6 +1359,18 @@ function openconnect_stop() {
         mwarn "OpenConnect PID file removed manually: $pid_file"
     fi
 
+    if $debug; then
+        sleep 2.0
+        mapfile -t ip_route_after < <(ip route)
+        mapfile -t ip_route_diff < <(diff -u -w <(printf "%s\n" "${ip_route_before[@]}") <(printf "%s\n" "${ip_route_after[@]}"))
+        mdebug "Changes made to the IP routing table:"
+        {
+            _tput setaf 8 ## gray
+            printf "%s\n" "${ip_route_diff[@]}"
+            _tput sgr0    ## reset
+        } 1>&2
+    fi
+    
     minfo "Disconnected from VPN server"
 }
 

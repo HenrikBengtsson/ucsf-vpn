@@ -3,7 +3,10 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### New Features
+
+ * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
+   changes to your IP routing table (per `ip route`).
 
 
 ## Version 5.7.0 (2024-04-27)
