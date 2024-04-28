@@ -9,19 +9,19 @@ ucsf-vpn
    with IP number annotated by hostnames, if available.  It also
    reports on the default non-VPN network interface.
  
- * Now `ucsf vpn start` waits for the default IP routing to be
-   tunneled before returning. If it does not happen within 10
-   seconds, then an error is produced.  Analogously, `ucsf vpn stop`
-   waits for the tunnel to be disabled before returning.
+ * Now `ucsf vpn start` and `ucsf vpn stop` wait for the updating of
+   the IP routing table (`ip route show`) to finish before returning.
  
  * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
-   changes to your IP routing table (per `ip route`).
+   changes to your IP routing table (per `ip route show`).
 
  * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
    or an unknown `--<key>=<value>` option.
 
  * Now `--args` causes all of the following options to be passed to
-   `openconnect`, e.g. `ucsf vpn start --args --script=my-vpnc-script`.
+   `openconnect`, e.g. `ucsf vpn start --args
+   --script=$PWD/my-vpnc-script` causes `--script=$PWD/my-vpnc-script`
+   to be passed to `openconnect`.
 
 
 ## Version 5.7.0 (2024-04-27)
