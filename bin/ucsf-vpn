@@ -132,7 +132,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9006
+### Version: 5.7.0-9007
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -965,7 +965,7 @@ function pulse_start() {
           merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
       fi
       ## Pulse Secure options
-      opts="$extras"
+      opts="${extras[*]}"
       opts="$opts -h ${server}"
 
       if [[ -n $user ]]; then
@@ -1164,7 +1164,7 @@ function openconnect_start() {
     fi
 
     ## openconnect options
-    opts="$extras"
+    opts="${extras[*]}"
 
     ## VPN protocol
     if [[ "$protocol" == "juniper" ]]; then
@@ -1497,7 +1497,8 @@ verbose=false
 validate=
 dryrun=false
 realm=
-extras=${UCSF_VPN_EXTRAS}
+extras=()
+extras+=("${UCSF_VPN_EXTRAS[@]}")
 protocol=${UCSF_VPN_PROTOCOL:-nc}
 gui=true
 notification=false
@@ -1603,7 +1604,7 @@ while [[ $# -gt 0 ]]; do
         mdefunct "Command-line option format '$1 $2' is defunct. Use '$1=$2' instead."
     ## Additional options to be appended (rarely needed)
     else
-        extras="$extras $1"
+        extras+=("$1")
     fi
     shift
 done
@@ -1730,7 +1731,7 @@ mdebug "verbose: $verbose"
 mdebug "force: $force"
 mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
-mdebug "extras: $extras"
+mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
 mdebug "method: $method"
 mdebug "gui: $gui"
 mdebug "speed: $speed"
