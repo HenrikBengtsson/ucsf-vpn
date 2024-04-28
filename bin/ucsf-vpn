@@ -1401,7 +1401,7 @@ function openconnect_stop() {
     done
 
     
-    ## Record IP routing table after being diconnected from the VPN
+    ## Record IP routing table after being disconnected from the VPN
     ip route show > "${ip_route_novpn_file}"
     
     default_route_after=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
