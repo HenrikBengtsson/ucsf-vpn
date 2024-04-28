@@ -21,7 +21,7 @@ ucsf-vpn
    or an unknown `--<key>=<value>` option.
 
  * Now `--args` causes all of the following options to be passed to
-   `openconnect`, e.g. `ucsf vpn start --args --script=my_script`.
+   `openconnect`, e.g. `ucsf vpn start --args --script=my-vpnc-script`.
 
 
 ## Version 5.7.0 (2024-04-27)
