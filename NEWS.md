@@ -5,6 +5,11 @@ ucsf-vpn
 
 ### New Features
 
+ * Now `ucsf vpn start` waits for the default IP routing to be
+   tunneled before returning. If it does not happen within 10
+   seconds, then an error is produced.  Analogously, `ucsf vpn stop`
+   waits for the tunnel to be disabled before returning.
+ 
  * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
    changes to your IP routing table (per `ip route`).
 

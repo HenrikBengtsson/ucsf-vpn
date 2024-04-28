@@ -131,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9002
+### Version: 5.7.0-9003
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1083,6 +1083,7 @@ function openconnect_pid() {
 function openconnect_start() {
     local opts two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
     local -i pid
+    local -i max_iter
 
     mdebug "openconnect_start() ..."
 
@@ -1190,7 +1191,7 @@ function openconnect_start() {
     fi
 
     ip route show > "${ip_route_novpn_file}"
-    
+
     fh_stderr=$(mktemp)
     fh_stdout=$(mktemp)
 
@@ -1284,14 +1285,31 @@ function openconnect_start() {
         merror "${reason}"
     fi
 
+    ## Wait for VPN connection to be established
+    mdebug "Waiting for default IP routing to be tunneled"
+    max_iter=100 ## try up to 10.0 seconds
+    while ! grep -q -E '^default[[:space:]].*tun' <(ip route show); do
+        max_iter=$((max_iter - 1))
+        if [[ ${max_iter} -eq 0 ]]; then            
+            merror "It appears that the default IP routing was never tunneled:$(echo; ip route show)"
+        fi
+        sleep 0.1
+    done
+    default_route_after=$(grep -E '^default[[:space:]].*tun' <(ip route show) | sed 's/default //' | sed -E 's/ +$//')
+    mdebug "Default IP routing changed to: ${default_route_after}"
+    
     if $debug; then
-        sleep 2.0
         mdebug "Changes made to the IP routing table:"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_novpn_file}" <(ip route show)
             _tput sgr0    ## reset
         } 1>&2
+    fi
+
+    if $verbose; then
+      default_route_before=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
+      minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
     
     minfo "Connected to VPN server"
@@ -1351,14 +1369,30 @@ function openconnect_stop() {
         mwarn "OpenConnect PID file removed manually: $pid_file"
     fi
 
+    mdebug "Waiting for default IP routing to be untunneled"
+    max_iter=100 ## try up to 10.0 seconds
+    while grep -q -E '^default[[:space:]].*tun' <(ip route show); do
+        max_iter=$((max_iter - 1))
+        if [[ ${max_iter} -eq 0 ]]; then            
+            merror "It appears that the default IP routing was never untunneled:$(echo; ip route show)"
+        fi
+        sleep 0.1
+    done
+    default_route_after=$(grep -E '^default[[:space:]]' <(ip route show) | sed 's/default //' | sed -E 's/ +$//')
+    mdebug "Default IP routing changed to: ${default_route_after}"
+    
     if $debug; then
-        sleep 2.0
         mdebug "Changes made to the IP routing table:"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_vpn_file}" <(ip route show)
             _tput sgr0    ## reset
         } 1>&2
+    fi
+    
+    if $verbose; then
+      default_route_before=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
+      minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
     
     minfo "Disconnected from VPN server"
