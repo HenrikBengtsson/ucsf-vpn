@@ -17,6 +17,9 @@ ucsf-vpn
  * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
    changes to your IP routing table (per `ip route`).
 
+ * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
+   or an unknown `--<key>=<value>` option.
+
 
 ## Version 5.7.0 (2024-04-27)
 

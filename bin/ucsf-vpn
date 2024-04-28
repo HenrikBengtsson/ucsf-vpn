@@ -132,7 +132,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9007
+### Version: 5.7.0-9008
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1539,30 +1539,35 @@ while [[ $# -gt 0 ]]; do
         action=close-gui
 
     ## Options (--flags):
-    elif [[ "$1" == "--help" ]]; then
-        action=help
-    elif [[ "$1" == "--version" ]]; then
-        action=version
-    elif [[ "$1" == "--debug" ]]; then
-        debug=true
-    elif [[ "$1" == "--verbose" ]]; then
-        verbose=true
-    elif [[ "$1" == "--force" ]]; then
-        force=true
-    elif [[ "$1" == "--full" ]]; then
-        full=true
-    elif [[ "$1" == "--dry-run" ]]; then
-        dryrun=true
-    elif [[ "$1" == "--dryrun" ]]; then
-        merror "Did you mean to use '--dry-run'?"
-    elif [[ "$1" == "--notification" ]]; then
-        notification=true
-    elif [[ "$1" == "--no-notification" ]]; then
-        notification=false
-    elif [[ "$1" == "--gui" ]]; then
-        gui=true
-    elif [[ "$1" == "--no-gui" ]]; then
-        gui=false
+    elif [[ "$1" =~ ^--[^=]*$ ]]; then
+        flag=${1//--}
+        if [[ "$flag" == "help" ]]; then
+            action=help
+        elif [[ "$flag" == "version" ]]; then
+            action=version
+        elif [[ "$flag" == "debug" ]]; then
+            debug=true
+        elif [[ "$flag" == "verbose" ]]; then
+            verbose=true
+        elif [[ "$flag" == "force" ]]; then
+            force=true
+        elif [[ "$flag" == "full" ]]; then
+            full=true
+        elif [[ "$flag" == "dry-run" ]]; then
+            dryrun=true
+        elif [[ "$flag" == "dryrun" ]]; then
+            merror "Did you mean to use '--dry-run'?"
+        elif [[ "$flag" == "notification" ]]; then
+            notification=true
+        elif [[ "$flag" == "no-notification" ]]; then
+            notification=false
+        elif [[ "$flag" == "gui" ]]; then
+            gui=true
+        elif [[ "$flag" == "no-gui" ]]; then
+            gui=false
+        else
+            merror "Unknown option: '$1'"
+        fi
 
     ## Options (--key=value):
     elif [[ "$1" =~ ^--.*=.*$ ]]; then
@@ -1595,6 +1600,8 @@ while [[ $# -gt 0 ]]; do
             theme=$value
         elif [[ "$key" == "validate" ]]; then
             validate=$value
+        else
+            merror "Unknown option: '$1'"
         fi
 
     ## DEPRECATED: Options (--key value):

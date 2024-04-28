@@ -4,11 +4,14 @@ codespell
 config
 edu
 env
+hostname
 Junos
 netrc
 OpenConnect
 Pre
 PULSEPATH
+pwd
+shellcheck
 ShellCheck
 sudo
 ucsf
@@ -29,5 +32,3 @@ dns
 PID
 www
 YubiKey
-pwd
-shellcheck

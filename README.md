@@ -105,6 +105,7 @@ Commands:
  toggle           Connect to or disconnect from VPN
  status           Display VPN connection status
  details          Display connection details in JSON format
+ routing          Display IP routing details
  log              Display log file
  troubleshoot     Scan log file for errors (only for '--method=pulse')
 
@@ -224,7 +225,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0-9005
+Version: 5.7.0-9008
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
