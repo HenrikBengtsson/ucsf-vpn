@@ -131,7 +131,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9004
+### Version: 5.7.0-9005
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -367,6 +367,17 @@ function is_connected() {
     connection_details | grep -q -E "org.*[:].*AS5653 University of California San Francisco"
 }
 
+
+function ip_route_novpn_interface() {
+    local interface
+    mdebug "ip_route_novpn_interface()"
+    interface=$(ip route show | grep -E "^default " | grep -vF " tun" | cut -d ' ' -f 5)
+    if [[ -z ${interface} ]]; then
+        merror "Failed to infer the default non-VPN network interface:$(echo; ip route show | grep -E '^default ')"
+    fi
+    echo "${interface}"
+}
+
 function status() {
     local assert connected mcmd msg ok
     local -i pid count
@@ -436,6 +447,9 @@ function status() {
     else
         mcmd="echo"
     fi        
+    eval "$mcmd" "$msg"
+
+    msg="Default non-VPN network interface: $(ip_route_novpn_interface)"
     eval "$mcmd" "$msg"
     
     if $connected; then
