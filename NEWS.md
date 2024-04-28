@@ -5,10 +5,9 @@ ucsf-vpn
 
 ### New Features
 
- * Now `ucsf vpn status` reports on your default non-VPN network
-   interface, which can be useful to circumvent the VPN network, e.g.
-   `interface=$(ucsf vpn status | grep interface | sed 's/.* //')` and
-   `curl --interface "${interface}" https://example.org"`.
+ * Add `ucsf vpn routing`, which shows the current IP routing table,
+   with IP number annotated by hostnames, if available.  It also
+   reports on the default non-VPN network interface.
  
  * Now `ucsf vpn start` waits for the default IP routing to be
    tunneled before returning. If it does not happen within 10

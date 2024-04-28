@@ -11,6 +11,7 @@
 ###  toggle           Connect to or disconnect from VPN
 ###  status           Display VPN connection status
 ###  details          Display connection details in JSON format
+###  routing          Display IP routing details
 ###  log              Display log file
 ###  troubleshoot     Scan log file for errors (only for '--method=pulse')
 ###
@@ -131,7 +132,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9005
+### Version: 5.7.0-9006
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -317,6 +318,32 @@ function connection_details() {
     echo
 }
 
+function routing_details() {
+    local -a ip_route
+    local ip domain
+    local -i kk
+    local has_dig=true
+
+    mdebug "routing_details()"
+    command -v dig &> /dev/null || has_dig=false
+    mdebug "Command 'dig' available: ${has_dig}"
+    
+    echo "Default non-VPN network interface: $(ip_route_novpn_interface)"
+    mapfile -t ip_route < <(ip route show)
+    echo "IP routing table (${#ip_route[@]} entries):"
+    for kk in "${!ip_route[@]}"; do
+        row="${ip_route[${kk}]}"
+        if $has_dig && grep -q -E "^([[:digit:].]+).*" <<< "${row}"; then
+            ip=$(sed -E 's/^([[:digit:].]+).*/\1/' <<< "${row}")
+            domain=$(dig -x "${ip}" +short | grep -vF "/" | sed -E 's/[.]$//' | tr $'\n' ',' | sed -E 's/,$//')
+            if [[ -n ${domain} ]]; then
+                row="${row}[${domain}]"
+            fi
+        fi
+        echo "${row}"
+    done
+}
+
 function public_ip() {
     mdebug "public_ip()"
     connection_details | grep -F '"ip":' | sed -E 's/[ ",]//g' | cut -d : -f 2
@@ -369,13 +396,8 @@ function is_connected() {
 
 
 function ip_route_novpn_interface() {
-    local interface
     mdebug "ip_route_novpn_interface()"
-    interface=$(ip route show | grep -E "^default " | grep -vF " tun" | cut -d ' ' -f 5)
-    if [[ -z ${interface} ]]; then
-        merror "Failed to infer the default non-VPN network interface:$(echo; ip route show | grep -E '^default ')"
-    fi
-    echo "${interface}"
+    ip route show | grep -E "^default " | grep -vF " tun" | cut -d ' ' -f 5
 }
 
 function status() {
@@ -449,9 +471,6 @@ function status() {
     fi        
     eval "$mcmd" "$msg"
 
-    msg="Default non-VPN network interface: $(ip_route_novpn_interface)"
-    eval "$mcmd" "$msg"
-    
     if $connected; then
         msg="Connected to the VPN"
     else
@@ -1507,6 +1526,8 @@ while [[ $# -gt 0 ]]; do
         action=status
     elif [[ "$1" == "details" ]]; then
         action=details
+    elif [[ "$1" == "routing" ]]; then
+        action=routing
     elif [[ "$1" == "log" ]]; then
         action=log
     elif [[ "$1" == "troubleshoot" ]]; then
@@ -1736,6 +1757,9 @@ if [[ $action == "status" ]]; then
     status
 elif [[ $action == "details" ]]; then
     connection_details
+    _exit $?
+elif [[ $action == "routing" ]]; then
+    routing_details
     _exit $?
 elif [[ $action == "open-gui" ]]; then
     if [[ $method != "pulse" ]]; then
