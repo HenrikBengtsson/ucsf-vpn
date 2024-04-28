@@ -1291,7 +1291,7 @@ function openconnect_start() {
     while ! grep -q -E '^default[[:space:]].*tun' <(ip route show); do
         max_iter=$((max_iter - 1))
         if [[ ${max_iter} -eq 0 ]]; then            
-            merror "It appears that the default IP routing was never tunneled:$(echo; ip route show)"
+            merror "The default IP routing was never tunneled:$(echo; ip route show)"
         fi
         sleep 0.1
     done
@@ -1375,7 +1375,7 @@ function openconnect_stop() {
     while grep -q -E '^default[[:space:]].*tun' <(ip route show); do
         max_iter=$((max_iter - 1))
         if [[ ${max_iter} -eq 0 ]]; then            
-            merror "It appears that the default IP routing was never untunneled:$(echo; ip route show)"
+            merror "The default IP routing was never untunneled:$(echo; ip route show)"
         fi
         sleep 0.1
     done
