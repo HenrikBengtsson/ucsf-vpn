@@ -1318,6 +1318,7 @@ function openconnect_start() {
 function openconnect_stop() {
     local kill_timeout
     local -i kk pid
+    local -i max_iter
 
     mdebug "openconnect_stop() ..."
 
