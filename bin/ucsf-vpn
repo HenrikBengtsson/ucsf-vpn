@@ -133,7 +133,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9009
+### Version: 5.7.0-9010
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -399,6 +399,26 @@ function is_connected() {
 function ip_route_novpn_interface() {
     mdebug "ip_route_novpn_interface()"
     ip route show | grep -E "^default " | grep -vF " tun" | cut -d ' ' -f 5
+}
+
+function wait_for_ip_route_tunnel() {
+    mdebug "Wait for tunnel to appear in IP routing table"
+    while ! grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"; do
+        sleep 0.1
+    done
+}
+
+function wait_for_ip_route() {
+    local prev curr
+    
+    mdebug "Wait for IP routing table to stabilize"
+    prev=$(ip route show)
+    curr=""
+    while [[ "${curr}" != "${prev}" ]]; do
+        sleep 0.5
+        prev="${curr}"
+        curr=$(ip route show)
+    done
 }
 
 function status() {
@@ -1118,7 +1138,6 @@ function openconnect_start() {
     local two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
     local -a opts
     local -i pid
-    local -i max_iter
 
     mdebug "openconnect_start() ..."
 
@@ -1322,16 +1341,11 @@ function openconnect_start() {
         merror "${reason}"
     fi
 
-    ## Wait for VPN connection to be established
-    mdebug "Waiting for default IP routing to be tunneled"
-    max_iter=100 ## try up to 10.0 seconds
-    while ! grep -q -E '^default[[:space:]].*tun' <(ip route show); do
-        max_iter=$((max_iter - 1))
-        if [[ ${max_iter} -eq 0 ]]; then            
-            merror "The default IP routing was never tunneled:$(echo; ip route show)"
-        fi
-        sleep 0.1
-    done
+    ## Wait for VPN tunnel to appear in IP routing table
+    wait_for_ip_route_tunnel
+    
+    ## Wait for IP routing table to stabilize
+    wait_for_ip_route
 
     ## Record IP routing table after having connected to the VPN
     ip route show > "${ip_route_vpn_file}"
@@ -1359,7 +1373,6 @@ function openconnect_start() {
 function openconnect_stop() {
     local kill_timeout
     local -i kk pid
-    local -i max_iter
 
     mdebug "openconnect_stop() ..."
 
@@ -1412,16 +1425,8 @@ function openconnect_stop() {
         mwarn "OpenConnect PID file removed manually: $pid_file"
     fi
 
-    mdebug "Waiting for default IP routing to be untunneled"
-    max_iter=100 ## try up to 10.0 seconds
-    while grep -q -E '^default[[:space:]].*tun' <(ip route show); do
-        max_iter=$((max_iter - 1))
-        if [[ ${max_iter} -eq 0 ]]; then            
-            merror "The default IP routing was never untunneled:$(echo; ip route show)"
-        fi
-        sleep 0.1
-    done
-
+    ## Wait for IP routing table to stabilize
+    wait_for_ip_route
     
     ## Record IP routing table after being disconnected from the VPN
     ip route show > "${ip_route_novpn_file}"
