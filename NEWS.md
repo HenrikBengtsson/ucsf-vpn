@@ -20,6 +20,9 @@ ucsf-vpn
  * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
    or an unknown `--<key>=<value>` option.
 
+ * Now `--args` causes all of the following options to be passed to
+   `openconnect`, e.g. `ucsf vpn start --args "--script=my_script"`.
+
 
 ## Version 5.7.0 (2024-04-27)
 

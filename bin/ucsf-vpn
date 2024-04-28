@@ -40,6 +40,7 @@
 ###  --version        Display version
 ###  --full           Display more version information
 ###  --force          Force command
+###  --args           Pass any remaining options to 'openconnect'
 ###
 ### Examples:
 ###  ucsf-vpn --version --full
@@ -132,7 +133,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9008
+### Version: 5.7.0-9009
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1114,7 +1115,8 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local opts two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local -a opts
     local -i pid
     local -i max_iter
 
@@ -1164,28 +1166,29 @@ function openconnect_start() {
     fi
 
     ## openconnect options
-    opts="${extras[*]}"
+    opts=()
+    opts+=("${extras[@]}")
 
     ## VPN protocol
     if [[ "$protocol" == "juniper" ]]; then
-        opts="$opts --juniper ${url}"
+        opts+=("--juniper" "${url}")
     else
-        opts="$opts --protocol=${protocol} ${url}"
+        opts+=("--protocol=${protocol}" "${url}")
     fi
     
-    opts="$opts --background"
+    opts+=("--background")
 
     if [[ -n $user ]]; then
-        opts="$opts --user=$user"
+        opts+=("--user=$user")
     fi
     if [[ -n $pwd ]]; then
-        opts="$opts --passwd-on-stdin"
+        opts+=("--passwd-on-stdin")
     fi
 
-    opts="$opts --pid-file=$pid_file"
+    opts+=("--pid-file=$pid_file")
 
     if ! $debug; then
-        opts="$opts --quiet"
+        opts+=("--quiet")
     fi
 
     mdebug "call: $call"
@@ -1206,8 +1209,8 @@ function openconnect_start() {
     else
         mdebug "token: <not specified>"
     fi
-    mdebug "opts: $opts"
-    mdebug "call: sudo openconnect $opts --authgroup=\"$realm\""
+    mdebug "opts: [n=${#opts[@]}] ${opts[*]}"
+    mdebug "call: sudo openconnect ${opts[*]} --authgroup=\"$realm\""
 
     if [[ $token == "push" ]]; then
          mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
@@ -1242,10 +1245,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo openconnect $opts --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1512,6 +1515,7 @@ token=${UCSF_VPN_TOKEN:-push}
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
     mdebug "Next CLI argument: $1"
+
     ## Commands:
     if [[ "$1" == "start" ]]; then
         action=start
@@ -1541,7 +1545,13 @@ while [[ $# -gt 0 ]]; do
     ## Options (--flags):
     elif [[ "$1" =~ ^--[^=]*$ ]]; then
         flag=${1//--}
-        if [[ "$flag" == "help" ]]; then
+        if [[ "$flag" == "args" ]]; then
+            # Treat all options after --args as 'extras'
+            shift
+            extras+=("$@")
+            ## Consume all remaining options
+            shift "$#"
+        elif [[ "$flag" == "help" ]]; then
             action=help
         elif [[ "$flag" == "version" ]]; then
             action=version
@@ -1609,9 +1619,8 @@ while [[ $# -gt 0 ]]; do
         mdefunct "Command-line option '$1' is defunct."
     elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
         mdefunct "Command-line option format '$1 $2' is defunct. Use '$1=$2' instead."
-    ## Additional options to be appended (rarely needed)
     else
-        extras+=("$1")
+        merror "Unknown option: '$1'"
     fi
     shift
 done
