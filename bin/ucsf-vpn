@@ -48,6 +48,7 @@
 ###  ucsf-vpn stop
 ###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
 ###  ucsf-vpn start
+###  ucsf-vpn routings --full
 ###
 ### ---
 ###
@@ -133,7 +134,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9010
+### Version: 5.7.0-9012
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -323,18 +324,26 @@ function routing_details() {
     local -a ip_route
     local ip domain
     local -i kk
-    local has_dig=true
+    local use_dig=true
 
     mdebug "routing_details()"
-    command -v dig &> /dev/null || has_dig=false
-    mdebug "Command 'dig' available: ${has_dig}"
+    
+    if $full; then
+       command -v dig &> /dev/null || use_dig=false
+       mdebug "Command 'dig' available: ${use_dig}"
+       if ! $use_dig; then
+           mwarn "Cannot lock up hostname information for IP addresses (--full), because 'dig' is missing. Install the 'dig' tool to fix this"
+       fi
+    else
+        use_dig=false
+    fi
     
     echo "Default non-VPN network interface: $(ip_route_novpn_interface)"
     mapfile -t ip_route < <(ip route show)
     echo "IP routing table (${#ip_route[@]} entries):"
     for kk in "${!ip_route[@]}"; do
         row="${ip_route[${kk}]}"
-        if $has_dig && grep -q -E "^([[:digit:].]+).*" <<< "${row}"; then
+        if $use_dig && grep -q -E "^([[:digit:].]+).*" <<< "${row}"; then
             ip=$(sed -E 's/^([[:digit:].]+).*/\1/' <<< "${row}")
             domain=$(dig -x "${ip}" +short | grep -vF "/" | sed -E 's/[.]$//' | tr $'\n' ',' | sed -E 's/,$//')
             if [[ -n ${domain} ]]; then
@@ -402,8 +411,14 @@ function ip_route_novpn_interface() {
 }
 
 function wait_for_ip_route_tunnel() {
+    local -i max_iter
     mdebug "Wait for tunnel to appear in IP routing table"
+    max_iter=100 ## Wait for up to 10 seconds
     while ! grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"; do
+        max_iter=$((max_iter - 1))
+        if [[ ${max_iter} -eq 0 ]]; then
+            merror "The VPN tunnel never appeared in the IP routing table:$(echo; ip route show; echo)"
+        fi
         sleep 0.1
     done
 }
