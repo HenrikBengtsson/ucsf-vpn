@@ -31,7 +31,7 @@
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
-###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
+###  --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###
 ### Flags:
@@ -134,7 +134,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9012
+### Version: 5.7.0-9013
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -329,11 +329,11 @@ function routing_details() {
     mdebug "routing_details()"
     
     if $full; then
-       command -v dig &> /dev/null || use_dig=false
-       mdebug "Command 'dig' available: ${use_dig}"
-       if ! $use_dig; then
+        command -v dig &> /dev/null || use_dig=false
+        mdebug "Command 'dig' available: ${use_dig}"
+        if ! $use_dig; then
            mwarn "Cannot lock up hostname information for IP addresses (--full), because 'dig' is missing. Install the 'dig' tool to fix this"
-       fi
+        fi
     else
         use_dig=false
     fi
@@ -380,7 +380,7 @@ function public_info() {
 }
 
 function is_online() {
-    local ping_server ping_timeout
+    local ping_server ping_servers ping_timeout
 
     ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
     mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
@@ -439,18 +439,22 @@ function wait_for_ip_route() {
 function status() {
     local assert connected mcmd msg ok
     local -i pid count
+    local -a msgs
 
     assert=$1
-    mdebug "assert='$assert'"
+    mdebug "status() ..."
+    mdebug "- assert='$assert'"
+    mdebug "- validate='$validate'"
     minfo "validate='$validate'"
 
     connected=false
 
-    ok=false    
+    ok=false
     count=1
     while ! $ok; do
         mdebug "Checking status (attempt #${count})"
         if [[ $validate == *pid* ]]; then
+            mdebug "- 'pid' validation"
             pid=$(openconnect_pid)
             if [[ $pid == -1 ]]; then
                 connected=false
@@ -469,8 +473,9 @@ function status() {
                     ok=false
                 fi
             fi
-            msg="OpenConnect status: $msg"
+            msgs+=("OpenConnect status: $msg")
         elif [[ $validate == *ipinfo* ]]; then
+            mdebug "- 'ipinfo' validation"
             if is_connected; then
                 connected=true
                 if [[ $assert == "connected" ]]; then
@@ -483,7 +488,7 @@ function status() {
                 fi
             fi
   
-            msg="Public IP information: $(public_info)"
+            msgs+=("Public IP information: $(public_info)")
         fi
 
         if $ok || [[ -z $assert ]]; then
@@ -505,7 +510,7 @@ function status() {
     else
         mcmd="echo"
     fi        
-    eval "$mcmd" "$msg"
+    eval "$mcmd" "${msgs[*]}"
 
     if $connected; then
         msg="Connected to the VPN"
@@ -514,6 +519,8 @@ function status() {
     fi
 
     eval "$mcmd" "$msg"
+
+    mdebug "status() ... done"
 }
 
 
