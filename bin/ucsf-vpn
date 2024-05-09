@@ -515,7 +515,7 @@ function status() {
         for msg in "${msgs[@]}"; do
             eval "echo" "${msg}"
         done
-        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while being on the VPN. You might be able to fix it with 'ucsf vpn restart'"
+        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
     fi
 
     mdebug "status() ... done"
