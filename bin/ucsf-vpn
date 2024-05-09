@@ -25,6 +25,7 @@
 ###                    -  44-letter YubiKey token ("press YubiKey")
 ###  --user=<user>    UCSF Active Directory ID (username)
 ###  --pwd=<pwd>      UCSF Active Directory ID password
+###  --presudo=<lgl>  Established sudo upfront (true; default) or not (false)
 ###
 ###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
@@ -134,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9014
+### Version: 5.7.0-9015
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -266,13 +267,6 @@ function assert_sudo() {
 
     cmd=$1
 
-    if sudo -v -n 2> /dev/null; then
-        mdebug "'sudo' is already active"
-        minfo "Administrative (\"sudo\") rights already establish"
-        return
-    fi
-    mdebug "'sudo' is not active"
-
     if [[ -n $cmd ]]; then
         if [[ ${UCSF_TOOLS} == "true" ]]; then
             cmd=" ('ucsf vpn $cmd')"
@@ -280,6 +274,21 @@ function assert_sudo() {
             cmd=" ('ucsf-vpn $cmd')"
         fi
     fi
+
+    ## Should we ask for sudo permissions upfront?
+    ## Note, this might add 'sudo: ... a password is required' event in
+    ## /var/log/auth.log, which in turn might trigger an alert.
+    if ! $presudo; then
+        mwarn "If you are prompted '[sudo] password for $USER:' below, please enter the password for your account ('$USER') on your local computer ('$HOSTNAME')"
+        return 0
+    fi
+    
+    if sudo -v -n 2> /dev/null; then
+        mdebug "'sudo' is already active"
+        minfo "Administrative (\"sudo\") rights already establish"
+        return
+    fi
+    mdebug "'sudo' is not active"
 
     {
         mwarn "This action$cmd requires administrative (\"sudo\") rights."
@@ -1531,6 +1540,7 @@ protocol=${UCSF_VPN_PROTOCOL:-nc}
 gui=true
 notification=false
 speed=1.0
+presudo=${UCSF_VPN_PRESUDO:-true}
 
 ## User credentials
 user=
@@ -1635,6 +1645,14 @@ while [[ $# -gt 0 ]]; do
             theme=$value
         elif [[ "$key" == "validate" ]]; then
             validate=$value
+        elif [[ "$key" == "presudo" ]]; then
+            if [[ $value == "true" ]]; then
+                presudo=true
+            elif [[ $value == "false" ]]; then
+                presudo=false
+            else
+                merror "Unknown value --presudo=$value"
+            fi
         else
             merror "Unknown option: '$1'"
         fi

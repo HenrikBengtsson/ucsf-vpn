@@ -32,6 +32,12 @@ ucsf-vpn
    --script=$PWD/my-vpnc-script` causes `--script=$PWD/my-vpnc-script`
    to be passed to `openconnect`.
 
+ * Use `--presudo=false` to skip establishing 'sudo' permissions
+   upfront. The default is `--presudo=true`, which might add a `sudo:
+   ... a password is required` event in the `/var/log/auth.log` log
+   file, which in turn might trigger an security alert.  The default
+   can be controlled via environment variable `UCSF_VPN_PRESUDO`.
+ 
 
 ## Version 5.7.0 (2024-04-27)
 
