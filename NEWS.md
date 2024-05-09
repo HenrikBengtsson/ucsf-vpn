@@ -3,6 +3,13 @@ ucsf-vpn
 
 ## Version (development version)
 
+### Significant changes
+
+ * Now `ucsf vpn status` uses all validation methods to conclude
+   whether there is a working VPN connection or not. If they do not
+   agree, an informative warning is produced. Previously, it returned
+   after the first validation method was successful.
+ 
 ### New Features
 
  * Add `ucsf vpn routing`, which shows the current IP routing table.

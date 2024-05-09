@@ -134,7 +134,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9013
+### Version: 5.7.0-9014
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -437,9 +437,13 @@ function wait_for_ip_route() {
 }
 
 function status() {
-    local assert connected mcmd msg ok
-    local -i pid count
+    local assert mcmd msg ok
+    local -i pid
     local -a msgs
+    local -a methods
+    local -a connected
+    local method
+    local oldIFS
 
     assert=$1
     mdebug "status() ..."
@@ -447,78 +451,72 @@ function status() {
     mdebug "- validate='$validate'"
     minfo "validate='$validate'"
 
-    connected=false
+    oldIFS="$IFS"
+    IFS=","
+    read -ra methods <<< "$validate"
+    IFS="$oldIFS"
+    mdebug "- methods: [n=${#methods[@]}] ${methods[*]}"
 
-    ok=false
-    count=1
-    while ! $ok; do
-        mdebug "Checking status (attempt #${count})"
-        if [[ $validate == *pid* ]]; then
-            mdebug "- 'pid' validation"
+    connected=()
+    for method in "${methods[@]}"; do
+        mdebug "Checking with ${method} ..."
+        if [[ $method == pid ]]; then
             pid=$(openconnect_pid)
             if [[ $pid == -1 ]]; then
-                connected=false
+                connected+=(false)
                 msg="No \'openconnect\' process running"
-                if [[ $assert == "disconnected" ]]; then
-                    ok=true
-                elif [[ $assert == "connected" ]]; then
-                    ok=false
-                fi
             else
-                connected=true
+                connected+=(true)
                 msg="\'openconnect\' process running \(PID=$pid\)"
-                if [[ $assert == "connected" ]]; then
-                    ok=true
-                elif [[ $assert == "disconnected" ]]; then
-                    ok=false
-                fi
             fi
             msgs+=("OpenConnect status: $msg")
-        elif [[ $validate == *ipinfo* ]]; then
-            mdebug "- 'ipinfo' validation"
+        elif [[ $method == ipinfo ]]; then
             if is_connected; then
-                connected=true
-                if [[ $assert == "connected" ]]; then
-                    ok=true
-                fi
+                connected+=(true)
             else
-                connected=false
-                if [[ $assert == "disconnected" ]]; then
-                    ok=true
-                fi
+                connected+=(false)
             fi
-  
             msgs+=("Public IP information: $(public_info)")
         fi
-
-        if $ok || [[ -z $assert ]]; then
-            break
-        fi
-
-        count=$((count + 1))
-        if (( count <= 5 )); then
-            sleep 0.5
-        fi
+        mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+        mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
+        mdebug "Checking with ${method} ... done"
     done
 
-    if [[ -n $assert ]]; then
-        if $ok; then
-            mcmd="mok"
-        else
-            mcmd="merror"
-        fi
-    else
+    ## Consensus
+    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
+    mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+
+    if [[ ${#connected[@]} -eq 1 ]]; then
         mcmd="echo"
-    fi        
-    eval "$mcmd" "${msgs[*]}"
-
-    if $connected; then
-        msg="Connected to the VPN"
+        if [[ -n $assert ]]; then
+            ok=true
+            if [[ $assert == "disconnected" ]] && ${connected[0]}; then
+                ok=false
+            elif [[ $assert == "connected" ]] && ! ${connected[0]}; then
+                ok=false
+            fi
+            if $ok; then
+                mcmd="mok"
+            else
+                mcmd="merror"
+            fi
+        fi
+        for msg in "${msgs[@]}"; do
+            eval "$mcmd" "${msg}"
+        done
+        if ${connected[0]}; then
+            msg="Connected to the VPN"
+        else
+            msg="Not connected to the VPN"
+        fi
+        eval "$mcmd" "$msg"
     else
-        msg="Not connected to the VPN"
+        for msg in "${msgs[@]}"; do
+            eval "echo" "${msg}"
+        done
+        mwarn "Conflicting results whether connected to the VPN"
     fi
-
-    eval "$mcmd" "$msg"
 
     mdebug "status() ... done"
 }
