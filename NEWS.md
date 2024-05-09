@@ -7,8 +7,9 @@ ucsf-vpn
 
  * Now `ucsf vpn status` uses all validation methods to conclude
    whether there is a working VPN connection or not. If they do not
-   agree, an informative warning is produced. Previously, it returned
-   after the first validation method was successful.
+   agree, an informative error is produced. Previously, it returned
+   after the first validation method was successful, ignoring the
+   remaining validation methods.
  
 ### New Features
 
