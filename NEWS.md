@@ -24,6 +24,9 @@ ucsf-vpn
  * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
    changes to your IP routing table (per `ip route show`).
 
+ * Now `ucsf vpn status` reports also on when the OpenConnect process
+   was started, if it exists.
+ 
  * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
    or an unknown `--<key>=<value>` option.
 
