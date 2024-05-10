@@ -474,14 +474,14 @@ function status() {
             pid=$(openconnect_pid)
             if [[ $pid == -1 ]]; then
                 connected+=(false)
-                msg="No \'openconnect\' process running"
+                msg="No 'openconnect' process running"
             else
                 connected+=(true)
                 timestamp=$(ps -p "${pid}" -o lstart=)
                 if [[ -n ${timestamp} ]]; then
                     timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
                 fi
-                msg="\'openconnect\' process running \(started on ${timestamp}; PID=$pid\)"
+                msg="'openconnect' process running (started on ${timestamp}; PID=${pid})"
             fi
             msgs+=("OpenConnect status: $msg")
         elif [[ $method == ipinfo ]]; then
@@ -517,7 +517,7 @@ function status() {
             fi
         fi
         for msg in "${msgs[@]}"; do
-            eval "$mcmd" "${msg}"
+            "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
             msg="Connected to the VPN"
