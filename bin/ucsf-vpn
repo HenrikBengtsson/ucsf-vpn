@@ -135,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9018
+### Version: 5.7.0-9019
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -547,10 +547,10 @@ function status() {
         else
             msg="Not connected to the VPN"
         fi
-        eval "$mcmd" "$msg"
+        "$mcmd" "$msg"
     else
         for msg in "${msgs[@]}"; do
-            eval "echo" "${msg}"
+            echo "${msg}"
         done
         merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
     fi
