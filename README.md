@@ -21,7 +21,7 @@ WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OK: OpenConnect status: 'openconnect' process running (PID=14549)
+OpenConnect status: 'openconnect' process running (started 00h00m13s ago on 2024-05-13T09:05:20-07:00; PID=14549)
 OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
@@ -55,7 +55,7 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-OpenConnect status: 'openconnect' process running (PID=17419)
+OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-05-13T16:20:00-07:00; PID=17419)
 Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 Connected to the VPN
 ```
@@ -119,13 +119,14 @@ Options:
                    -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
+ --presudo=<lgl>  Established sudo upfront (true; default) or not (false)
 
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
- --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
+ --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
@@ -142,6 +143,7 @@ Examples:
  ucsf-vpn stop
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
+ ucsf-vpn routings --full
 
 
 Environment variables:
@@ -226,7 +228,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0-9010
+Version: 5.7.0-9018
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
