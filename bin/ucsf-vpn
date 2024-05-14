@@ -342,11 +342,11 @@ function routing_details() {
         command -v dig &> /dev/null || use_dig=false
         mdebug "Command 'dig' available: ${use_dig}"
 
-        command -v whois &> /dev/null || use_dig=false
+        command -v whois &> /dev/null || use_whois=false
         mdebug "Command 'whois' available: ${use_whois}"
         
         if ! $use_dig && ! $use_whois; then
-           mwarn "Cannot lock up hostname information for IP addresses (--full). Install 'dig' or 'whois' to fix this"
+           mwarn "Cannot annotate IP addresses (--full). Install 'dig' or 'whois' to fix this"
         fi
     else
         use_dig=false
