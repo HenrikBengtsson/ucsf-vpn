@@ -16,7 +16,7 @@ ucsf-vpn
  * Add `ucsf vpn routing`, which shows the current IP routing table.
    It also reports on the default non-VPN network interface on the
    machine.  By specifying `--full`, IP numbers are annotated with
-   hostnames, if available.
+   hostnames and `whois` information, if available.
  
  * Now `ucsf vpn start` and `ucsf vpn stop` wait for the updating of
    the IP routing table (`ip route show`) to finish before returning.

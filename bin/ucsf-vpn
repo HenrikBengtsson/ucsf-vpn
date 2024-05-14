@@ -135,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9016
+### Version: 5.7.0-9017
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -330,21 +330,27 @@ function connection_details() {
 }
 
 function routing_details() {
-    local -a ip_route
-    local ip domain
+    local -a ip_route info
+    local ip
     local -i kk
     local use_dig=true
+    local use_whois=true
 
     mdebug "routing_details()"
     
     if $full; then
         command -v dig &> /dev/null || use_dig=false
         mdebug "Command 'dig' available: ${use_dig}"
-        if ! $use_dig; then
-           mwarn "Cannot lock up hostname information for IP addresses (--full), because 'dig' is missing. Install the 'dig' tool to fix this"
+
+        command -v whois &> /dev/null || use_dig=false
+        mdebug "Command 'whois' available: ${use_whois}"
+        
+        if ! $use_dig && ! $use_whois; then
+           mwarn "Cannot lock up hostname information for IP addresses (--full). Install 'dig' or 'whois' to fix this"
         fi
     else
         use_dig=false
+        use_whois=false
     fi
     
     echo "Default non-VPN network interface: $(ip_route_novpn_interface)"
@@ -352,11 +358,20 @@ function routing_details() {
     echo "IP routing table (${#ip_route[@]} entries):"
     for kk in "${!ip_route[@]}"; do
         row="${ip_route[${kk}]}"
-        if $use_dig && grep -q -E "^([[:digit:].]+).*" <<< "${row}"; then
-            ip=$(sed -E 's/^([[:digit:].]+).*/\1/' <<< "${row}")
-            domain=$(dig -x "${ip}" +short | grep -vF "/" | sed -E 's/[.]$//' | tr $'\n' ',' | sed -E 's/,$//')
-            if [[ -n ${domain} ]]; then
-                row="${row}[${domain}]"
+        if $use_dig || $use_whois; then
+            if grep -q -E "^([[:digit:].]+).*" <<< "${row}"; then
+                ip=$(sed -E 's/^([[:digit:].]+).*/\1/' <<< "${row}")
+                mapfile -t info < <(
+                    if $use_dig; then
+                        dig -x "${ip}" +short | grep -vF "/" | sed -E 's/[.]$//'
+                    fi
+                    if $use_whois; then
+                        whois "${ip}" | grep -i -E "^(country|netname|orgname):" | sed -E 's/^([[:alpha:]]+):[[:space:]]+/\1=/I' | sort | uniq # | sed -i -E 's/^(netname|orgname):[[:space:]]+//I'
+                    fi
+                )
+                if [[ ${#info[@]} -gt 0 ]]; then
+                    row="${row}[$(printf "%s; " "${info[@]}" | sed -E 's/; $//')]"
+                fi
             fi
         fi
         echo "${row}"
