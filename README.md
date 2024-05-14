@@ -21,7 +21,7 @@ WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OpenConnect status: 'openconnect' process running (started 00h00m13s ago on 2024-05-13T09:05:20-07:00; PID=14549)
+OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-05-13T09:05:20-07:00; PID=14549)
 OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
