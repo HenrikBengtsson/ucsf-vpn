@@ -135,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9017
+### Version: 5.7.0-9018
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -468,7 +468,7 @@ function status() {
     local -a connected
     local method
     local oldIFS
-    local timestamp
+    local timestamp now since s m h age
 
     assert=$1
     mdebug "status() ..."
@@ -495,8 +495,16 @@ function status() {
                 timestamp=$(ps -p "${pid}" -o lstart=)
                 if [[ -n ${timestamp} ]]; then
                     timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
+                    since=$(date -d "${timestamp}" +%s)
+                    now=$(date +%s)
+		    s=$((now - since))
+		    m=$((s / 60))
+		    s=$((s - 60 * m))
+		    h=$((m / 60))
+		    m=$((m - 60 * h))
+		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
                 fi
-                msg="'openconnect' process running (started on ${timestamp}; PID=${pid})"
+                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
             fi
             msgs+=("OpenConnect status: $msg")
         elif [[ $method == ipinfo ]]; then
