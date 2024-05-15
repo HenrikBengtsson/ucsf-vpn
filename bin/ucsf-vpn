@@ -135,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9020
+### Version: 5.7.0-9021
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -563,16 +563,27 @@ function status() {
 # Credentials, e.g. .netrc, prompting for password, etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local rcfile pattern found bfr defaultrc
+    local rcfile pattern found bfr home
 
-    # eval is another solution, but a security risk
-    # https://stackoverflow.com/questions/7358611/get-users-home-directory-when-they-run-a-script-as-root
-    defaultrc=$(getent passwd "$(logname)" | cut -d: -f6)/.netrc
-    rcfile=${NETRC:-${defaultrc}}
+    if [[ -z ${NETRC} ]]; then
+        if [[ ${EUID} -eq 0 ]]; then
+            ## Identify the HOME folder of the logged in user, even when
+            ## 'ucsf-vpn' is called via sudo
+            home=$(getent passwd "$(logname)" | cut -d ":" -f 6)
+            ## Fall back to HOME, if the above failed
+            if [[ ! -d "${home}" ]]; then
+                home=${HOME}
+            fi
+        else
+            home=${HOME}
+        fi
+        rcfile=${home}/.netrc
+    fi
+
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
         mdebug "No .netrc file: $rcfile"
-        return;
+        return
     fi
     mdebug "Detected .netrc file: $rcfile"
 

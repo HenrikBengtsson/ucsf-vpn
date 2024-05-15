@@ -10,6 +10,9 @@ ucsf-vpn
    agree, an informative error is produced. Previously, it returned
    after the first validation method was successful, ignoring the
    remaining validation methods.
+
+ * Now `ucsf vpn start` finds the logged in user's `~/.netrc` file
+   also when called via `sudo`.
  
 ### New Features
 
