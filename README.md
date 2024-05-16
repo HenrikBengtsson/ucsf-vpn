@@ -137,7 +137,7 @@ Flags:
  --verbose        More verbose output
  --help           Display full help
  --version        Display version
- --full           Display more version information
+ --full           Display more information
  --force          Force command
  --args           Pass any remaining options to 'openconnect'
 
