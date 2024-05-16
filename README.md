@@ -129,7 +129,8 @@ Options:
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
- --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo' (default)
+ --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
+                  'pid,iproute,ipinfo' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
 
 Flags:
