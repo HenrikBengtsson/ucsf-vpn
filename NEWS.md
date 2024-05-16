@@ -18,8 +18,9 @@ ucsf-vpn
 
  * Add `ucsf vpn routing`, which shows the current IP routing table.
    It also reports on the default non-VPN network interface on the
-   machine.  By specifying `--full`, IP numbers are annotated with
-   hostnames and `whois` information, if available.
+   machine, and any tunnel devices.  By specifying `--full`, IP
+   numbers are annotated with hostnames and `whois` information, if
+   available.
  
  * Now `ucsf vpn start` and `ucsf vpn stop` wait for the updating of
    the IP routing table (`ip route show`) to finish before returning.
@@ -28,7 +29,8 @@ ucsf-vpn
    changes to your IP routing table (per `ip route show`).
 
  * Now `ucsf vpn status` reports also on how long ago and when the
-   OpenConnect process was started, if it exists.
+   OpenConnect process was started, if it exists. It also reports on
+   any IP routing tunnel devices.
  
  * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
    or an unknown `--<key>=<value>` option.

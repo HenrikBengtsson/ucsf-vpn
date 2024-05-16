@@ -135,7 +135,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9021
+### Version: 5.7.0-9022
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -354,6 +354,13 @@ function routing_details() {
     fi
     
     echo "Default non-VPN network interface: $(ip_route_novpn_interface)"
+    mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
+    if [[ ${#info[@]} -gt 0 ]]; then
+        echo "Tunnel interfaces: [n=${#info[@]}] ${info[*]}"
+    else
+        echo "Tunnel interfaces: none"
+    fi
+
     mapfile -t ip_route < <(ip route show)
     echo "IP routing table (${#ip_route[@]} entries):"
     for kk in "${!ip_route[@]}"; do
@@ -434,6 +441,7 @@ function ip_route_novpn_interface() {
     ip route show | grep -E "^default " | grep -vF " tun" | cut -d ' ' -f 5
 }
 
+
 function wait_for_ip_route_tunnel() {
     local -i max_iter
     mdebug "Wait for tunnel to appear in IP routing table"
@@ -463,6 +471,7 @@ function wait_for_ip_route() {
 function status() {
     local assert mcmd msg ok
     local -i pid
+    local -a info
     local -a msgs
     local -a methods
     local -a connected
@@ -507,6 +516,16 @@ function status() {
                 msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
             fi
             msgs+=("OpenConnect status: $msg")
+        elif [[ $method == iproute ]]; then
+            mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
+            if [[ ${#info[@]} -gt 0 ]]; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="none"
+            fi
+            msgs+=("IP routing tunnels: ${msg}")
         elif [[ $method == ipinfo ]]; then
             if is_connected; then
                 connected+=(true)
@@ -514,6 +533,8 @@ function status() {
                 connected+=(false)
             fi
             msgs+=("Public IP information: $(public_info)")
+        else
+            merror "Unknown --validate value: $method"
         fi
         mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
         mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
@@ -1780,9 +1801,7 @@ fi
 ## Validate 'validate'
 if [[ $method == "openconnect" ]]; then
     if [[ -z $validate ]]; then
-        validate=${UCSF_VPN_VALIDATE:-pid,ipinfo}
-    elif [[ ! $validate =~ ^(ipinfo|pid|pid,ipinfo)$ ]]; then
-        merror "Unknown --validate value: '$validate'"
+        validate=${UCSF_VPN_VALIDATE:-pid,iproute,ipinfo}
     fi
 elif [[ $method == "pulse" ]]; then
     if [[ -z $validate ]]; then

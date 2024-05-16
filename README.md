@@ -22,6 +22,7 @@ Enter the password for your account ('alice84') on your local computer ('alice-l
 Enter your UCSF Active Directory password: <password>
 Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
 OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-05-13T09:05:20-07:00; PID=14549)
+OK: IP routing tunnels: [n=1] tun0
 OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
@@ -44,6 +45,7 @@ To disconnect from the UCSF VPN, call:
 ```sh
 $ ucsf-vpn stop
 OK: OpenConnect status: No 'openconnect' process running
+OK: IP routing tunnels: none
 OK: Public IP information: ip=123.145.254.42, hostname=123.145.254.42.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
 OK: Not connected to the VPN
 ```
@@ -56,6 +58,7 @@ To check whether you are connected to the UCSF VPN or not, call:
 ```sh
 $ ucsf-vpn status
 OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-05-13T16:20:00-07:00; PID=17419)
+IP routing tunnels: [n=1] tun0
 Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 Connected to the VPN
 ```
@@ -228,7 +231,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0-9020
+Version: 5.7.0-9022
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
