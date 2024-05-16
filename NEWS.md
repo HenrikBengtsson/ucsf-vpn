@@ -16,6 +16,10 @@ ucsf-vpn
  
 ### New Features
 
+ * `ucsf vpn` sources `~/.config/ucsf-vpn/envs` on start, which
+   provides a convenient location for configuring default settings via
+   `UCSF_VPN_*` environment variables.
+ 
  * Add `ucsf vpn routing`, which shows the current IP routing table.
    It also reports on the default non-VPN network interface on the
    machine, and any tunnel devices.  By specifying `--full`, IP
