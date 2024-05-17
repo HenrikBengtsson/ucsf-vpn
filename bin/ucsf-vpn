@@ -137,7 +137,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9030
+### Version: 5.7.0-9031
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1624,7 +1624,8 @@ function source_envs() {
 
 
 function flavor_home() {
-    local path file
+    local path file pathname
+    local -i count
 
     ## No flavor specified
     if [[ -z ${flavor} ]]; then
@@ -1637,11 +1638,21 @@ function flavor_home() {
         merror "Folder not found: ${path}"
     fi
 
-    file=${path}/connect.sh
-    if [[ ! -f "${file}" ]]; then
-        merror "File not found: ${file}"
-    fi
+    count=0
+    for file in pre-connect.sh post-connect.sh; do
+        pathname=${path}/${file}
+        if [[ -f "${pathname}" ]]; then
+            if ! bash -n "${pathname}"; then
+                merror "File syntax error: ${pathname}"
+            fi
+            count+=1
+        fi
+    done
 
+    if [[ "${count}" -eq 0 ]]; then
+        merror "Flavor folder contains no known hook script files: ${path}"
+    fi
+    
     echo "${path}"    
 }    
 
