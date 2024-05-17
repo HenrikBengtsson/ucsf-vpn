@@ -49,7 +49,11 @@ ucsf-vpn
    ... a password is required` event in the `/var/log/auth.log` log
    file, which in turn might trigger an security alert.  The default
    can be controlled via environment variable `UCSF_VPN_PRESUDO`.
- 
+
+### Bug Fixes
+
+ * `ucsf vpn start` ignored environment variable `NETRC`.
+
 
 ## Version 5.7.0 (2024-04-27)
 

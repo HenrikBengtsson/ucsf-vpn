@@ -232,7 +232,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0-9023
+Version: 5.7.0-9024
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
