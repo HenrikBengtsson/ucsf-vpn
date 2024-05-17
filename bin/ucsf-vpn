@@ -35,6 +35,7 @@
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
 ###                   'pid,iproute,ipinfo' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
+###  --flavor=<flvr>  Use a customized flavor of the VPN
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -136,7 +137,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9027
+### Version: 5.7.0-9028
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1324,7 +1325,7 @@ function openconnect_start() {
         mdebug "token: <not specified>"
     fi
     mdebug "opts: [n=${#opts[@]}] ${opts[*]}"
-    mdebug "call: sudo UCSF_VPN_VERSION=$(version) openconnect ${opts[*]} --authgroup=\"$realm\""
+    mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_FLAVOR=${flavor} openconnect ${opts[*]} --authgroup=\"$realm\""
 
     if [[ $token == "push" ]]; then
          mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
@@ -1359,10 +1360,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="${flavor}" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="${flavor}" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1642,6 +1643,7 @@ gui=true
 notification=false
 speed=1.0
 presudo=${UCSF_VPN_PRESUDO:-true}
+flavor=${UCSF_VPN_FLAVOR}
 
 ## User credentials
 user=
@@ -1754,6 +1756,8 @@ while [[ $# -gt 0 ]]; do
             else
                 merror "Unknown value --presudo=$value"
             fi
+        elif [[ "$key" == "flavor" ]]; then
+            flavor=$value
         else
             merror "Unknown option: '$1'"
         fi

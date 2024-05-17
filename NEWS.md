@@ -49,7 +49,10 @@ ucsf-vpn
    ... a password is required` event in the `/var/log/auth.log` log
    file, which in turn might trigger an security alert.  The default
    can be controlled via environment variable `UCSF_VPN_PRESUDO`.
-   
+
+ * Add argument `--flavor=<flavor>`, which defaults to
+   `UCSF_VPN_FLAVOR`, which does not have a default value.
+ 
  * Environment variable `UCSF_VPN_VERSION=x.y.z` is now passed to
    OpenConnect.
 
