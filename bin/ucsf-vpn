@@ -137,7 +137,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9033
+### Version: 5.7.0-9034
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1328,7 +1328,7 @@ function openconnect_start() {
         mdebug "token: <not specified>"
     fi
     mdebug "opts: [n=${#opts[@]}] ${opts[*]}"
-    mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_FLAVOR=$(flavor_home) UCSF_VPN_LOGPATH=$(logpath) openconnect ${opts[*]} --authgroup=\"$realm\""
+    mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_FLAVOR=$(flavor_home) UCSF_VPN_LOGFILE=$(logfile) openconnect ${opts[*]} --authgroup=\"$realm\""
 
     if [[ $token == "push" ]]; then
          mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
@@ -1363,10 +1363,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGPATH="$(logpath)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGPATH="$(logpath)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1657,15 +1657,20 @@ function flavor_home() {
 }    
 
 
-function logpath() {
-    local path
+function logfile() {
+    local path file
     
     path="$(xdg_state_path)/logs"
     if [ ! -d "$path" ]; then
         mkdir -p "$path"
     fi
 
-    echo "${path}"
+    file="${path}"/ucsf-vpn.log
+
+    ## Create log file
+    touch "${file}"
+    
+    echo "${file}"
 }
 
 
