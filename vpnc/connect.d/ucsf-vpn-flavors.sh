@@ -12,7 +12,7 @@
 
 ## Called via 'ucsf-vpn'?
 if [ -n "${UCSF_VPN_VERSION}" ]; then
-    file="${UCSF_VPN_FLAVOR}"/connect.sh
+    file="${UCSF_VPN_FLAVOR}"/pre-connect.sh
     if [ -f "${file}" ]; then
         . "${file}"
     fi

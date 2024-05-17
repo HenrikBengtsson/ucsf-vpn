@@ -137,7 +137,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9031
+### Version: 5.7.0-9032
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1555,10 +1555,10 @@ function openconnect_stop() {
 # -------------------------------------------------------------------------
 # XDG config utility functions
 # -------------------------------------------------------------------------
-function xdg_cache_path() {
+function xdg_state_path() {
     local path
 
-    path=${XDG_CACHE_HOME:-$HOME/.cache}/ucsf-vpn
+    path=${XDG_STATE_HOME:-$HOME/.local/state}/ucsf-vpn
     if [ ! -d "$path" ]; then
         mkdir -p "$path"
     fi
@@ -1578,7 +1578,7 @@ function xdg_config_path() {
 
 function make_pii_file() {
     pii_cleanup
-    mktemp --dry-run --tmpdir="$(xdg_cache_path)" --suffix=-ipinfo.json
+    mktemp --dry-run --tmpdir="$(xdg_state_path)" --suffix=-ipinfo.json
 }
 
 function pii_cleanup() {
@@ -1660,9 +1660,9 @@ function flavor_home() {
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
-pid_file="$(xdg_cache_path)/openconnect.pid"
-ip_route_novpn_file="$(xdg_cache_path)/ip-route.novpn.out"
-ip_route_vpn_file="$(xdg_cache_path)/ip-route.vpn.out"
+pid_file="$(xdg_state_path)/openconnect.pid"
+ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
+ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
 pii_file=$(make_pii_file)
 
 source_envs
