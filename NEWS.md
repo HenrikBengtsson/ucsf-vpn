@@ -51,7 +51,9 @@ ucsf-vpn
    can be controlled via environment variable `UCSF_VPN_PRESUDO`.
 
  * Add argument `--flavor=<flavor>`, which defaults to
-   `UCSF_VPN_FLAVOR`, which does not have a default value.
+   `UCSF_VPN_FLAVOR`, which does not have a default value. If
+   specified, folder `~/.config/ucsf-vpn/flavors/<flavor>/` must
+   exist.
  
  * Environment variable `UCSF_VPN_VERSION=x.y.z` is now passed to
    OpenConnect.
