@@ -137,7 +137,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9028
+### Version: 5.7.0-9029
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1265,6 +1265,9 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
+    ## Assert that --flavor=<flavor> exists, if specified
+    flavor_home > /dev/null
+    
     assert_sudo "start"
 
     ## Load user credentials from file?
@@ -1325,7 +1328,7 @@ function openconnect_start() {
         mdebug "token: <not specified>"
     fi
     mdebug "opts: [n=${#opts[@]}] ${opts[*]}"
-    mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_FLAVOR=${flavor} openconnect ${opts[*]} --authgroup=\"$realm\""
+    mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_FLAVOR=$(flavor_home) openconnect ${opts[*]} --authgroup=\"$realm\""
 
     if [[ $token == "push" ]]; then
          mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
@@ -1360,10 +1363,10 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="${flavor}" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="${flavor}" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
     fi
 
     ## Update IP-info file
@@ -1577,7 +1580,7 @@ function pii_cleanup() {
 
 
 # Function to safely parse and set environment variables for file
-source_envs() {
+function source_envs() {
     local file line key value
     
     file="$(xdg_config_path)/envs"
@@ -1608,6 +1611,29 @@ source_envs() {
         export "$key=$value"
     done < "${file}"
 }
+
+
+function flavor_home() {
+    local path file
+
+    ## No flavor specified
+    if [[ -z ${flavor} ]]; then
+        echo
+        return
+    fi
+
+    path="$(xdg_config_path)/flavors/${flavor}"
+    if [[ ! -d "${path}" ]]; then
+        merror "Folder not found: ${path}"
+    fi
+
+    file=${path}/connect.sh
+    if [[ ! -f "${file}" ]]; then
+        merror "File not found: ${file}"
+    fi
+
+    echo "${path}"    
+}    
 
 
 # -------------------------------------------------------------------------
