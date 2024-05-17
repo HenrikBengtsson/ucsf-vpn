@@ -136,7 +136,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.7.0-9024
+### Version: 5.7.0-9025
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1549,7 +1549,7 @@ function openconnect_stop() {
 
 
 # -------------------------------------------------------------------------
-# XDG and cache utility functions
+# XDG config utility functions
 # -------------------------------------------------------------------------
 function xdg_config_path() {
     local path
@@ -1575,19 +1575,49 @@ function pii_cleanup() {
 }
 
 
+# Function to safely parse and set environment variables for file
+source_envs() {
+    local file line key value
+    
+    file="$(xdg_config_path)/envs"
+
+    ## Nothing to do?
+    if [[ ! -f "${file}" ]]; then
+        return 0
+    fi
+
+    while IFS= read -r line; do
+        # Skip empty lines and lines starting with #
+        [[ -z "$line" ]] && continue
+        [[ "$line" =~ ^[[:blank:]]*# ]] && continue
+
+        # Assert that line specifies a key=value pair
+        if [[ ! "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
+            merror "Syntax error in ${file}: ${line}"
+        fi
+
+        # Split the line into key and value parts
+        key="${line%%=*}"
+        value="${line#*=}"
+
+        # Resolve any variables and expressions in the value part
+        eval "value=${value}"
+
+        # Assign the resolved value to environment variable specified by the key
+        export "$key=$value"
+    done < "${file}"
+}
+
+
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
 pid_file="$(xdg_config_path)/openconnect.pid"
-envs_file="$(xdg_config_path)/envs"
 ip_route_novpn_file="$(xdg_config_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_config_path)/ip-route.vpn.out"
 pii_file=$(make_pii_file)
 
-if [[ -f "${envs_file}" ]]; then
-    # shellcheck disable=SC1090
-    source "${envs_file}"
-fi
+source_envs
 
 ## Actions
 action=
