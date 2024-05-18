@@ -126,7 +126,6 @@ Options:
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
- --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
                   'pid,iproute,ipinfo' (default)
@@ -151,7 +150,6 @@ Examples:
 
 
 Environment variables:
- UCSF_VPN_METHOD       Default value for --method
  UCSF_VPN_PROTOCOL     Default value for --protocol
  UCSF_VPN_SERVER       Default value for --server
  UCSF_VPN_TOKEN        Default value for --token
@@ -175,9 +173,8 @@ the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Requirements when using OpenConnect (CLI):
-  - OpenConnect (>= 7.08) (installed: 8.20-1)
-  - sudo
+* OpenConnect (>= 7.08) (installed: 8.20-1)
+* sudo
 
 VPN Protocol:
 Different versions of OpenConnect support different VPN protocols.
@@ -204,7 +201,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.8.0-9001
+Version: 5.8.0-9002
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -213,8 +210,6 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 
 ## Required software
-
-### OpenConnect (default)
 
 The `uscf-vpn` tool requires:
 
@@ -238,7 +233,7 @@ whether a VPN connection is established or not, and to provide public IP
 information on your current internet connection.  To disable this check, use
 `--validate=pid`, or environment variable `UCSF_VPN_VALIDATE=pid`, which
 uses the PID file of OpenConnect to decide whether a VPN connection is
-established or not.  This only works for `--method=openconnect`.
+established or not.
 
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.

@@ -32,7 +32,6 @@
 ###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
-###  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
 ###                   'pid,iproute,ipinfo' (default)
@@ -58,7 +57,6 @@
 ### ---
 ###
 ### Environment variables:
-###  UCSF_VPN_METHOD       Default value for --method
 ###  UCSF_VPN_PROTOCOL     Default value for --protocol
 ###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_TOKEN        Default value for --token
@@ -82,9 +80,8 @@
 ### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 ###
 ### Requirements:
-### * Requirements when using OpenConnect (CLI):
-###   - OpenConnect (>= 7.08) (installed: {{openconnect_version}})
-###   - sudo
+### * OpenConnect (>= 7.08) (installed: {{openconnect_version}})
+### * sudo
 ###
 ### VPN Protocol:
 ### Different versions of OpenConnect support different VPN protocols.
@@ -111,7 +108,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9001
+### Version: 5.8.0-9002
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1383,6 +1380,7 @@ while [[ $# -gt 0 ]]; do
             merror "Option '--$key' must not be empty"
         fi
         if [[ "$key" == "method" ]]; then
+            mwarn "There is no longer a need to specify method, because the default --method=openconnect is the only support one"
             method=$value
         elif [[ "$key" == "url" ]]; then
             url=$value
