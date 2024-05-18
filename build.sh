@@ -1,4 +1,4 @@
-tmpl=${1:-src/ucsf-vpn}
+tmpl=${1:-src/ucsf-vpn.sh}
 target=${2:-bin/ucsf-vpn}
 
 echo "Building ${target} from ${tmpl} ..."

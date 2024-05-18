@@ -233,7 +233,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0-9033
+Version: 5.7.0-9034
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -283,6 +283,21 @@ established or not.  This only works for `--method=openconnect`.
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.
 
+
+## Building from source
+
+The self-contained `bin/ucsf-vpn` script is generated from
+`src/ucsf-vpn.sh` and `src/incl/*.sh`. The rebuild `bin/ucsf-vpn`,
+use:
+
+```sh
+$ make build
+./build.sh
+Building bin/ucsf-vpn from src/ucsf-vpn ...
+-rwxrwxr-x 1 alice henrik alice May 18 09:34 bin/ucsf-vpn
+Version built: 5.8.0
+Building bin/ucsf-vpn from src/ucsf-vpn ... done
+```
 
 [NEWS]: NEWS.md
 [UCSF VPN web proxy]: https://remote-vpn01.ucsf.edu/
