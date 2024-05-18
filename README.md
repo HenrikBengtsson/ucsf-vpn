@@ -21,7 +21,8 @@ WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OK: OpenConnect status: 'openconnect' process running (PID=14549)
+OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-05-13T09:05:20-07:00; PID=14549)
+OK: IP routing tunnels: [n=1] tun0
 OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 OK: Connected to the VPN
 ```
@@ -44,6 +45,7 @@ To disconnect from the UCSF VPN, call:
 ```sh
 $ ucsf-vpn stop
 OK: OpenConnect status: No 'openconnect' process running
+OK: IP routing tunnels: none
 OK: Public IP information: ip=123.145.254.42, hostname=123.145.254.42.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
 OK: Not connected to the VPN
 ```
@@ -55,7 +57,8 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-OpenConnect status: 'openconnect' process running (PID=17419)
+OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-05-13T16:20:00-07:00; PID=17419)
+IP routing tunnels: [n=1] tun0
 Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
 Connected to the VPN
 ```
@@ -105,6 +108,7 @@ Commands:
  toggle           Connect to or disconnect from VPN
  status           Display VPN connection status
  details          Display connection details in JSON format
+ routing          Display IP routing details
  log              Display log file
  troubleshoot     Scan log file for errors (only for '--method=pulse')
 
@@ -118,21 +122,25 @@ Options:
                    -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
+ --presudo=<lgl>  Established sudo upfront (true; default) or not (false)
 
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
- --validate=<how> Either 'ipinfo', 'pid', or 'pid,ipinfo'
+ --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
+                  'pid,iproute,ipinfo' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
+ --flavor=<flvr>  Use a customized flavor of the VPN
 
 Flags:
  --verbose        More verbose output
  --help           Display full help
  --version        Display version
- --full           Display more version information
+ --full           Display more information
  --force          Force command
+ --args           Pass any remaining options to 'openconnect'
 
 Examples:
  ucsf-vpn --version --full
@@ -140,6 +148,7 @@ Examples:
  ucsf-vpn stop
  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
+ ucsf-vpn routings --full
 
 
 Environment variables:
@@ -224,7 +233,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.7.0
+Version: 5.8.0
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -274,6 +283,21 @@ established or not.  This only works for `--method=openconnect`.
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.
 
+
+## Building from source
+
+The self-contained `bin/ucsf-vpn` script is generated from
+`src/ucsf-vpn.sh` and `src/incl/*.sh`. The rebuild `bin/ucsf-vpn`,
+use:
+
+```sh
+$ make build
+./build.sh
+Building bin/ucsf-vpn from src/ucsf-vpn ...
+-rwxrwxr-x 1 alice henrik alice May 18 09:34 bin/ucsf-vpn
+Version built: 5.8.0
+Building bin/ucsf-vpn from src/ucsf-vpn ... done
+```
 
 [NEWS]: NEWS.md
 [UCSF VPN web proxy]: https://remote-vpn01.ucsf.edu/

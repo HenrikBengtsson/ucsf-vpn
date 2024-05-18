@@ -1,6 +1,70 @@
 ucsf-vpn
 ========
 
+## Version 5.8.0 (2024-05-18)
+
+### Significant changes
+
+ * Now `ucsf vpn status` uses all validation methods to conclude
+   whether there is a working VPN connection or not. If they do not
+   agree, an informative error is produced. Previously, it returned
+   after the first validation method was successful, ignoring the
+   remaining validation methods.
+
+ * Now `ucsf vpn start` finds the logged in user's `~/.netrc` file
+   also when called via `sudo`.
+ 
+### New Features
+
+ * Now `ucsf vpn start` and `ucsf vpn stop` wait for the updating of
+   the IP routing table (`ip route show`) to finish before returning.
+ 
+ * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
+   changes to your IP routing table (per `ip route show`).
+
+ * Now `ucsf vpn status` reports also on how long ago and when the
+   OpenConnect process was started, if it exists. It also reports on
+   any IP routing tunnel devices.
+ 
+ * Now `--args` causes all of the following options to be passed to
+   `openconnect`, e.g. `ucsf vpn start --args
+   --script=$PWD/my-vpnc-script` causes `--script=$PWD/my-vpnc-script`
+   to be passed to `openconnect`.
+
+ * Use `--presudo=false` to skip establishing 'sudo' permissions
+   upfront. The default is `--presudo=true`, which might add a `sudo:
+   ... a password is required` event in the `/var/log/auth.log` log
+   file, which in turn might trigger an security alert.  The default
+   can be controlled via environment variable `UCSF_VPN_PRESUDO`.
+
+ * `ucsf vpn` sources `~/.config/ucsf-vpn/envs` on start, which
+   provides a convenient location for configuring default settings via
+   `UCSF_VPN_*` environment variables.
+ 
+ * Add `ucsf vpn routing`, which shows the current IP routing table.
+   It also reports on the default non-VPN network interface on the
+   machine, and any tunnel devices.  By specifying `--full`, IP
+   numbers are annotated with hostnames and `whois` information, if
+   available.
+
+ * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
+   or an unknown `--<key>=<value>` option.
+
+ * Environment variable `UCSF_VPN_VERSION=x.y.z` is now passed to
+   OpenConnect.
+
+### Beta Features
+
+ * Add argument `--flavor=<flavor>`, which defaults to
+   `UCSF_VPN_FLAVOR`, which does not have a default value. If
+   specified, folder `~/.config/ucsf-vpn/flavors/<flavor>/` must
+   exist.
+
+### Bug Fixes
+
+ * `ucsf vpn start` ignored environment variable `NETRC`.
+
+
 ## Version 5.7.0 (2024-04-27)
 
 ### Bug Fixes
