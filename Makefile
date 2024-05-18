@@ -4,6 +4,10 @@ all: README.md shellcheck spelling
 
 .PHONY: help
 
+build:
+	./build.sh
+
+
 ## Regenerate README.md
 README.md: README.md.tmpl bin/ucsf-vpn
 	@bfr=`cat $<`; \
