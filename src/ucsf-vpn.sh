@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9006
+### Version: 5.8.0-9007
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -318,7 +318,7 @@ function source_envs() {
 
 
 function flavor_home() {
-    local path file pathname
+    local path hook pathname
     local -i count
 
     ## No flavor specified
@@ -333,8 +333,8 @@ function flavor_home() {
     fi
 
     count=0
-    for file in pre-connect.sh post-connect.sh; do
-        pathname=${path}/${file}
+    for hook in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        pathname=${path}/${hook}.sh
         if [[ -f "${pathname}" ]]; then
             if ! bash -n "${pathname}"; then
                 merror "File syntax error: ${pathname}"
