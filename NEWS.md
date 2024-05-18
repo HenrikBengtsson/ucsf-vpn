@@ -3,8 +3,16 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
- 
+### Significant changes
+
+ * OpenConnect is now the only supported method. Support for Pulse
+   Secure GUI client has been dropped.
+
+### Deprecated and Defunct
+
+ * The use of `--method=pulse`, which uses the Pulse Secure GUI client
+   to establish a VPN connection, is defunct.
+
 
 ## Version 5.8.0 (2024-05-18)
 

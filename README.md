@@ -110,7 +110,6 @@ Commands:
  details          Display connection details in JSON format
  routing          Display IP routing details
  log              Display log file
- troubleshoot     Scan log file for errors (only for '--method=pulse')
 
 Options:
  --token=<token>  One-time two-factor authentication (2FA) token or method:
@@ -162,16 +161,6 @@ Environment variables:
  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
 
-Commands and Options for Pulse Security Client only (--method=pulse):
- open-gui         Open the Pulse Secure GUI
- close-gui        Close the Pulse Secure GUI (and any VPN connections)
-
- --gui            Connect to VPN via Pulse Secure GUI
- --no-gui         Connect to VPN via Pulse Secure CLI (default)
- --speed=<factor> Control speed of --gui interactions (default is 1.0)
-
-Any other options are passed to Pulse Secure CLI as is (only --no-gui).
-
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given
 in ~/.netrc, then you will be prompted to enter them. To specify them
@@ -189,12 +178,6 @@ Requirements:
 * Requirements when using OpenConnect (CLI):
   - OpenConnect (>= 7.08) (installed: 8.20-1)
   - sudo
-* Requirements when using Junos Pulse Secure Client (GUI):
-  - Junos Pulse Secure client (>= 5.3) (installed: <PLEASE INSTALL>)
-  - Ports 4242 (UDP) and 443 (TCP)
-  - `curl`
-  - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
-  - No need for sudo rights
 
 VPN Protocol:
 Different versions of OpenConnect support different VPN protocols.
@@ -205,22 +188,10 @@ and 'pulse' the newer "Pulse Secure" protocol.  For older version of
 OpenConnect that recognizes neither, specify '--protocol=juniper',
 which will results in using 'openconnect' legacy option '--juniper'.
 
-Pulse Secure GUI configuration:
-Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
-automatically add a valid VPN connection to the Pulse Secure GUI
-with the following details:
- - Name: UCSF
- - URL: https://remote.ucsf.edu/pulse
-You may change the name to you own liking.
-
 Troubleshooting:
 * Verify your username and password at https://remote.ucsf.edu/.
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
-* If you are using the Pulse Secure client (`ucsf-vpn --method=pulse`),
-  - Make sure ports 4242 & 443 are not used by other processes
-  - Make sure 'https://remote.ucsf.edu/pulse' is used as the URL
-  - Run 'ucsf-vpn troubleshoot' to inspect the Pulse Secure logs
 
 Useful resources:
 * UCSF VPN information:
@@ -233,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.8.0
+Version: 5.8.0-9001
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
