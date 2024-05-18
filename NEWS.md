@@ -16,16 +16,6 @@ ucsf-vpn
  
 ### New Features
 
- * `ucsf vpn` sources `~/.config/ucsf-vpn/envs` on start, which
-   provides a convenient location for configuring default settings via
-   `UCSF_VPN_*` environment variables.
- 
- * Add `ucsf vpn routing`, which shows the current IP routing table.
-   It also reports on the default non-VPN network interface on the
-   machine, and any tunnel devices.  By specifying `--full`, IP
-   numbers are annotated with hostnames and `whois` information, if
-   available.
- 
  * Now `ucsf vpn start` and `ucsf vpn stop` wait for the updating of
    the IP routing table (`ip route show`) to finish before returning.
  
@@ -36,9 +26,6 @@ ucsf-vpn
    OpenConnect process was started, if it exists. It also reports on
    any IP routing tunnel devices.
  
- * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
-   or an unknown `--<key>=<value>` option.
-
  * Now `--args` causes all of the following options to be passed to
    `openconnect`, e.g. `ucsf vpn start --args
    --script=$PWD/my-vpnc-script` causes `--script=$PWD/my-vpnc-script`
@@ -50,13 +37,28 @@ ucsf-vpn
    file, which in turn might trigger an security alert.  The default
    can be controlled via environment variable `UCSF_VPN_PRESUDO`.
 
+ * `ucsf vpn` sources `~/.config/ucsf-vpn/envs` on start, which
+   provides a convenient location for configuring default settings via
+   `UCSF_VPN_*` environment variables.
+ 
+ * Add `ucsf vpn routing`, which shows the current IP routing table.
+   It also reports on the default non-VPN network interface on the
+   machine, and any tunnel devices.  By specifying `--full`, IP
+   numbers are annotated with hostnames and `whois` information, if
+   available.
+
+ * Now `ucsf vpn` gives an error if it detects an unknown `--<flag>`
+   or an unknown `--<key>=<value>` option.
+
+ * Environment variable `UCSF_VPN_VERSION=x.y.z` is now passed to
+   OpenConnect.
+
+### Beta Features
+
  * Add argument `--flavor=<flavor>`, which defaults to
    `UCSF_VPN_FLAVOR`, which does not have a default value. If
    specified, folder `~/.config/ucsf-vpn/flavors/<flavor>/` must
    exist.
- 
- * Environment variable `UCSF_VPN_VERSION=x.y.z` is now passed to
-   OpenConnect.
 
 ### Bug Fixes
 

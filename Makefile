@@ -1,6 +1,6 @@
 SHELL:=/bin/bash
 
-all: README.md shellcheck spelling
+all: build README.md shellcheck spelling
 
 .PHONY: help
 
