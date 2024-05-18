@@ -3,8 +3,7 @@
 # Use user-specific UCSF VPN configurations
 #
 # Install:
-#   mkdir -p /etc/vpnc/connect.d/
-#   cp ucsf-vpn-flavors.sh /etc/vpnc/connect.d/
+#   ucsf vpn install-vpnc
 #
 # Requires:
 #   https://github.com/HenrikBengtsson/ucsf-vpn

@@ -77,7 +77,7 @@ function openconnect_start() {
 
     ## Assert that --flavor=<flavor> exists, if specified
     flavor_home > /dev/null
-    
+
     assert_sudo "start"
 
     ## Load user credentials from file?

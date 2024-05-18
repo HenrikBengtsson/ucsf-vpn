@@ -12,6 +12,7 @@
 ###  status           Display VPN connection status
 ###  details          Display connection details in JSON format
 ###  routing          Display IP routing details
+###  install-vpnc     Install 'ucsf-vpn' hook scripts
 ###  log              Display log file
 ###
 ### Options:
@@ -105,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9002
+### Version: 5.8.0-9004
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -113,6 +114,7 @@ call="$0 $*"
 
 this="${BASH_SOURCE%/}"; [[ -L "${this}" ]] && this=$(readlink "${this}")
 incl="$(dirname "${this}")/incl"
+vpnc="$(dirname "${this}")/vpnc"
 
 # shellcheck source=incl/output.sh
 source "${incl}/output.sh"
@@ -349,6 +351,68 @@ function flavor_home() {
 }    
 
 
+function find_vpnc-script() {
+    local file
+    file=$(openconnect --help | grep -E "vpnc-script" | sed 's/[^"]*"//' | sed 's/".*//')
+    if [[ -z "${file}" ]]; then
+        merror "Failed to locate the default 'vpnc-script' script. It appears that openconnect --help does not specify it"
+    fi
+    echo "${file}"
+}
+
+function find_hooks_dir() {
+    local file dir
+    find_vpnc-script > /dev/null
+    file=$(find_vpnc-script)
+    dir=$(grep -E "^HOOKS_DIR=" "${file}" | sed 's/[^=]*=//' | sed 's/[[:blank:]]$//')
+    echo "${dir}"
+}
+
+
+function ucsf-vpn-flavors_code() {
+    cat "${vpnc}/ucsf-vpn-flavors.sh"
+}
+
+function install_vpnc() {
+    local file filename dest hooks_dir dir path
+
+    file="$(mktemp -d)/ucsf-vpn-flavors.sh"
+    ucsf-vpn-flavors_code > "${file}"
+    
+    find_vpnc-script > /dev/null
+    hooks_dir=$(find_hooks_dir)
+
+    mdebug "install_vpnc() ..."
+    mdebug " - hooks folder: ${hooks_dir}"
+    mdebug " - template: ${file}"
+    
+    assert_sudo "install-vpnc"
+
+    sudo mkdir -p "${hooks_dir}"
+    [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+
+    filename=$(basename "${file}")
+    dest="${hooks_dir}/${filename}"
+    sudo cp "${file}" "${dest}"
+    sudo chmod ugo+r "${dest}"
+    [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
+    mdebug " - copied generic hook script: ${dest}"
+
+    for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        path=${hooks_dir}/${dir}
+        sudo mkdir -p "${path}"
+        [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
+        dest="${path}/${filename}"
+        sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
+        [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
+        mdebug " - added symbolic link: ${dest} -> ${hooks_dir}/${filename}"
+    done
+
+    rm "${file}"
+    mdebug "install_vpnc() ... done"
+}
+
+
 function logfile() {
     local path file
     
@@ -417,23 +481,25 @@ while [[ $# -gt 0 ]]; do
 
     ## Commands:
     if [[ "$1" == "start" ]]; then
-        action=start
+        action=$1
     elif [[ "$1" == "stop" ]]; then
-        action=stop
+        action=$1
     elif [[ "$1" == "toggle" ]]; then
-        action=toggle
+        action=$1
         force=true
     elif [[ "$1" == "restart" ]]; then
-        action=restart
+        action=$1
         force=true
     elif [[ "$1" == "status" ]]; then
-        action=status
+        action=$1
     elif [[ "$1" == "details" ]]; then
-        action=details
+        action=$1
     elif [[ "$1" == "routing" ]]; then
-        action=routing
+        action=$1
+    elif [[ "$1" == "install-vpnc" ]]; then
+        action=$1
     elif [[ "$1" == "log" ]]; then
-        action=log
+        action=$1
     elif [[ "$1" == "troubleshoot" ]]; then
         pulse_is_defunct
     elif [[ "$1" == "open-gui" ]]; then
@@ -666,6 +732,9 @@ elif [[ $action == "details" ]]; then
     _exit $?
 elif [[ $action == "routing" ]]; then
     routing_details
+    _exit $?
+elif [[ $action == "install-vpnc" ]]; then
+    install_vpnc
     _exit $?
 elif [[ $action == "start" ]]; then
     openconnect_start

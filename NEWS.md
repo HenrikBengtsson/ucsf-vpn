@@ -8,6 +8,11 @@ ucsf-vpn
  * OpenConnect is now the only supported method. Support for Pulse
    Secure GUI client has been dropped.
 
+### New Features
+
+ * Add `ucsf vpn install-vpnc`, which is required before using
+   `--flavor=<flavor>`.
+
 ### Deprecated and Defunct
 
  * The use of `--method=pulse`, which uses the Pulse Secure GUI client
