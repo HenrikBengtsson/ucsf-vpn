@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9004
+### Version: 5.8.0-9005
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -396,7 +396,7 @@ function install_vpnc() {
     sudo cp "${file}" "${dest}"
     sudo chmod ugo+r "${dest}"
     [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
-    mdebug " - copied generic hook script: ${dest}"
+    mok "Copied generic hook script: ${dest}"
 
     for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
         path=${hooks_dir}/${dir}
@@ -405,7 +405,7 @@ function install_vpnc() {
         dest="${path}/${filename}"
         sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
         [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
-        mdebug " - added symbolic link: ${dest} -> ${hooks_dir}/${filename}"
+        mok "Added symbolic link: ${dest} -> ${hooks_dir}/${filename}"
     done
 
     rm "${file}"
