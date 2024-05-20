@@ -194,8 +194,8 @@ Troubleshooting:
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
 
 Useful resources:
-* UCSF VPN information:
-  - https://software.ucsf.edu/content/vpn-virtual-private-network
+* UCSF VPN - Remote connection:
+  - https://it.ucsf.edu/service/vpn-remote-connection
 * UCSF Web-based VPN Interface:
   - https://remote-vpn01.ucsf.edu/ (preferred)
   - https://remote.ucsf.edu/
@@ -204,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.9.9-9013
+Version: 5.9.9-9014
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
