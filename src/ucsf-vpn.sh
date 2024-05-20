@@ -107,7 +107,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9009
+### Version: 5.8.0-9011
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -347,7 +347,7 @@ function flavor_home() {
     if [[ "${count}" -eq 0 ]]; then
         merror "Flavor folder contains no known hook script files: ${path}"
     fi
-    
+
     echo "${path}"    
 }    
 
@@ -375,42 +375,70 @@ function ucsf-vpn-flavors_code() {
 }
 
 function install_vpnc() {
-    local file filename dest hooks_dir dir path
-
-    file="$(mktemp -d)/ucsf-vpn-flavors.sh"
-    ucsf-vpn-flavors_code > "${file}"
-    
-    find_vpnc-script > /dev/null
-    hooks_dir=$(find_hooks_dir)
+    local action file filename dest hooks_dir dir path
+    action=${1:-install}
 
     mdebug "install_vpnc() ..."
+    mdebug " - action: ${action}"
+
+    ## Locate hooks directory
+    find_vpnc-script > /dev/null
+    hooks_dir=$(find_hooks_dir)
     mdebug " - hooks folder: ${hooks_dir}"
-    mdebug " - template: ${file}"
-    
-    assert_sudo "install-vpnc"
 
-    sudo mkdir -p "${hooks_dir}"
-    [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+    filename="ucsf-vpn-flavors.sh"
 
-    filename=$(basename "${file}")
+    ## Is ucsf-vpn hook script already installed?
     dest="${hooks_dir}/${filename}"
-    sudo cp "${file}" "${dest}"
-    sudo chmod ugo+r "${dest}"
-    [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
-    mok "Copied generic hook script: ${dest}"
+    if [[ $action == "check" ]] && [[ ! -f "${dest}" ]]; then
+        return 1
+    fi
+    
+    if $force || [[ ! -f "${dest}" ]]; then
+        file="$(mktemp -d)/${filename}"
+        ucsf-vpn-flavors_code > "${file}"
+        mdebug " - template: ${file}"
+        assert_sudo "install-vpnc"
 
+        ## Create hooks folder, if missing
+        if [[ ! -d "${hooks_dir}" ]]; then
+            sudo mkdir -p "${hooks_dir}"
+            [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+        fi
+    
+        sudo cp "${file}" "${dest}"
+        sudo chmod ugo+r "${dest}"
+        [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
+        mok "Generic hook script added: ${dest}"
+        if [[ -f "${file}" ]]; then
+           rm "${file}"
+        fi
+    else
+        mok "Generic hook script already exists: ${dest}"
+    fi
+
+    ## Install symbolic links to ucsf-vpn hook script, if missing
     for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
         path=${hooks_dir}/${dir}.d
-        sudo mkdir -p "${path}"
-        [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
         dest="${path}/${filename}"
-        sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
-        [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
-        mok "Added symbolic link: ${dest} -> ${hooks_dir}/${filename}"
+        if [[ $action == "check" ]] && [[ ! -L "${dest}" ]]; then
+            return 1
+        fi
+        if $force || [[ ! -L "${dest}" ]]; then
+            assert_sudo "install-vpnc"
+            sudo mkdir -p "${path}"
+            [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
+            sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
+            [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
+            mok "Symbolic link added: ${dest} -> ${hooks_dir}/${filename}"
+        else
+            mok "Symbolic link already exists: ${dest} -> ${hooks_dir}/${filename}"
+        fi
     done
 
-    rm "${file}"
     mdebug "install_vpnc() ... done"
+    
+    return 0
 }
 
 
@@ -757,7 +785,7 @@ elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
 elif [[ $action == "install-vpnc" ]]; then
-    install_vpnc
+    install_vpnc "install"
     _exit $?
 elif [[ $action == "start" ]]; then
     openconnect_start

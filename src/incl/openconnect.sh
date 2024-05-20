@@ -75,9 +75,17 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    ## Assert that --flavor=<flavor> exists, if specified
-    flavor_home > /dev/null
-
+    if [[ -n ${flavor} ]]; then
+        echo "Are vpnc scripts installed?"
+        if ! install_vpnc "check"; then
+            merror "Generic ucsf-vpn hook scripts not installed. Please install with 'ucsf vpn install-vpnc'"
+        fi
+        echo "Are vpnc scripts installed? done"
+        
+        ## Assert that --flavor=<flavor> exists, if specified
+        flavor_home > /dev/null
+    fi
+    
     assert_sudo "start"
 
     ## Load user credentials from file?
