@@ -125,6 +125,24 @@ function openconnect_pid() {
     echo -1
 }
 
+function openconnect_flavor() {
+    local res
+    
+    ## Is there a PID file?
+    if [[ ! -f "${flavor_file}" ]]; then
+        mwarn "Flavor file does not exists: ${flavor_file}"
+        echo "<unknown>"
+        return
+    fi
+    mdebug "Flavor file exists: ${flavor_file}"
+    res=$(cat "${flavor_file}")
+    if [[ -z ${res} ]]; then
+        res="default"
+    fi
+    echo "${res}"
+}
+
+
 function prompt_yesno() {
     local prompt answer
     
@@ -156,6 +174,7 @@ function prompt_yesno() {
         fi                 
     done
 }
+
 
 function openconnect_start() {
     local two_pwds openconnect_log_file log_file main_reason reason post_reason
@@ -388,6 +407,9 @@ function openconnect_start() {
       default_route_before=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
+
+    log "record flavor"
+    echo "$(flavor_home)" > "${flavor_file}"
 
     log "openconnect_start() ... done"
     

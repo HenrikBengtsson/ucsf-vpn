@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9011
+### Version: 5.8.0-9012
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -224,6 +224,7 @@ function status() {
             "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
+            "$mcmd" "Flavor: $(openconnect_flavor)"
             msg="Connected to the VPN"
         else
             msg="Not connected to the VPN"
@@ -405,6 +406,7 @@ pulse_is_defunct() {
 # MAIN
 # -------------------------------------------------------------------------
 pid_file="$(xdg_state_path)/openconnect.pid"
+flavor_file="$(xdg_state_path)/openconnect.flavor"
 ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
 pii_file=$(make_pii_file)
