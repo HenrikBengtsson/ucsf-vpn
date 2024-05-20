@@ -7,6 +7,7 @@
 ### Commands:
 ###  start            Connect to VPN
 ###  stop             Disconnect from VPN
+###  reconnect        Reconnect to VPN
 ###  restart          Disconnect and reconnect to VPN
 ###  toggle           Connect to or disconnect from VPN
 ###  status           Display VPN connection status
@@ -106,7 +107,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9007
+### Version: 5.8.0-9008
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -429,6 +430,10 @@ function logfile() {
     echo "${file}"
 }
 
+log() {
+    echo "[$(date --iso-8601=seconds)] $*" >> "$(logfile)"
+}
+
 
 # -------------------------------------------------------------------------
 # Deprecated and defunct
@@ -483,6 +488,8 @@ while [[ $# -gt 0 ]]; do
     if [[ "$1" == "start" ]]; then
         action=$1
     elif [[ "$1" == "stop" ]]; then
+        action=$1
+    elif [[ "$1" == "reconnect" ]]; then
         action=$1
     elif [[ "$1" == "toggle" ]]; then
         action=$1
@@ -743,6 +750,8 @@ elif [[ $action == "start" ]]; then
 elif [[ $action == "stop" ]]; then
     openconnect_stop
     status "disconnected"
+elif [[ $action == "reconnect" ]]; then
+    openconnect_reconnect
 elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
         openconnect_stop

@@ -154,6 +154,9 @@ function openconnect_start() {
         _exit 0
     fi
 
+    rm "$(logfile)"
+    log "openconnect_start() ..."
+    
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
@@ -275,6 +278,8 @@ function openconnect_start() {
       default_route_before=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
+
+    log "openconnect_start() ... done"
     
     minfo "Connected to VPN server"
 }
@@ -285,6 +290,8 @@ function openconnect_stop() {
 
     mdebug "openconnect_stop() ..."
 
+    log "openconnect_stop() ..."
+    
     pid=$(openconnect_pid)
     if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
@@ -307,6 +314,7 @@ function openconnect_stop() {
         ## session off, disconnecting from the gateway, and running the vpnc-script
         ## to restore the network configuration.
         mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+        log "- sudo kill -s INT $pid"
         sudo kill -s INT $pid 2> /dev/null
     
          ## Wait for process to terminate
@@ -357,6 +365,41 @@ function openconnect_stop() {
       default_route_before=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
-    
+
+    log "openconnect_stop() ... done"
+
     minfo "Disconnected from VPN server"
+}
+
+
+function openconnect_reconnect() {
+    local kill_timeout
+    local -i kk pid
+
+    mdebug "openconnect_reconnect() ..."
+
+    log "openconnect_reconnect() ..."
+    
+    pid=$(openconnect_pid)
+    if [[ $pid == -1 ]]; then
+        mwarn "Could not detect a VPN ('openconnect') process. Skipping."
+        return
+    fi
+
+    minfo "Reconnecting to VPN server"
+
+    assert_sudo "stop"
+
+    ## From 'man openconnect': SIGUSR2 forces an immediate disconnection and
+    ## reconnection; this can be used to quickly recover from LAN IP address
+    ## changes.
+    mdebug "sudo kill -s USR2 $pid"
+    log "- sudo kill -s USR2 $pid"
+    sudo kill -s USR2 $pid 2> /dev/null
+
+    status "connected"
+
+    log "openconnect_reconnect() ... done"
+
+    minfo "Reconnected to VPN server"
 }

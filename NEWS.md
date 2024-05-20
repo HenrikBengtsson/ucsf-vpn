@@ -12,6 +12,11 @@ ucsf-vpn
 
  * Add `ucsf vpn install-vpnc`, which is required before using
    `--flavor=<flavor>`.
+   
+ * Add `ucsf vpn reconnect`, which signals `SIGUSR2` to the
+   OpenConnect process and thereby "forces an immediate disconnection
+   and reconnection; this can be used to quickly recover from LAN IP
+   address changes."
 
 ### Deprecated and Defunct
 

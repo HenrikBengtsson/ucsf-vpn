@@ -104,6 +104,7 @@ Usage:
 Commands:
  start            Connect to VPN
  stop             Disconnect from VPN
+ reconnect        Reconnect to VPN
  restart          Disconnect and reconnect to VPN
  toggle           Connect to or disconnect from VPN
  status           Display VPN connection status
@@ -202,7 +203,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.8.0-9007
+Version: 5.8.0-9008
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
