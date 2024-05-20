@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.9.9-9015
+### Version: 5.9.9-9016
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -127,6 +127,13 @@ source "${incl}/system.sh"
 
 # shellcheck source=incl/connections.sh
 source "${incl}/connections.sh"
+
+# shellcheck source=incl/auth.sh
+source "${incl}/auth.sh"
+
+# shellcheck source=incl/openconnect.sh
+source "${incl}/openconnect.sh"
+
 
 function status() {
     local assert mcmd msg ok
@@ -240,12 +247,6 @@ function status() {
     mdebug "status() ... done"
 }
 
-
-# shellcheck source=incl/auth.sh
-source "${incl}/auth.sh"
-
-# shellcheck source=incl/openconnect.sh
-source "${incl}/openconnect.sh"
 
 # -------------------------------------------------------------------------
 # XDG config utility functions

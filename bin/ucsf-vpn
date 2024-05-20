@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.9.9-9015
+### Version: 5.9.9-9016
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -451,119 +451,6 @@ function wait_for_ip_route() {
         prev="${curr}"
         curr=$(ip route show)
     done
-}
-
-
-function status() {
-    local assert mcmd msg ok
-    local -i pid
-    local -a info
-    local -a msgs
-    local -a methods
-    local -a connected
-    local method
-    local oldIFS
-    local timestamp now since s m h age
-
-    assert=$1
-    mdebug "status() ..."
-    mdebug "- assert='$assert'"
-    mdebug "- validate='$validate'"
-    minfo "validate='$validate'"
-
-    oldIFS="$IFS"
-    IFS=","
-    read -ra methods <<< "$validate"
-    IFS="$oldIFS"
-    mdebug "- methods: [n=${#methods[@]}] ${methods[*]}"
-
-    connected=()
-    for method in "${methods[@]}"; do
-        mdebug "Checking with ${method} ..."
-        if [[ $method == pid ]]; then
-            pid=$(openconnect_pid)
-            if [[ $pid == -1 ]]; then
-                connected+=(false)
-                msg="No 'openconnect' process running"
-            else
-                connected+=(true)
-                timestamp=$(ps -p "${pid}" -o lstart=)
-                if [[ -n ${timestamp} ]]; then
-                    timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
-                    since=$(date -d "${timestamp}" +%s)
-                    now=$(date +%s)
-		    s=$((now - since))
-		    m=$((s / 60))
-		    s=$((s - 60 * m))
-		    h=$((m / 60))
-		    m=$((m - 60 * h))
-		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
-                fi
-                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
-            fi
-            msgs+=("OpenConnect status: $msg")
-        elif [[ $method == iproute ]]; then
-            mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
-            if [[ ${#info[@]} -gt 0 ]]; then
-                connected+=(true)
-                msg="yes (n=${#info[@]} ${info[*]})"
-            else
-                connected+=(false)
-                msg="none"
-            fi
-            msgs+=("IP routing tunnels: ${msg}")
-        elif [[ $method == ipinfo ]]; then
-            if is_connected; then
-                connected+=(true)
-            else
-                connected+=(false)
-            fi
-            msgs+=("Public IP information: $(public_info)")
-        else
-            merror "Unknown --validate value: $method"
-        fi
-        mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
-        mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
-        mdebug "Checking with ${method} ... done"
-    done
-
-    ## Consensus
-    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
-    mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
-
-    if [[ ${#connected[@]} -eq 1 ]]; then
-        mcmd="echo"
-        if [[ -n $assert ]]; then
-            ok=true
-            if [[ $assert == "disconnected" ]] && ${connected[0]}; then
-                ok=false
-            elif [[ $assert == "connected" ]] && ! ${connected[0]}; then
-                ok=false
-            fi
-            if $ok; then
-                mcmd="mok"
-            else
-                mcmd="merror"
-            fi
-        fi
-        for msg in "${msgs[@]}"; do
-            "$mcmd" "${msg}"
-        done
-        if ${connected[0]}; then
-            "$mcmd" "Flavor: $(openconnect_flavor)"
-            msg="Connected to the VPN"
-        else
-            msg="Not connected to the VPN"
-        fi
-        "$mcmd" "$msg"
-    else
-        for msg in "${msgs[@]}"; do
-            echo "${msg}"
-        done
-        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
-    fi
-
-    mdebug "status() ... done"
 }
 
 
@@ -1317,6 +1204,120 @@ function openconnect_reconnect() {
     log "openconnect_reconnect() ... done"
 
     minfo "Reconnected to VPN server"
+}
+
+
+
+function status() {
+    local assert mcmd msg ok
+    local -i pid
+    local -a info
+    local -a msgs
+    local -a methods
+    local -a connected
+    local method
+    local oldIFS
+    local timestamp now since s m h age
+
+    assert=$1
+    mdebug "status() ..."
+    mdebug "- assert='$assert'"
+    mdebug "- validate='$validate'"
+    minfo "validate='$validate'"
+
+    oldIFS="$IFS"
+    IFS=","
+    read -ra methods <<< "$validate"
+    IFS="$oldIFS"
+    mdebug "- methods: [n=${#methods[@]}] ${methods[*]}"
+
+    connected=()
+    for method in "${methods[@]}"; do
+        mdebug "Checking with ${method} ..."
+        if [[ $method == pid ]]; then
+            pid=$(openconnect_pid)
+            if [[ $pid == -1 ]]; then
+                connected+=(false)
+                msg="No 'openconnect' process running"
+            else
+                connected+=(true)
+                timestamp=$(ps -p "${pid}" -o lstart=)
+                if [[ -n ${timestamp} ]]; then
+                    timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
+                    since=$(date -d "${timestamp}" +%s)
+                    now=$(date +%s)
+		    s=$((now - since))
+		    m=$((s / 60))
+		    s=$((s - 60 * m))
+		    h=$((m / 60))
+		    m=$((m - 60 * h))
+		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
+                fi
+                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
+            fi
+            msgs+=("OpenConnect status: $msg")
+        elif [[ $method == iproute ]]; then
+            mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
+            if [[ ${#info[@]} -gt 0 ]]; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="none"
+            fi
+            msgs+=("IP routing tunnels: ${msg}")
+        elif [[ $method == ipinfo ]]; then
+            if is_connected; then
+                connected+=(true)
+            else
+                connected+=(false)
+            fi
+            msgs+=("Public IP information: $(public_info)")
+        else
+            merror "Unknown --validate value: $method"
+        fi
+        mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+        mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
+        mdebug "Checking with ${method} ... done"
+    done
+
+    ## Consensus
+    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
+    mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+
+    if [[ ${#connected[@]} -eq 1 ]]; then
+        mcmd="echo"
+        if [[ -n $assert ]]; then
+            ok=true
+            if [[ $assert == "disconnected" ]] && ${connected[0]}; then
+                ok=false
+            elif [[ $assert == "connected" ]] && ! ${connected[0]}; then
+                ok=false
+            fi
+            if $ok; then
+                mcmd="mok"
+            else
+                mcmd="merror"
+            fi
+        fi
+        for msg in "${msgs[@]}"; do
+            "$mcmd" "${msg}"
+        done
+        if ${connected[0]}; then
+            "$mcmd" "Flavor: $(openconnect_flavor)"
+            msg="Connected to the VPN"
+        else
+            msg="Not connected to the VPN"
+        fi
+        "$mcmd" "$msg"
+    else
+        for msg in "${msgs[@]}"; do
+            echo "${msg}"
+        done
+        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
+    fi
+
+    mdebug "status() ... done"
 }
 
 
