@@ -10,8 +10,9 @@ ucsf-vpn
 
 ### New Features
 
- * Add `ucsf vpn install-vpnc`, which is required before using
-   `--flavor=<flavor>`.
+ * Now `ucsf vpn start --flavor=<flavor>` checks if required
+   OpenConnect hook scripts are installed on the system. If not, it
+   will prompt the user if they should be installed.
    
  * Add `ucsf vpn reconnect`, which signals `SIGUSR2` to the
    OpenConnect process and thereby "forces an immediate disconnection
