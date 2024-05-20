@@ -110,7 +110,6 @@ Commands:
  status           Display VPN connection status
  details          Display connection details in JSON format
  routing          Display IP routing details
- install-vpnc     Install 'ucsf-vpn' hook scripts
  log              Display log file
 
 Options:
@@ -203,7 +202,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.8.0-9010
+Version: 5.8.0-9011
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn

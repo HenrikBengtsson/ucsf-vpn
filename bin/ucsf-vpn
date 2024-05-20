@@ -16,7 +16,6 @@
 ###  status           Display VPN connection status
 ###  details          Display connection details in JSON format
 ###  routing          Display IP routing details
-###  install-vpnc     Install 'ucsf-vpn' hook scripts
 ###  log              Display log file
 ###
 ### Options:
@@ -110,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9010
+### Version: 5.8.0-9011
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -789,6 +788,91 @@ function openconnect_version() {
     fi
 }
 
+function find_vpnc-script() {
+    local file
+    file=$(openconnect --help | grep -E "vpnc-script" | sed 's/[^"]*"//' | sed 's/".*//')
+    if [[ -z "${file}" ]]; then
+        merror "Failed to locate the default 'vpnc-script' script. It appears that openconnect --help does not specify it"
+    fi
+    echo "${file}"
+}
+
+function find_hooks_dir() {
+    local file dir
+    find_vpnc-script > /dev/null
+    file=$(find_vpnc-script)
+    dir=$(grep -E "^HOOKS_DIR=" "${file}" | sed 's/[^=]*=//' | sed 's/[[:blank:]]$//')
+    echo "${dir}"
+}
+
+
+function install_vpnc() {
+    local action file filename dest hooks_dir dir path
+    action=${1:-install}
+
+    mdebug "install_vpnc() ..."
+    mdebug " - action: ${action}"
+
+    ## Locate hooks directory
+    find_vpnc-script > /dev/null
+    hooks_dir=$(find_hooks_dir)
+    mdebug " - hooks folder: ${hooks_dir}"
+
+    filename="ucsf-vpn-flavors.sh"
+
+    ## Is ucsf-vpn hook script already installed?
+    dest="${hooks_dir}/${filename}"
+    if [[ $action == "check" ]] && [[ ! -f "${dest}" ]]; then
+        return 1
+    fi
+    
+    if $force || [[ ! -f "${dest}" ]]; then
+        file="$(mktemp -d)/${filename}"
+        ucsf-vpn-flavors_code > "${file}"
+        mdebug " - template: ${file}"
+        assert_sudo "install-vpnc"
+
+        ## Create hooks folder, if missing
+        if [[ ! -d "${hooks_dir}" ]]; then
+            sudo mkdir -p "${hooks_dir}"
+            [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+        fi
+    
+        sudo cp "${file}" "${dest}"
+        sudo chmod ugo+r "${dest}"
+        [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
+        mok "Generic hook script added: ${dest}"
+        if [[ -f "${file}" ]]; then
+           rm "${file}"
+        fi
+    else
+        minfo "Generic hook script already exists: ${dest}"
+    fi
+
+    ## Install symbolic links to ucsf-vpn hook script, if missing
+    for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        path=${hooks_dir}/${dir}.d
+        dest="${path}/${filename}"
+        if [[ $action == "check" ]] && [[ ! -L "${dest}" ]]; then
+            return 1
+        fi
+        if $force || [[ ! -L "${dest}" ]]; then
+            assert_sudo "install-vpnc"
+            sudo mkdir -p "${path}"
+            [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
+            sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
+            [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
+            mok "Symbolic link added: ${dest} -> ${hooks_dir}/${filename}"
+        else
+            minfo "Symbolic link already exists: ${dest} -> ${hooks_dir}/${filename}"
+        fi
+    done
+
+    mdebug "install_vpnc() ... done"
+    
+    return 0
+}
+
 function openconnect_pid() {
     local -i pid
 
@@ -814,6 +898,38 @@ function openconnect_pid() {
     rm "$pid_file"
     mwarn "Removed stray PID file with non-existing process (PID=$pid): $pid_file"
     echo -1
+}
+
+function prompt_yesno() {
+    local prompt answer
+    
+    prompt=${1:?}
+
+    mdebug "PROMPT: Asking user for yes-no input:"
+    while true; do
+        {
+            _tput setaf 11  ## bright yellow
+            printf "%s [Y/n]: " "${prompt}"
+            _tput setaf 15  ## bright white
+            read -r answer
+            _tput sgr0      ## reset
+        } 1>&2
+        
+        ## Default?
+        if [[ ${answer} == "" ]]; then
+            return 0
+        fi
+
+        ## yes or no?
+        answer=${answer/ /}
+        answer=$(tr '[:upper:]' '[:lower:]' <<< "${answer}")
+        mdebug "- answer=${answer}"
+        if [[ ${answer} == "yes" ]] || [[ ${answer} == "y" ]]; then
+            return 0
+        elif [[ ${answer} == "no" ]] || [[ ${answer} == "n" ]]; then
+            return 1
+        fi                 
+    done
 }
 
 function openconnect_start() {
@@ -852,12 +968,14 @@ function openconnect_start() {
     minfo "Preparing to connect to VPN server '$server'"
 
     if [[ -n ${flavor} ]]; then
-        echo "Are vpnc scripts installed?"
+        ## Are vpnc generic hook scripts installed?
         if ! install_vpnc "check"; then
-            merror "Generic ucsf-vpn hook scripts not installed. Please install with 'ucsf vpn install-vpnc'"
+            if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
+                install_vpnc "install"
+            else
+                merror "Generic ucsf-vpn hook scripts not installed. To install manually, call 'ucsf vpn install-vpnc'"
+            fi
         fi
-        echo "Are vpnc scripts installed? done"
-        
         ## Assert that --flavor=<flavor> exists, if specified
         flavor_home > /dev/null
     fi
@@ -1277,24 +1395,7 @@ function flavor_home() {
 }    
 
 
-function find_vpnc-script() {
-    local file
-    file=$(openconnect --help | grep -E "vpnc-script" | sed 's/[^"]*"//' | sed 's/".*//')
-    if [[ -z "${file}" ]]; then
-        merror "Failed to locate the default 'vpnc-script' script. It appears that openconnect --help does not specify it"
-    fi
-    echo "${file}"
-}
-
-function find_hooks_dir() {
-    local file dir
-    find_vpnc-script > /dev/null
-    file=$(find_vpnc-script)
-    dir=$(grep -E "^HOOKS_DIR=" "${file}" | sed 's/[^=]*=//' | sed 's/[[:blank:]]$//')
-    echo "${dir}"
-}
-
-
+## Note, this function needs to be in src/ucsf-vpn.sh in order for 'make build' to work
 function ucsf-vpn-flavors_code() {
 cat << HOOK_SCRIPT_EOF
 #!/bin/sh
@@ -1337,73 +1438,6 @@ if [ -n "\${UCSF_VPN_VERSION}" ]; then
     ucsf_vpn_log "\$* ... done"
 fi
 HOOK_SCRIPT_EOF
-}
-
-function install_vpnc() {
-    local action file filename dest hooks_dir dir path
-    action=${1:-install}
-
-    mdebug "install_vpnc() ..."
-    mdebug " - action: ${action}"
-
-    ## Locate hooks directory
-    find_vpnc-script > /dev/null
-    hooks_dir=$(find_hooks_dir)
-    mdebug " - hooks folder: ${hooks_dir}"
-
-    filename="ucsf-vpn-flavors.sh"
-
-    ## Is ucsf-vpn hook script already installed?
-    dest="${hooks_dir}/${filename}"
-    if [[ $action == "check" ]] && [[ ! -f "${dest}" ]]; then
-        return 1
-    fi
-    
-    if $force || [[ ! -f "${dest}" ]]; then
-        file="$(mktemp -d)/${filename}"
-        ucsf-vpn-flavors_code > "${file}"
-        mdebug " - template: ${file}"
-        assert_sudo "install-vpnc"
-
-        ## Create hooks folder, if missing
-        if [[ ! -d "${hooks_dir}" ]]; then
-            sudo mkdir -p "${hooks_dir}"
-            [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
-        fi
-    
-        sudo cp "${file}" "${dest}"
-        sudo chmod ugo+r "${dest}"
-        [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
-        mok "Generic hook script added: ${dest}"
-        if [[ -f "${file}" ]]; then
-           rm "${file}"
-        fi
-    else
-        mok "Generic hook script already exists: ${dest}"
-    fi
-
-    ## Install symbolic links to ucsf-vpn hook script, if missing
-    for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
-        path=${hooks_dir}/${dir}.d
-        dest="${path}/${filename}"
-        if [[ $action == "check" ]] && [[ ! -L "${dest}" ]]; then
-            return 1
-        fi
-        if $force || [[ ! -L "${dest}" ]]; then
-            assert_sudo "install-vpnc"
-            sudo mkdir -p "${path}"
-            [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
-            sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
-            [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
-            mok "Symbolic link added: ${dest} -> ${hooks_dir}/${filename}"
-        else
-            mok "Symbolic link already exists: ${dest} -> ${hooks_dir}/${filename}"
-        fi
-    done
-
-    mdebug "install_vpnc() ... done"
-    
-    return 0
 }
 
 
