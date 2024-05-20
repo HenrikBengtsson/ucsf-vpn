@@ -41,7 +41,7 @@ function openconnect_pid() {
 }
 
 function openconnect_start() {
-    local two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local two_pwds openconnect_log_file log_file main_reason reason post_reason
     local -a opts
     local -i pid
 
@@ -154,14 +154,16 @@ function openconnect_start() {
         _exit 0
     fi
 
-    rm "$(logfile)"
+    log_file="$(logfile)"
+    openconnect_log_file="$(openconnect_logfile)"
+    rm "${log_file}"
     log "openconnect_start() ..."
     
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
-    fh_stderr=$(mktemp)
-    fh_stdout=$(mktemp)
+    log "ip route show:"
+    ip route show >> "${log_file}"
 
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
@@ -176,38 +178,19 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     fi
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
 
-    ## Cleanup
-    if [[ -f "$fh_stderr" ]]; then
-        stderr=$(cat "$fh_stderr")
-        sudo rm "$fh_stderr"
-    else
-        stderr=
-    fi
-    if [[ -f "$fh_stdout" ]]; then
-        stdout=$(cat "$fh_stdout")
-        sudo rm "$fh_stdout"
-    else
-        stdout=
-    fi
-    mdebug "OpenConnect standard output:"
-    mdebug "$stdout"
-    mdebug "OpenConnect standard error:"
-    mdebug "$stderr"
-
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
     if [[ $pid == -1 ]]; then
-        echo "$stdout"
-        echo "$stderr"
+        cat "${openconnect_log_file}"
 
         ## Report on ping for VPN server
         if ! is_online "$server"; then
@@ -226,16 +209,16 @@ function openconnect_start() {
         ##       username:fgets (stdin): Resource temporarily unavailable
 
         ## Was the wrong credentials given?
-        if echo "$stderr" | grep -q -F "username:password"; then
+        if grep -q -F "username:password" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -F "Inappropriate ioctl for device"; then
+        elif grep -q -F "Inappropriate ioctl for device" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -E "password#2"; then
+        elif grep -q -E "password#2" "${openconnect_log_file}"; then
             reason="2FA token not accepted"
-        elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
-            reason="$stderr (option --protocol=<ptl>)"
+        elif grep -q -iF "Unknown VPN protocol" "${openconnect_log_file}"; then
+            reason="Unknown VPN protocol (option --protocol=<ptl>)"
         else
             reason="Check your username, password, and token"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"

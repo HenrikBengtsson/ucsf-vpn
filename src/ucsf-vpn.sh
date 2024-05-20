@@ -107,7 +107,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0-9008
+### Version: 5.8.0-9009
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -413,6 +413,22 @@ function install_vpnc() {
     mdebug "install_vpnc() ... done"
 }
 
+
+function openconnect_logfile() {
+    local path file
+    
+    path="$(xdg_state_path)/logs"
+    if [ ! -d "$path" ]; then
+        mkdir -p "$path"
+    fi
+
+    file="${path}"/openconnect.log
+
+    ## Create log file
+    touch "${file}"
+    
+    echo "${file}"
+}
 
 function logfile() {
     local path file
