@@ -409,6 +409,7 @@ function openconnect_start() {
     fi
 
     log "record flavor"
+    # shellcheck disable=SC2005
     echo "$(flavor_home)" > "${flavor_file}"
 
     log "openconnect_start() ... done"
