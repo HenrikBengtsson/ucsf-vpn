@@ -12,7 +12,11 @@ grep -q -F 'source "${incl}/' "${tmpl}"
             file=$(sed -E 's/source "[$][{](incl)[}][/]([^.]+[.]sh)"/\1\/\2/' <<< "${line}")
             cat "src/${file}"
             echo
-        elif ! grep -q -E "^(# shellcheck source=|this=|incl=)" <<< "${line}"; then
+        elif [[ "${line}" == *'cat "${vpnc}/ucsf-vpn-flavors.sh"'* ]]; then
+            echo 'cat << HOOK_SCRIPT_EOF'
+            sed -E 's/[$]/\\$/g' src/vpnc/ucsf-vpn-flavors.sh
+            echo 'HOOK_SCRIPT_EOF'
+        elif ! grep -q -E "^(# shellcheck source=|this=|vpnc=|incl=)" <<< "${line}"; then
             echo "${line}"
             if [[ "${line}" == "#! /usr/bin/env bash" ]]; then
                  echo "###################################################################"

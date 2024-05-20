@@ -1,6 +1,30 @@
 ucsf-vpn
 ========
 
+## Version 6.0.0 (2024-05-20)
+
+### Significant changes
+
+ * OpenConnect is now the only supported method. Support for Pulse
+   Secure GUI client has been dropped.
+
+### New Features
+
+ * Now `ucsf vpn start --flavor=<flavor>` checks if required
+   OpenConnect hook scripts are installed on the system. If not, it
+   will prompt the user if they should be installed.
+   
+ * Add `ucsf vpn reconnect`, which signals `SIGUSR2` to the
+   OpenConnect process and thereby "forces an immediate disconnection
+   and reconnection; this can be used to quickly recover from LAN IP
+   address changes."
+
+### Deprecated and Defunct
+
+ * The use of `--method=pulse`, which uses the Pulse Secure GUI client
+   to establish a VPN connection, is defunct.
+
+
 ## Version 5.8.0 (2024-05-18)
 
 ### Significant changes

@@ -3,8 +3,7 @@
 # Use user-specific UCSF VPN configurations
 #
 # Install:
-#   mkdir -p /etc/vpnc/connect.d/
-#   cp ucsf-vpn-flavors.sh /etc/vpnc/connect.d/
+#   ucsf vpn install-vpnc
 #
 # Requires:
 #   https://github.com/HenrikBengtsson/ucsf-vpn
@@ -20,11 +19,7 @@ if [ -n "${UCSF_VPN_VERSION}" ]; then
     ucsf_vpn_log "UCSF_VPN_VERSION=${UCSF_VPN_VERSION}"
     ucsf_vpn_log "UCSF_VPN_FLAVOR=${UCSF_VPN_FLAVOR}"
 
-    if [ "$1" = "connect" ]; then
-        _hook_="pre-connect"
-    else
-        _hook_="$1"
-    fi
+    _hook_="$1"
     ucsf_vpn_log "hook=${_hook_}"
 
     _hook_file_="${UCSF_VPN_FLAVOR}/${_hook_}.sh"

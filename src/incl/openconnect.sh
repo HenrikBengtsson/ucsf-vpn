@@ -13,6 +13,91 @@ function openconnect_version() {
     fi
 }
 
+function find_vpnc-script() {
+    local file
+    file=$(openconnect --help | grep -E "vpnc-script" | sed 's/[^"]*"//' | sed 's/".*//')
+    if [[ -z "${file}" ]]; then
+        merror "Failed to locate the default 'vpnc-script' script. It appears that openconnect --help does not specify it"
+    fi
+    echo "${file}"
+}
+
+function find_hooks_dir() {
+    local file dir
+    find_vpnc-script > /dev/null
+    file=$(find_vpnc-script)
+    dir=$(grep -E "^HOOKS_DIR=" "${file}" | sed 's/[^=]*=//' | sed 's/[[:blank:]]$//')
+    echo "${dir}"
+}
+
+
+function install_vpnc() {
+    local action file filename dest hooks_dir dir path
+    action=${1:-install}
+
+    mdebug "install_vpnc() ..."
+    mdebug " - action: ${action}"
+
+    ## Locate hooks directory
+    find_vpnc-script > /dev/null
+    hooks_dir=$(find_hooks_dir)
+    mdebug " - hooks folder: ${hooks_dir}"
+
+    filename="ucsf-vpn-flavors.sh"
+
+    ## Is ucsf-vpn hook script already installed?
+    dest="${hooks_dir}/${filename}"
+    if [[ $action == "check" ]] && [[ ! -f "${dest}" ]]; then
+        return 1
+    fi
+    
+    if $force || [[ ! -f "${dest}" ]]; then
+        file="$(mktemp -d)/${filename}"
+        ucsf-vpn-flavors_code > "${file}"
+        mdebug " - template: ${file}"
+        assert_sudo "install-vpnc"
+
+        ## Create hooks folder, if missing
+        if [[ ! -d "${hooks_dir}" ]]; then
+            sudo mkdir -p "${hooks_dir}"
+            [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+        fi
+    
+        sudo cp "${file}" "${dest}"
+        sudo chmod ugo+r "${dest}"
+        [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
+        mok "Generic hook script added: ${dest}"
+        if [[ -f "${file}" ]]; then
+           rm "${file}"
+        fi
+    else
+        minfo "Generic hook script already exists: ${dest}"
+    fi
+
+    ## Install symbolic links to ucsf-vpn hook script, if missing
+    for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        path=${hooks_dir}/${dir}.d
+        dest="${path}/${filename}"
+        if [[ $action == "check" ]] && [[ ! -L "${dest}" ]]; then
+            return 1
+        fi
+        if $force || [[ ! -L "${dest}" ]]; then
+            assert_sudo "install-vpnc"
+            sudo mkdir -p "${path}"
+            [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
+            sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
+            [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
+            mok "Symbolic link added: ${dest} -> ${hooks_dir}/${filename}"
+        else
+            minfo "Symbolic link already exists: ${dest} -> ${hooks_dir}/${filename}"
+        fi
+    done
+
+    mdebug "install_vpnc() ... done"
+    
+    return 0
+}
+
 function openconnect_pid() {
     local -i pid
 
@@ -40,8 +125,59 @@ function openconnect_pid() {
     echo -1
 }
 
+function openconnect_flavor() {
+    local res
+    
+    ## Is there a PID file?
+    if [[ ! -f "${flavor_file}" ]]; then
+        mwarn "Flavor file does not exists: ${flavor_file}"
+        echo "<unknown>"
+        return
+    fi
+    mdebug "Flavor file exists: ${flavor_file}"
+    res=$(cat "${flavor_file}")
+    if [[ -z ${res} ]]; then
+        res="default"
+    fi
+    echo "${res}"
+}
+
+
+function prompt_yesno() {
+    local prompt answer
+    
+    prompt=${1:?}
+
+    mdebug "PROMPT: Asking user for yes-no input:"
+    while true; do
+        {
+            _tput setaf 11  ## bright yellow
+            printf "%s [Y/n]: " "${prompt}"
+            _tput setaf 15  ## bright white
+            read -r answer
+            _tput sgr0      ## reset
+        } 1>&2
+        
+        ## Default?
+        if [[ ${answer} == "" ]]; then
+            return 0
+        fi
+
+        ## yes or no?
+        answer=${answer/ /}
+        answer=$(tr '[:upper:]' '[:lower:]' <<< "${answer}")
+        mdebug "- answer=${answer}"
+        if [[ ${answer} == "yes" ]] || [[ ${answer} == "y" ]]; then
+            return 0
+        elif [[ ${answer} == "no" ]] || [[ ${answer} == "n" ]]; then
+            return 1
+        fi                 
+    done
+}
+
+
 function openconnect_start() {
-    local two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local two_pwds openconnect_log_file log_file main_reason reason post_reason
     local -a opts
     local -i pid
 
@@ -75,8 +211,18 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    ## Assert that --flavor=<flavor> exists, if specified
-    flavor_home > /dev/null
+    if [[ -n ${flavor} ]]; then
+        ## Are vpnc generic hook scripts installed?
+        if ! install_vpnc "check"; then
+            if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
+                install_vpnc "install"
+            else
+                merror "Generic ucsf-vpn hook scripts not installed. To install manually, call 'ucsf vpn install-vpnc'"
+            fi
+        fi
+        ## Assert that --flavor=<flavor> exists, if specified
+        flavor_home > /dev/null
+    fi
     
     assert_sudo "start"
 
@@ -154,11 +300,16 @@ function openconnect_start() {
         _exit 0
     fi
 
+    log_file="$(logfile)"
+    openconnect_log_file="$(openconnect_logfile)"
+    rm "${log_file}"
+    log "openconnect_start() ..."
+    
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
-    fh_stderr=$(mktemp)
-    fh_stdout=$(mktemp)
+    log "ip route show:"
+    ip route show >> "${log_file}"
 
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
@@ -173,38 +324,19 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     fi
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
 
-    ## Cleanup
-    if [[ -f "$fh_stderr" ]]; then
-        stderr=$(cat "$fh_stderr")
-        sudo rm "$fh_stderr"
-    else
-        stderr=
-    fi
-    if [[ -f "$fh_stdout" ]]; then
-        stdout=$(cat "$fh_stdout")
-        sudo rm "$fh_stdout"
-    else
-        stdout=
-    fi
-    mdebug "OpenConnect standard output:"
-    mdebug "$stdout"
-    mdebug "OpenConnect standard error:"
-    mdebug "$stderr"
-
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
     if [[ $pid == -1 ]]; then
-        echo "$stdout"
-        echo "$stderr"
+        cat "${openconnect_log_file}"
 
         ## Report on ping for VPN server
         if ! is_online "$server"; then
@@ -223,16 +355,16 @@ function openconnect_start() {
         ##       username:fgets (stdin): Resource temporarily unavailable
 
         ## Was the wrong credentials given?
-        if echo "$stderr" | grep -q -F "username:password"; then
+        if grep -q -F "username:password" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -F "Inappropriate ioctl for device"; then
+        elif grep -q -F "Inappropriate ioctl for device" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -E "password#2"; then
+        elif grep -q -E "password#2" "${openconnect_log_file}"; then
             reason="2FA token not accepted"
-        elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
-            reason="$stderr (option --protocol=<ptl>)"
+        elif grep -q -iF "Unknown VPN protocol" "${openconnect_log_file}"; then
+            reason="Unknown VPN protocol (option --protocol=<ptl>)"
         else
             reason="Check your username, password, and token"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
@@ -275,6 +407,12 @@ function openconnect_start() {
       default_route_before=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
+
+    log "record flavor"
+    # shellcheck disable=SC2005
+    echo "$(flavor_home)" > "${flavor_file}"
+
+    log "openconnect_start() ... done"
     
     minfo "Connected to VPN server"
 }
@@ -285,6 +423,8 @@ function openconnect_stop() {
 
     mdebug "openconnect_stop() ..."
 
+    log "openconnect_stop() ..."
+    
     pid=$(openconnect_pid)
     if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
@@ -307,6 +447,7 @@ function openconnect_stop() {
         ## session off, disconnecting from the gateway, and running the vpnc-script
         ## to restore the network configuration.
         mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+        log "- sudo kill -s INT $pid"
         sudo kill -s INT $pid 2> /dev/null
     
          ## Wait for process to terminate
@@ -357,6 +498,41 @@ function openconnect_stop() {
       default_route_before=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
-    
+
+    log "openconnect_stop() ... done"
+
     minfo "Disconnected from VPN server"
+}
+
+
+function openconnect_reconnect() {
+    local kill_timeout
+    local -i kk pid
+
+    mdebug "openconnect_reconnect() ..."
+
+    log "openconnect_reconnect() ..."
+    
+    pid=$(openconnect_pid)
+    if [[ $pid == -1 ]]; then
+        mwarn "Could not detect a VPN ('openconnect') process. Skipping."
+        return
+    fi
+
+    minfo "Reconnecting to VPN server"
+
+    assert_sudo "stop"
+
+    ## From 'man openconnect': SIGUSR2 forces an immediate disconnection and
+    ## reconnection; this can be used to quickly recover from LAN IP address
+    ## changes.
+    mdebug "sudo kill -s USR2 $pid"
+    log "- sudo kill -s USR2 $pid"
+    sudo kill -s USR2 $pid 2> /dev/null
+
+    status "connected"
+
+    log "openconnect_reconnect() ... done"
+
+    minfo "Reconnected to VPN server"
 }

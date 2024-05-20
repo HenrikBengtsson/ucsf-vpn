@@ -10,13 +10,13 @@
 ### Commands:
 ###  start            Connect to VPN
 ###  stop             Disconnect from VPN
+###  reconnect        Reconnect to VPN
 ###  restart          Disconnect and reconnect to VPN
 ###  toggle           Connect to or disconnect from VPN
 ###  status           Display VPN connection status
 ###  details          Display connection details in JSON format
 ###  routing          Display IP routing details
 ###  log              Display log file
-###  troubleshoot     Scan log file for errors (only for '--method=pulse')
 ###
 ### Options:
 ###  --token=<token>  One-time two-factor authentication (2FA) token or method:
@@ -33,7 +33,6 @@
 ###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
-###  --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
 ###                   'pid,iproute,ipinfo' (default)
@@ -59,7 +58,6 @@
 ### ---
 ###
 ### Environment variables:
-###  UCSF_VPN_METHOD       Default value for --method
 ###  UCSF_VPN_PROTOCOL     Default value for --protocol
 ###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_TOKEN        Default value for --token
@@ -68,16 +66,6 @@
 ###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
 ###  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
-###
-### Commands and Options for Pulse Security Client only (--method=pulse):
-###  open-gui         Open the Pulse Secure GUI
-###  close-gui        Close the Pulse Secure GUI (and any VPN connections)
-###
-###  --gui            Connect to VPN via Pulse Secure GUI
-###  --no-gui         Connect to VPN via Pulse Secure CLI (default)
-###  --speed=<factor> Control speed of --gui interactions (default is 1.0)
-###
-### Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 ###
 ### User credentials:
 ### If user credentials (--user and --pwd) are neither specified nor given
@@ -93,15 +81,8 @@
 ### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 ###
 ### Requirements:
-### * Requirements when using OpenConnect (CLI):
-###   - OpenConnect (>= 7.08) (installed: {{openconnect_version}})
-###   - sudo
-### * Requirements when using Junos Pulse Secure Client (GUI):
-###   - Junos Pulse Secure client (>= 5.3) (installed: {{pulsesvc_version}})
-###   - Ports 4242 (UDP) and 443 (TCP)
-###   - `curl`
-###   - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
-###   - No need for sudo rights
+### * OpenConnect (>= 7.08) (installed: {{openconnect_version}})
+### * sudo
 ###
 ### VPN Protocol:
 ### Different versions of OpenConnect support different VPN protocols.
@@ -112,26 +93,14 @@
 ### OpenConnect that recognizes neither, specify '--protocol=juniper',
 ### which will results in using 'openconnect' legacy option '--juniper'.
 ###
-### Pulse Secure GUI configuration:
-### Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
-### automatically add a valid VPN connection to the Pulse Secure GUI
-### with the following details:
-###  - Name: UCSF
-###  - URL: https://remote.ucsf.edu/pulse
-### You may change the name to you own liking.
-###
 ### Troubleshooting:
 ### * Verify your username and password at https://remote.ucsf.edu/.
 ###   This should be your UCSF Active Directory ID (username); neither
 ###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
-### * If you are using the Pulse Secure client (`ucsf-vpn --method=pulse`),
-###   - Make sure ports 4242 & 443 are not used by other processes
-###   - Make sure 'https://remote.ucsf.edu/pulse' is used as the URL
-###   - Run 'ucsf-vpn troubleshoot' to inspect the Pulse Secure logs
 ###
 ### Useful resources:
-### * UCSF VPN information:
-###   - https://software.ucsf.edu/content/vpn-virtual-private-network
+### * UCSF VPN - Remote connection:
+###   - https://it.ucsf.edu/service/vpn-remote-connection
 ### * UCSF Web-based VPN Interface:
 ###   - https://remote-vpn01.ucsf.edu/ (preferred)
 ###   - https://remote.ucsf.edu/
@@ -140,15 +109,11 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 5.8.0
+### Version: 6.0.0
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
-
-export PULSEPATH=${PULSEPATH:-/usr/local/pulse}
-export PATH="${PULSEPATH}:${PATH}"
-export LD_LIBRARY_PATH="${PULSEPATH}:${LD_LIBRARY_PATH}"
 
 
 # -------------------------------------------------------------------------
@@ -162,6 +127,7 @@ function _tput() {
 }
 
 function mecho() { echo "$@" 1>&2; }
+
 function mdebug() {
     if ! $debug; then
         return
@@ -172,6 +138,7 @@ function mdebug() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function merror() {
     local info version
     {
@@ -189,6 +156,7 @@ function merror() {
     } 1>&2
     _exit 1
 }
+
 function mwarn() {
     {
         _tput setaf 3 ## yellow
@@ -196,6 +164,7 @@ function mwarn() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function minfo() {
     if ! $verbose; then
         return
@@ -206,6 +175,8 @@ function minfo() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
+# shellcheck disable=SC2317
 function mok() {
     {
         _tput setaf 2 ## green
@@ -213,6 +184,7 @@ function mok() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function mdefunct() {
     {
         _tput setaf 1 ## red
@@ -221,6 +193,7 @@ function mdefunct() {
         exit 1
     } 1>&2
 }
+
 function mnote() {
     {
         _tput setaf 11  ## bright yellow
@@ -250,7 +223,7 @@ function help() {
     local what res
 
     what=$1
-    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
     if [[ $what == "full" ]]; then
         res=$(echo "$res" | sed '/^---/d')
@@ -324,8 +297,10 @@ function connection_details() {
         fi
         minfo "Verified that internet connection works"
         minfo "Getting public IP (from https://ipinfo.io/ip)"
-        mdebug "Calling: curl --silent https://ipinfo.io/json > \"$pii_file\""
-        curl --silent https://ipinfo.io/json > "$pii_file"
+        mdebug "Calling: curl --silent  --connect-timeout 3.0 https://ipinfo.io/json > \"$pii_file\""
+        if ! curl --silent --connect-timeout 3.0 https://ipinfo.io/json > "$pii_file"; then
+            rm "$pii_file"
+        fi
         if [[ ! -f "$pii_file" ]]; then
             merror "Failed to get public IP (from https://ipinfo.io/ip)"
         fi
@@ -410,10 +385,14 @@ function public_info() {
     local ip hostname org
 
     mdebug "public_info()"
-    ip=$(public_ip)
-    hostname=$(public_hostname)
-    org=$(public_org)
-    printf "ip=%s, hostname='%s', org='%s'" "$ip" "$hostname" "$org"
+    ip=$(public_ip 2> /dev/null)
+    if [[ -n "${ip}" ]]; then
+        hostname=$(public_hostname)
+        org=$(public_org)
+        printf "ip=%s, hostname='%s', org='%s'" "$ip" "$hostname" "$org"
+    else
+        printf "<failed to infer information>"
+    fi
 }
 
 function is_online() {
@@ -472,118 +451,6 @@ function wait_for_ip_route() {
         prev="${curr}"
         curr=$(ip route show)
     done
-}
-
-
-function status() {
-    local assert mcmd msg ok
-    local -i pid
-    local -a info
-    local -a msgs
-    local -a methods
-    local -a connected
-    local method
-    local oldIFS
-    local timestamp now since s m h age
-
-    assert=$1
-    mdebug "status() ..."
-    mdebug "- assert='$assert'"
-    mdebug "- validate='$validate'"
-    minfo "validate='$validate'"
-
-    oldIFS="$IFS"
-    IFS=","
-    read -ra methods <<< "$validate"
-    IFS="$oldIFS"
-    mdebug "- methods: [n=${#methods[@]}] ${methods[*]}"
-
-    connected=()
-    for method in "${methods[@]}"; do
-        mdebug "Checking with ${method} ..."
-        if [[ $method == pid ]]; then
-            pid=$(openconnect_pid)
-            if [[ $pid == -1 ]]; then
-                connected+=(false)
-                msg="No 'openconnect' process running"
-            else
-                connected+=(true)
-                timestamp=$(ps -p "${pid}" -o lstart=)
-                if [[ -n ${timestamp} ]]; then
-                    timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
-                    since=$(date -d "${timestamp}" +%s)
-                    now=$(date +%s)
-		    s=$((now - since))
-		    m=$((s / 60))
-		    s=$((s - 60 * m))
-		    h=$((m / 60))
-		    m=$((m - 60 * h))
-		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
-                fi
-                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
-            fi
-            msgs+=("OpenConnect status: $msg")
-        elif [[ $method == iproute ]]; then
-            mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
-            if [[ ${#info[@]} -gt 0 ]]; then
-                connected+=(true)
-                msg="yes (n=${#info[@]} ${info[*]})"
-            else
-                connected+=(false)
-                msg="none"
-            fi
-            msgs+=("IP routing tunnels: ${msg}")
-        elif [[ $method == ipinfo ]]; then
-            if is_connected; then
-                connected+=(true)
-            else
-                connected+=(false)
-            fi
-            msgs+=("Public IP information: $(public_info)")
-        else
-            merror "Unknown --validate value: $method"
-        fi
-        mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
-        mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
-        mdebug "Checking with ${method} ... done"
-    done
-
-    ## Consensus
-    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
-    mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
-
-    if [[ ${#connected[@]} -eq 1 ]]; then
-        mcmd="echo"
-        if [[ -n $assert ]]; then
-            ok=true
-            if [[ $assert == "disconnected" ]] && ${connected[0]}; then
-                ok=false
-            elif [[ $assert == "connected" ]] && ! ${connected[0]}; then
-                ok=false
-            fi
-            if $ok; then
-                mcmd="mok"
-            else
-                mcmd="merror"
-            fi
-        fi
-        for msg in "${msgs[@]}"; do
-            "$mcmd" "${msg}"
-        done
-        if ${connected[0]}; then
-            msg="Connected to the VPN"
-        else
-            msg="Not connected to the VPN"
-        fi
-        "$mcmd" "$msg"
-    else
-        for msg in "${msgs[@]}"; do
-            echo "${msg}"
-        done
-        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
-    fi
-
-    mdebug "status() ... done"
 }
 
 
@@ -801,399 +668,6 @@ function prompt_token() {
 
 
 # -------------------------------------------------------------------------
-# Pulse Secure Client
-# -------------------------------------------------------------------------
-function div() {
-    if [ "$2" == "1" ] || [ "$2" == "1.0" ]; then
-        echo "$1"
-    else
-        # shellcheck disable=SC2003
-        echo "$1/$2" | bc -l
-    fi
-}
-
-function pulsesvc_version() {
-    local res
-
-    res=$(pulsesvc --version 2> /dev/null)
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
-        echo "<PLEASE INSTALL>"
-    else
-        printf "%s\\n" "${res[@]}" | grep -F "Release Version" | sed -E 's/.*:[ ]+//'
-    fi
-}
-
-function is_pulseUi_running() {
-    ps -C pulseUi > /dev/null
-}
-
-function pulseUi_find_connection() {
-    local config_home confile con  # IFS too?
-    local -i idx ii
-
-    config_home="$HOME/.pulse_secure/pulse"
-    confile="$config_home/.pulse_Connections.txt"
-    [[ -f "$confile" ]] || pulseUi_add_connection
-    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    mdebug "Pulse connections file: $confile"
-    mdebug "$(< "$confile")"
-
-    # shellcheck disable=SC2207
-    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    mdebug "Number of connections: ${#cons[@]}"
-    mdebug "Searching for VPN URL: $url"
-
-    idx=-1
-    for ii in "${!cons[@]}"; do
-        con="${cons[$ii]/^ */}"
-        mdebug "- connection $ii: $con"
-        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-            idx=$ii
-            break
-        fi
-    done
-
-    mdebug "Index of connection found: $idx"
-
-    echo $idx
-}
-
-function pulseUi_add_connection() {
-    local config_home confile name con
-
-    config_home="$HOME/.pulse_secure/pulse"
-    confile="$config_home/.pulse_Connections.txt"
-    name="UCSF"
-    mdebug "Pulse connections file: $confile"
-    con="{\"connName\": \"$name\", \"preferredCert\": \"\", \"baseUrl\": \"$url\"}"
-    mdebug "Appending connection: $con"
-    echo "$con" >> "$confile"
-    mecho "Appended missing '$name' connection: $url"
-}
-
-function pulse_start_gui() {
-    if is_pulseUi_running; then
-        mwarn "Pulse Secure GUI is already running"
-        return
-    fi
-
-    ## Start the Pulse Secure GUI
-    ## NOTE: Sending stderr to dev null to silence warnings on
-    ## "(pulseUi:26614): libsoup-CRITICAL **: soup_cookie_jar_get_cookies:
-    ##  assertion 'SOUP_IS_COOKIE_JAR (jar)' failed"
-    mdebug "Pulse Secure GUI client: $(command -v pulseUi)"
-    minfo "Launching the Pulse Secure GUI ($(command -v pulseUi))"
-    pulseUi 2> /dev/null &
-}
-
-function pulse_open_gui() {
-    if ! $force; then
-      if is_connected; then
-          mwarn "Already connected to the VPN [$(public_info)]"
-          _exit 0
-      fi
-    fi
-
-    mdebug "call: $call"
-    mdebug "call: pulseUi"
-
-    if $dryrun; then
-        _exit 0
-    fi
-
-    ## Start the Pulse Secure GUI
-    pulse_start_gui
-}
-
-function pulse_close_gui() {
-    if ! is_pulseUi_running; then return; fi
-
-    mdebug "Closing Pulse Secure GUI"
-
-    ## Try with 'xdotool'?
-    if command -v xdotool &> /dev/null; then
-        xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure" windowkill
-    else
-        pkill -QUIT pulseUi && mdebug "Killed Pulse Secure GUI"
-    fi
-}
-
-function wait_for_pulse_window_to_close() {
-    local wid wids
-
-    wid=$1
-    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ..."
-    while true; do
-       wids=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-       echo "$wids" | grep -q "$wid" && break
-       sleep 0.2
-    done
-    mdebug "Waiting for Pulse Secure Window ID ($wid) to close ... done"
-}
-
-function pulse_start() {
-    local wid wid2 wid3 cmd opts extra
-    local -i conidx step
-
-    ## Validate request
-    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
-        if ! $gui; then
-            merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
-        fi
-    elif [[ "$realm" == "Single-Factor Pulse Clients" ]]; then
-        if [ -n "${token}" ] && [ "${token}" != "false" ]; then
-            merror "Passing a --token='$token' with --realm='$realm' (two-factor authentication; 2FA) does not make sense"
-        fi
-    fi
-    if [ -n "${token}" ] && [ "${token}" != "false" ]; then
-        if ! $gui; then
-            merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
-        fi
-    fi
-
-    if ! $force; then
-      if is_connected; then
-          mwarn "Already connected to the VPN [$(public_info)]"
-          _exit 0
-      fi
-    fi
-
-    ## Check for valid connection in Pulse Secure GUI
-    conidx=-1
-    if $gui; then
-        ## If Pulse Secure GUI is open, we need to close it
-        ## before peeking at its connections config file.
-        if is_pulseUi_running; then
-            close_gui
-            sleep "$(div 0.5 "$speed")"
-        fi
-        conidx=$(pulseUi_find_connection)
-        [[ $conidx -eq -1 ]] && pulseUi_add_connection
-        conidx=$(pulseUi_find_connection)
-        [[ $conidx -eq -1 ]] && merror "Pulse Secure GUI does not have a connection for the VPN: $url"
-    fi
-
-    ## Load user credentials from file?
-    source_netrc
-
-    ## Prompt for username and password, if missing
-    prompt_user "${user}"
-    prompt_pwd "${pwd}"
-
-    ## Prompt for 2FA token?
-    if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
-        ## Prompt for one-time token, if requested
-        prompt_token "${token}"
-    fi
-
-    if $gui; then
-        step=1
-
-        ## Check for 'xdotool'
-        command -v xdotool &> /dev/null || merror "Cannot enter credentials in GUI, because 'xdotool' could not be located."
-
-        ## Start Pulse Secure GUI
-        pulse_start_gui
-
-        sleep "$(div 1.0 "$speed")"
-        wid=$(xdotool search --all --onlyvisible --pid "$(pidof pulseUi)" --name "Pulse Secure")
-        if [[ -z "$wid" ]]; then
-            merror "Failed to locate the Pulse Secure GUI window"
-        fi
-        mecho "Pulse Secure GUI automation:"
-        mdebug "Pulse Secure Window ID: $wid"
-        mdebug "Clicking pulseUi 'Connect': $((7 + 2 * conidx)) TABs + ENTER"
-        cmd="xdotool search --all --onlyvisible --pid $(pidof pulseUi) --name 'Pulse Secure' windowmap --sync windowactivate --sync windowfocus --sync windowraise mousemove --window %1 --sync 0 0 sleep 0.1 click 1 sleep 0.1 key --delay 50 --repeat "$((7 + 2 * conidx))" Tab sleep 0.1 key Return"
-        mdebug " - $cmd"
-        mecho " ${step}. selecting connection"
-        step=$((step + 1))
-        eval "$cmd"
-
-        mdebug "Minimizing Pulse Secure GUI"
-        xdotool windowminimize "$wid"
-
-        sleep "$(div 2.0 "$speed")"
-        wid2=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-        mdebug "Pulse Secure Window IDs: $wid2"
-        wid2=$(echo "$wid2" | grep -vF "$wid")
-        mdebug "Pulse Secure Popup Window ID: $wid2"
-        if [[ -z "$wid2" ]]; then
-            merror "Failed to locate the Pulse Secure GUI popup window"
-        fi
-
-        ## Click-through UCSF announcement message?
-        if $notification; then
-            mdebug "Clicking on 'Proceed'"
-            cmd="xdotool windowactivate --sync $wid2 key --delay 50 --repeat 2 Tab key Return"
-            mdebug " - $cmd"
-            eval "$cmd"
-            mecho " ${step}. clicking through UCSF notification popup window (--no-notification if it doesn't exist)"
-            step=$((step + 1))
-            sleep "$(div 2.0 "$speed")"
-        else
-            mecho " ${step}. skipping UCSF notification popup window (--notification if it exists)"
-            step=$((step + 1))
-        fi
-
-        mdebug "Entering user credentials (username and password)"
-        xdotool windowactivate --sync "$wid2" type "$user"
-        xdotool windowactivate --sync "$wid2" key --delay 50 Tab type "$pwd"
-        ## Single- or Dual-Factor Pulse Clients?
-        extra=
-        [[ "$realm" == "Dual-Factor Pulse Clients" ]] && extra="Down"
-        cmd="xdotool windowactivate --sync $wid2 key --delay 50 Tab $extra Tab Return"
-        mdebug " - $cmd"
-        eval "$cmd"
-        mecho " ${step}. entering user credentials and selecting realm"
-        step=$((step + 1))
-
-
-        if [[ ${token} != "false" ]]; then
-            mdebug "Using two-factor authentication (2FA) token"
-
-            sleep "$(div 1.0 "$speed")"
-            wid3=$(xdotool search --all --onlyvisible --name "Pulse Secure")
-            mdebug "Pulse Secure Window IDs: $wid3"
-            wid3=$(echo "$wid3" | grep -vF "$wid")
-            mdebug "Pulse Secure Popup Window ID: $wid3"
-            if [[ -z "$wid3" ]]; then
-                merror "Failed to locate the Pulse Secure GUI popup window"
-            fi
-
-            mdebug "Entering token"
-            mecho " ${step}. entering 2FA token"
-            step=$((step + 1))
-            cmd="xdotool windowactivate --sync $wid3 type $token"
-            mdebug " - $cmd"
-            eval "$cmd"
-            cmd="xdotool windowactivate --sync $wid3 key Return"
-            mdebug " - $cmd"
-            eval "$cmd"
-
-            ## Wait for popup window to close
-            wait_for_pulse_window_to_close "$wid3"
-        else
-            ## Wait for popup window to close
-            wait_for_pulse_window_to_close "$wid2"
-        fi
-        mecho " ${step}. connecting ..."
-        step=$((step + 1))
-    else
-      if [[ "$realm" == "Dual-Factor Pulse Clients" ]]; then
-          merror "Using --realm='$realm' (two-factor authentication; 2FA) is not supported when using --no-gui"
-      fi
-      if [ -n "${token}" ] && [ "${token}" != "false" ]; then
-          merror "Using --token='$token' suggests two-factor authentication (2FA), which is currently not supported when using --no-gui"
-      fi
-      ## Pulse Secure options
-      opts="${extras[*]}"
-      opts="$opts -h ${server}"
-
-      if [[ -n $user ]]; then
-          opts="-u $user $opts"
-      fi
-
-      if ! $debug; then
-          opts="-log-level 5 $opts"
-      fi
-
-      mdebug "call: $call"
-      mdebug "user: $user"
-      if [[ -n $pwd ]]; then
-          mdebug "pwd: <hidden>"
-      else
-          mdebug "pwd: <not specified>"
-      fi
-      mdebug "opts: $opts"
-      mdebug "call: pulsesvc $opts -r \"${realm}\""
-
-      if $dryrun; then
-          if [[ -n $pwd ]]; then
-              echo "echo \"<pwd>\" | pulsesvc $opts -r \"${realm}\" | grep -viF password &"
-          else
-              echo "pulsesvc $opts -r \"${realm}\" &"
-          fi
-          _exit 0
-      fi
-
-      if [[ -n $pwd ]]; then
-          echo "$pwd" | pulsesvc "$opts" -r "${realm}" | grep -viF password &
-      else
-          pulsesvc "$opts" -r "${realm}" &
-      fi
-    fi
-}
-
-function pulse_stop() {
-    if ! $force; then
-      if is_connected; then
-          ## Close/kill the Pulse Secure GUI
-          pulse_close_gui
-
-          mwarn "Already connected to the VPN [$(public_info)]"
-          _exit 0
-      fi
-      mdebug "Public IP (before): $ip"
-    fi
-
-    ## Close/kill the Pulse Secure GUI
-    pulse_close_gui
-
-    ## Kill any running pulsesvc processes
-    pulsesvc -Kill
-    mdebug "Killed local ('pulsesvc') VPN process"
-}
-
-
-function pulse_troubleshoot() {
-    local config_home confile match con prefix logfile ## IFS too?
-    local -i ii
-
-    minfo "Assumed path to Pulse Secure (PULSEPATH): $PULSEPATH"
-    command -v pulsesvc || merror "Pulse Secure software 'pulsesvc' not found (in neither PULSEPATH nor PATH)."
-
-    minfo "Pulse Secure software: $res"
-    pulsesvc --version
-
-    config_home="$HOME/.pulse_secure/pulse"
-    [[ -d "$config_home" ]] || merror "Pulse user-specific folder: $config_home"
-    minfo "Pulse user configuration folder: $config_home"
-
-    confile="$config_home/.pulse_Connections.txt"
-    [[ -f "$confile" ]] || merror "No Pulse GUI connection file: $confile"
-    minfo "Pulse connections file: $confile"
-    # shellcheck disable=SC2207
-    IFS=$'\r\n' cons=( $(grep -E "^[ \\t]*{.+}[ \\t]*$" < "$confile") )
-    minfo "Number of connections: ${#cons[@]}"
-    match=false
-    for ii in "${!cons[@]}"; do
-        con="${cons[$ii]/^ */}"
-        if echo "$con" | grep -q -F "\"$url\"" &> /dev/null; then
-            prefix=">>>"
-            match=true
-        else
-            prefix="   "
-        fi
-        >&2 printf " %s %d. %s\\n" "$prefix" "$((ii + 1))" "${con/ *$/}"
-    done
-    if $match; then
-        minfo "Found connection with URL of interest: $url"
-    else
-        mwarn "No connection with URL of interest: $url"
-    fi
-
-    logfile="$config_home/pulsesvc.log"
-    [[ -f "$logfile" ]] || merror "No log file: $logfile"
-
-    minfo "Log file: $logfile"
-    grep -q -F Error "$logfile" &> /dev/null || { mok "No errors found: $logfile"; _exit 0; }
-
-    mwarn "Detected the following errors in the log file: $(grep -F Error "$logfile" | >&2 tail -3)"
-}
-
-
-# -------------------------------------------------------------------------
 # OpenConnect
 # -------------------------------------------------------------------------
 function openconnect_version() {
@@ -1206,6 +680,91 @@ function openconnect_version() {
     else
         printf "%s\\n" "${res[@]}" | grep -F "version" | sed -E 's/.*v//'
     fi
+}
+
+function find_vpnc-script() {
+    local file
+    file=$(openconnect --help | grep -E "vpnc-script" | sed 's/[^"]*"//' | sed 's/".*//')
+    if [[ -z "${file}" ]]; then
+        merror "Failed to locate the default 'vpnc-script' script. It appears that openconnect --help does not specify it"
+    fi
+    echo "${file}"
+}
+
+function find_hooks_dir() {
+    local file dir
+    find_vpnc-script > /dev/null
+    file=$(find_vpnc-script)
+    dir=$(grep -E "^HOOKS_DIR=" "${file}" | sed 's/[^=]*=//' | sed 's/[[:blank:]]$//')
+    echo "${dir}"
+}
+
+
+function install_vpnc() {
+    local action file filename dest hooks_dir dir path
+    action=${1:-install}
+
+    mdebug "install_vpnc() ..."
+    mdebug " - action: ${action}"
+
+    ## Locate hooks directory
+    find_vpnc-script > /dev/null
+    hooks_dir=$(find_hooks_dir)
+    mdebug " - hooks folder: ${hooks_dir}"
+
+    filename="ucsf-vpn-flavors.sh"
+
+    ## Is ucsf-vpn hook script already installed?
+    dest="${hooks_dir}/${filename}"
+    if [[ $action == "check" ]] && [[ ! -f "${dest}" ]]; then
+        return 1
+    fi
+    
+    if $force || [[ ! -f "${dest}" ]]; then
+        file="$(mktemp -d)/${filename}"
+        ucsf-vpn-flavors_code > "${file}"
+        mdebug " - template: ${file}"
+        assert_sudo "install-vpnc"
+
+        ## Create hooks folder, if missing
+        if [[ ! -d "${hooks_dir}" ]]; then
+            sudo mkdir -p "${hooks_dir}"
+            [[ -d "${hooks_dir}" ]] || merror "Failed to create directory: ${hooks_dir}"
+        fi
+    
+        sudo cp "${file}" "${dest}"
+        sudo chmod ugo+r "${dest}"
+        [[ -f "${dest}" ]] || merror "Failed to create file: ${dest}"
+        mok "Generic hook script added: ${dest}"
+        if [[ -f "${file}" ]]; then
+           rm "${file}"
+        fi
+    else
+        minfo "Generic hook script already exists: ${dest}"
+    fi
+
+    ## Install symbolic links to ucsf-vpn hook script, if missing
+    for dir in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        path=${hooks_dir}/${dir}.d
+        dest="${path}/${filename}"
+        if [[ $action == "check" ]] && [[ ! -L "${dest}" ]]; then
+            return 1
+        fi
+        if $force || [[ ! -L "${dest}" ]]; then
+            assert_sudo "install-vpnc"
+            sudo mkdir -p "${path}"
+            [[ -d "${path}" ]] || merror "Failed to create directory: ${path}"
+            sudo ln -fs "${hooks_dir}/${filename}" "${dest}"
+            [[ -L "${dest}" ]] || merror "Failed to create symbol link: ${dest} -> ${hooks_dir}/${filename}"
+            mok "Symbolic link added: ${dest} -> ${hooks_dir}/${filename}"
+        else
+            minfo "Symbolic link already exists: ${dest} -> ${hooks_dir}/${filename}"
+        fi
+    done
+
+    mdebug "install_vpnc() ... done"
+    
+    return 0
 }
 
 function openconnect_pid() {
@@ -1235,8 +794,59 @@ function openconnect_pid() {
     echo -1
 }
 
+function openconnect_flavor() {
+    local res
+    
+    ## Is there a PID file?
+    if [[ ! -f "${flavor_file}" ]]; then
+        mwarn "Flavor file does not exists: ${flavor_file}"
+        echo "<unknown>"
+        return
+    fi
+    mdebug "Flavor file exists: ${flavor_file}"
+    res=$(cat "${flavor_file}")
+    if [[ -z ${res} ]]; then
+        res="default"
+    fi
+    echo "${res}"
+}
+
+
+function prompt_yesno() {
+    local prompt answer
+    
+    prompt=${1:?}
+
+    mdebug "PROMPT: Asking user for yes-no input:"
+    while true; do
+        {
+            _tput setaf 11  ## bright yellow
+            printf "%s [Y/n]: " "${prompt}"
+            _tput setaf 15  ## bright white
+            read -r answer
+            _tput sgr0      ## reset
+        } 1>&2
+        
+        ## Default?
+        if [[ ${answer} == "" ]]; then
+            return 0
+        fi
+
+        ## yes or no?
+        answer=${answer/ /}
+        answer=$(tr '[:upper:]' '[:lower:]' <<< "${answer}")
+        mdebug "- answer=${answer}"
+        if [[ ${answer} == "yes" ]] || [[ ${answer} == "y" ]]; then
+            return 0
+        elif [[ ${answer} == "no" ]] || [[ ${answer} == "n" ]]; then
+            return 1
+        fi                 
+    done
+}
+
+
 function openconnect_start() {
-    local two_pwds fh_stderr stderr fh_stdout stdout main_reason reason post_reason
+    local two_pwds openconnect_log_file log_file main_reason reason post_reason
     local -a opts
     local -i pid
 
@@ -1270,8 +880,18 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    ## Assert that --flavor=<flavor> exists, if specified
-    flavor_home > /dev/null
+    if [[ -n ${flavor} ]]; then
+        ## Are vpnc generic hook scripts installed?
+        if ! install_vpnc "check"; then
+            if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
+                install_vpnc "install"
+            else
+                merror "Generic ucsf-vpn hook scripts not installed. To install manually, call 'ucsf vpn install-vpnc'"
+            fi
+        fi
+        ## Assert that --flavor=<flavor> exists, if specified
+        flavor_home > /dev/null
+    fi
     
     assert_sudo "start"
 
@@ -1349,11 +969,16 @@ function openconnect_start() {
         _exit 0
     fi
 
+    log_file="$(logfile)"
+    openconnect_log_file="$(openconnect_logfile)"
+    rm "${log_file}"
+    log "openconnect_start() ..."
+    
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
-    fh_stderr=$(mktemp)
-    fh_stdout=$(mktemp)
+    log "ip route show:"
+    ip route show >> "${log_file}"
 
     if [[ -n $pwd && -n $token ]]; then
         case "${UCSF_VPN_TWO_PWDS:-password-token}" in
@@ -1368,38 +993,19 @@ function openconnect_start() {
                 ;;
         esac
         # shellcheck disable=SC2086
-        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo echo -e "$two_pwds" | sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     else
         # shellcheck disable=SC2086
-        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "$fh_stderr" 1> "$fh_stdout"
+        sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_FLAVOR="$(flavor_home)" UCSF_VPN_LOGFILE="$(logfile)" openconnect "${opts[@]}" --authgroup="$realm" 2> "${openconnect_log_file}" 1> "${openconnect_log_file}"
     fi
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
 
-    ## Cleanup
-    if [[ -f "$fh_stderr" ]]; then
-        stderr=$(cat "$fh_stderr")
-        sudo rm "$fh_stderr"
-    else
-        stderr=
-    fi
-    if [[ -f "$fh_stdout" ]]; then
-        stdout=$(cat "$fh_stdout")
-        sudo rm "$fh_stdout"
-    else
-        stdout=
-    fi
-    mdebug "OpenConnect standard output:"
-    mdebug "$stdout"
-    mdebug "OpenConnect standard error:"
-    mdebug "$stderr"
-
     pid=$(openconnect_pid)
     mdebug "pid=$pid"
     if [[ $pid == -1 ]]; then
-        echo "$stdout"
-        echo "$stderr"
+        cat "${openconnect_log_file}"
 
         ## Report on ping for VPN server
         if ! is_online "$server"; then
@@ -1418,16 +1024,16 @@ function openconnect_start() {
         ##       username:fgets (stdin): Resource temporarily unavailable
 
         ## Was the wrong credentials given?
-        if echo "$stderr" | grep -q -F "username:password"; then
+        if grep -q -F "username:password" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -F "Inappropriate ioctl for device"; then
+        elif grep -q -F "Inappropriate ioctl for device" "${openconnect_log_file}"; then
             reason="Incorrect username or password"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
-        elif echo "$stderr" | grep -q -E "password#2"; then
+        elif grep -q -E "password#2" "${openconnect_log_file}"; then
             reason="2FA token not accepted"
-        elif echo "$stderr" | grep -q -iF "Unknown VPN protocol"; then
-            reason="$stderr (option --protocol=<ptl>)"
+        elif grep -q -iF "Unknown VPN protocol" "${openconnect_log_file}"; then
+            reason="Unknown VPN protocol (option --protocol=<ptl>)"
         else
             reason="Check your username, password, and token"
             reason="${reason}. You can test your credentials via the Web VPN at https://${UCSF_WEB_VPN_SERVER:-remote-vpn01.ucsf.edu}/"
@@ -1470,6 +1076,12 @@ function openconnect_start() {
       default_route_before=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
+
+    log "record flavor"
+    # shellcheck disable=SC2005
+    echo "$(flavor_home)" > "${flavor_file}"
+
+    log "openconnect_start() ... done"
     
     minfo "Connected to VPN server"
 }
@@ -1480,6 +1092,8 @@ function openconnect_stop() {
 
     mdebug "openconnect_stop() ..."
 
+    log "openconnect_stop() ..."
+    
     pid=$(openconnect_pid)
     if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('openconnect') process. Skipping."
@@ -1502,6 +1116,7 @@ function openconnect_stop() {
         ## session off, disconnecting from the gateway, and running the vpnc-script
         ## to restore the network configuration.
         mdebug "Killing OpenConnect process: sudo kill -s INT \"$pid\" 2> /dev/null"
+        log "- sudo kill -s INT $pid"
         sudo kill -s INT $pid 2> /dev/null
     
          ## Wait for process to terminate
@@ -1552,8 +1167,157 @@ function openconnect_stop() {
       default_route_before=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
       minfo "Default IP routing was changed from '${default_route_before}' to '${default_route_after}'"
     fi
-    
+
+    log "openconnect_stop() ... done"
+
     minfo "Disconnected from VPN server"
+}
+
+
+function openconnect_reconnect() {
+    local kill_timeout
+    local -i kk pid
+
+    mdebug "openconnect_reconnect() ..."
+
+    log "openconnect_reconnect() ..."
+    
+    pid=$(openconnect_pid)
+    if [[ $pid == -1 ]]; then
+        mwarn "Could not detect a VPN ('openconnect') process. Skipping."
+        return
+    fi
+
+    minfo "Reconnecting to VPN server"
+
+    assert_sudo "stop"
+
+    ## From 'man openconnect': SIGUSR2 forces an immediate disconnection and
+    ## reconnection; this can be used to quickly recover from LAN IP address
+    ## changes.
+    mdebug "sudo kill -s USR2 $pid"
+    log "- sudo kill -s USR2 $pid"
+    sudo kill -s USR2 $pid 2> /dev/null
+
+    status "connected"
+
+    log "openconnect_reconnect() ... done"
+
+    minfo "Reconnected to VPN server"
+}
+
+
+
+function status() {
+    local assert mcmd msg ok
+    local -i pid
+    local -a info
+    local -a msgs
+    local -a methods
+    local -a connected
+    local method
+    local oldIFS
+    local timestamp now since s m h age
+
+    assert=$1
+    mdebug "status() ..."
+    mdebug "- assert='$assert'"
+    mdebug "- validate='$validate'"
+    minfo "validate='$validate'"
+
+    oldIFS="$IFS"
+    IFS=","
+    read -ra methods <<< "$validate"
+    IFS="$oldIFS"
+    mdebug "- methods: [n=${#methods[@]}] ${methods[*]}"
+
+    connected=()
+    for method in "${methods[@]}"; do
+        mdebug "Checking with ${method} ..."
+        if [[ $method == pid ]]; then
+            pid=$(openconnect_pid)
+            if [[ $pid == -1 ]]; then
+                connected+=(false)
+                msg="No 'openconnect' process running"
+            else
+                connected+=(true)
+                timestamp=$(ps -p "${pid}" -o lstart=)
+                if [[ -n ${timestamp} ]]; then
+                    timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
+                    since=$(date -d "${timestamp}" +%s)
+                    now=$(date +%s)
+		    s=$((now - since))
+		    m=$((s / 60))
+		    s=$((s - 60 * m))
+		    h=$((m / 60))
+		    m=$((m - 60 * h))
+		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
+                fi
+                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
+            fi
+            msgs+=("OpenConnect status: $msg")
+        elif [[ $method == iproute ]]; then
+            mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
+            if [[ ${#info[@]} -gt 0 ]]; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="none"
+            fi
+            msgs+=("IP routing tunnels: ${msg}")
+        elif [[ $method == ipinfo ]]; then
+            if is_connected; then
+                connected+=(true)
+            else
+                connected+=(false)
+            fi
+            msgs+=("Public IP information: $(public_info)")
+        else
+            merror "Unknown --validate value: $method"
+        fi
+        mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+        mdebug "- msgs: [n=${#msgs[@]}] ${msgs[*]}"
+        mdebug "Checking with ${method} ... done"
+    done
+
+    ## Consensus
+    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
+    mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
+
+    if [[ ${#connected[@]} -eq 1 ]]; then
+        mcmd="echo"
+        if [[ -n $assert ]]; then
+            ok=true
+            if [[ $assert == "disconnected" ]] && ${connected[0]}; then
+                ok=false
+            elif [[ $assert == "connected" ]] && ! ${connected[0]}; then
+                ok=false
+            fi
+            if $ok; then
+                mcmd="mok"
+            else
+                mcmd="merror"
+            fi
+        fi
+        for msg in "${msgs[@]}"; do
+            "$mcmd" "${msg}"
+        done
+        if ${connected[0]}; then
+            "$mcmd" "Flavor: $(openconnect_flavor)"
+            msg="Connected to the VPN"
+        else
+            msg="Not connected to the VPN"
+        fi
+        "$mcmd" "$msg"
+    else
+        for msg in "${msgs[@]}"; do
+            echo "${msg}"
+        done
+        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
+    fi
+
+    mdebug "status() ... done"
 }
 
 
@@ -1629,7 +1393,7 @@ function source_envs() {
 
 
 function flavor_home() {
-    local path file pathname
+    local path hook pathname
     local -i count
 
     ## No flavor specified
@@ -1644,8 +1408,8 @@ function flavor_home() {
     fi
 
     count=0
-    for file in pre-connect.sh post-connect.sh; do
-        pathname=${path}/${file}
+    for hook in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
+        pathname=${path}/${hook}.sh
         if [[ -f "${pathname}" ]]; then
             if ! bash -n "${pathname}"; then
                 merror "File syntax error: ${pathname}"
@@ -1657,10 +1421,72 @@ function flavor_home() {
     if [[ "${count}" -eq 0 ]]; then
         merror "Flavor folder contains no known hook script files: ${path}"
     fi
-    
+
     echo "${path}"    
 }    
 
+
+## Note, this function needs to be in src/ucsf-vpn.sh in order for 'make build' to work
+function ucsf-vpn-flavors_code() {
+cat << HOOK_SCRIPT_EOF
+#!/bin/sh
+####################################################################
+# Use user-specific UCSF VPN configurations
+#
+# Install:
+#   ucsf vpn install-vpnc
+#
+# Requires:
+#   https://github.com/HenrikBengtsson/ucsf-vpn
+####################################################################
+
+## Called via 'ucsf-vpn'?
+if [ -n "\${UCSF_VPN_VERSION}" ]; then
+    ucsf_vpn_log() {
+       echo "[\$(date --iso-8601=seconds)] \$*" >> "\${UCSF_VPN_LOGFILE}"
+    }
+
+    ucsf_vpn_log "\$* ..."
+    ucsf_vpn_log "UCSF_VPN_VERSION=\${UCSF_VPN_VERSION}"
+    ucsf_vpn_log "UCSF_VPN_FLAVOR=\${UCSF_VPN_FLAVOR}"
+
+    _hook_="\$1"
+    ucsf_vpn_log "hook=\${_hook_}"
+
+    _hook_file_="\${UCSF_VPN_FLAVOR}/\${_hook_}.sh"
+    ucsf_vpn_log "\${_hook_file_} ..."
+    if [ -f "\${_hook_file_}" ]; then
+        _hook_status_="done"
+
+        # shellcheck disable=SC1090
+        . "\${_hook_file_}" || _hook_status_="error"
+        
+        ucsf_vpn_log "\${_hook_file_} ... \${_hook_status_}"
+    else
+        ucsf_vpn_log "\${_hook_file_} ... non-existing"
+    fi
+    
+    ucsf_vpn_log "\$* ... done"
+fi
+HOOK_SCRIPT_EOF
+}
+
+
+function openconnect_logfile() {
+    local path file
+    
+    path="$(xdg_state_path)/logs"
+    if [ ! -d "$path" ]; then
+        mkdir -p "$path"
+    fi
+
+    file="${path}"/openconnect.log
+
+    ## Create log file
+    touch "${file}"
+    
+    echo "${file}"
+}
 
 function logfile() {
     local path file
@@ -1678,21 +1504,34 @@ function logfile() {
     echo "${file}"
 }
 
+log() {
+    echo "[$(date --iso-8601=seconds)] $*" >> "$(logfile)"
+}
+
+
+# -------------------------------------------------------------------------
+# Deprecated and defunct
+# -------------------------------------------------------------------------
+pulse_is_defunct() {
+    merror "Support for the Pulse Secure GUI, and command-line options associated with it, are defunct as of ucsf-vpn 6.0.0 (2024-05-20) in favor of OpenConnect (--method=openconnect; default)"
+}
 
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
 pid_file="$(xdg_state_path)/openconnect.pid"
+flavor_file="$(xdg_state_path)/openconnect.flavor"
 ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
 pii_file=$(make_pii_file)
 
 source_envs
 
+
 ## Actions
 action=
 
-## VPN method: 'openconnect' or 'pulse' (default)
+## VPN method: 'openconnect' (default)
 method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
@@ -1708,9 +1547,6 @@ dryrun=false
 realm=
 extras=("${UCSF_VPN_EXTRAS[@]}")
 protocol=${UCSF_VPN_PROTOCOL:-nc}
-gui=true
-notification=false
-speed=1.0
 presudo=${UCSF_VPN_PRESUDO:-true}
 flavor=${UCSF_VPN_FLAVOR}
 
@@ -1725,29 +1561,33 @@ while [[ $# -gt 0 ]]; do
 
     ## Commands:
     if [[ "$1" == "start" ]]; then
-        action=start
+        action=$1
     elif [[ "$1" == "stop" ]]; then
-        action=stop
+        action=$1
+    elif [[ "$1" == "reconnect" ]]; then
+        action=$1
     elif [[ "$1" == "toggle" ]]; then
-        action=toggle
+        action=$1
         force=true
     elif [[ "$1" == "restart" ]]; then
-        action=restart
+        action=$1
         force=true
     elif [[ "$1" == "status" ]]; then
-        action=status
+        action=$1
     elif [[ "$1" == "details" ]]; then
-        action=details
+        action=$1
     elif [[ "$1" == "routing" ]]; then
-        action=routing
+        action=$1
+    elif [[ "$1" == "install-vpnc" ]]; then
+        action=$1
     elif [[ "$1" == "log" ]]; then
-        action=log
+        action=$1
     elif [[ "$1" == "troubleshoot" ]]; then
-        action=troubleshoot
+        pulse_is_defunct
     elif [[ "$1" == "open-gui" ]]; then
-        action=open-gui
+        pulse_is_defunct
     elif [[ "$1" == "close-gui" ]]; then
-        action=close-gui
+        pulse_is_defunct
 
     ## Options (--flags):
     elif [[ "$1" =~ ^--[^=]*$ ]]; then
@@ -1775,13 +1615,13 @@ while [[ $# -gt 0 ]]; do
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
         elif [[ "$flag" == "notification" ]]; then
-            notification=true
+            pulse_is_defunct
         elif [[ "$flag" == "no-notification" ]]; then
-            notification=false
+            pulse_is_defunct
         elif [[ "$flag" == "gui" ]]; then
-            gui=true
+            pulse_is_defunct
         elif [[ "$flag" == "no-gui" ]]; then
-            gui=false
+            pulse_is_defunct
         else
             merror "Unknown option: '$1'"
         fi
@@ -1796,6 +1636,7 @@ while [[ $# -gt 0 ]]; do
             merror "Option '--$key' must not be empty"
         fi
         if [[ "$key" == "method" ]]; then
+            mwarn "There is no longer a need to specify method, because the default --method=openconnect is the only support one"
             method=$value
         elif [[ "$key" == "url" ]]; then
             url=$value
@@ -1812,7 +1653,7 @@ while [[ $# -gt 0 ]]; do
         elif [[ "$key" == "token" ]]; then
             token=$value
         elif [[ "$key" == "speed" ]]; then
-            speed=$value
+            pulse_is_defunct
         elif [[ "$key" == "theme" ]]; then
             theme=$value
         elif [[ "$key" == "validate" ]]; then
@@ -1864,19 +1705,14 @@ fi
 if [[ ${method} == "openconnect" ]]; then
     mdebug "Method: $method"
 elif [[ ${method} == "pulse" ]]; then
-    mdebug "Method: $method"
-    mwarn "Using Pulse Secure is deprecated as of ucsf-vpn 5.7.0 (2024-04-27) in favor of the default --method=openconnect. Support for --method=pulse will be removed in a near-future release."
+    pulse_is_defunct
 else
     merror "Unknown value on option --method: '$method'"
 fi
 
 ## Validate 'realm'
 if [[ -z $realm ]]; then
-    if $gui; then
-        realm="Dual-Factor Pulse Clients"
-    else
-        realm="Single-Factor Pulse Clients"
-    fi
+    realm="Dual-Factor Pulse Clients"
 fi
 if [[ $realm == "Single-Factor Pulse Clients" ]]; then
     true
@@ -1910,22 +1746,10 @@ if [[ ! $theme =~ ^(cli|none)$ ]]; then
 fi
 
 ## Validate 'validate'
-if [[ $method == "openconnect" ]]; then
-    if [[ -z $validate ]]; then
-        validate=${UCSF_VPN_VALIDATE:-pid,iproute,ipinfo}
-    fi
-elif [[ $method == "pulse" ]]; then
-    if [[ -z $validate ]]; then
-        validate=${UCSF_VPN_VALIDATE:-ipinfo}
-    elif [[ ! $validate =~ ^(ipinfo)$ ]]; then
-        merror "Unknown --validate value: '$validate'"
-    fi
+if [[ -z $validate ]]; then
+    validate=${UCSF_VPN_VALIDATE:-pid,iproute,ipinfo}
 fi
 
-## Validate 'speed'
-if [[ ! ${speed} =~ ^[0-9]+[.0-9]*$ ]]; then
-    merror "Invalid --speed argument: '$speed'"
-fi
 
 
 # -------------------------------------------------------------------------
@@ -1964,8 +1788,6 @@ mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
 mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
 mdebug "method: $method"
-mdebug "gui: $gui"
-mdebug "speed: $speed"
 mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "openconnect_pid: $(openconnect_pid)"
@@ -1993,99 +1815,41 @@ elif [[ $action == "details" ]]; then
 elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
-elif [[ $action == "open-gui" ]]; then
-    if [[ $method != "pulse" ]]; then
-        merror "ucsf vpn open-gui requires --method=pulse: $method"
-    fi
-    pulse_open_gui
-    res=$?
-    _exit $res
-elif [[ $action == "close-gui" ]]; then
-    if [[ $method != "pulse" ]]; then
-        merror "ucsf vpn open-gui requires --method=pulse: $method"
-    fi
-    pulse_close_gui
-    res=$?
-    _exit $res
+elif [[ $action == "install-vpnc" ]]; then
+    install_vpnc "install"
+    _exit $?
 elif [[ $action == "start" ]]; then
-    if [[ $method == "openconnect" ]]; then
-        openconnect_start
-        res=$?
-    elif [[ $method == "pulse" ]]; then
-        pulse_start
-        res=$?
-        sleep "$(div 4.0 "$speed")"
-    fi
+    openconnect_start
+    res=$?
     status "connected"
 elif [[ $action == "stop" ]]; then
-    if [[ $method == "openconnect" ]]; then
-        openconnect_stop
-        res=$?
-    elif [[ $method == "pulse" ]]; then
-        pulse_stop
-        res=$?
-        sleep "$(div 1.0 "$speed")"
-    fi
+    openconnect_stop
     status "disconnected"
+elif [[ $action == "reconnect" ]]; then
+    openconnect_reconnect
 elif [[ $action == "restart" ]]; then
-    if [[ $method == "openconnect" ]]; then
-        if $force || is_connected; then
-            openconnect_stop
-        fi
-        openconnect_start
-        res=$?
-    elif [[ $method == "pulse" ]]; then
-        pulse_stop
-        sleep "$(div 1.0 "$speed")"
-        is_online
-        pulse_start
-        sleep "$(div 4.0 "$speed")"
-        res=$?
+    if $force || is_connected; then
+        openconnect_stop
     fi
+    openconnect_start
+    res=$?
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
-      if [[ $method == "openconnect" ]]; then
-          openconnect_start
-      elif [[ $method == "pulse" ]]; then
-          pulse_start
-          sleep "$(div 4.0 "$speed")"
-      fi
+      openconnect_start
       status "connected"
     else
-      if [[ $method == "openconnect" ]]; then
-          openconnect_stop
-      elif [[ $method == "pulse" ]]; then
-          pulse_stop
-          sleep "$(div 1.0 "$speed")"
-      fi
+      openconnect_stop
       status "disconnected"
     fi
 elif [[ $action == "log" ]]; then
-    if [[ $method == "openconnect" ]]; then
-        LOGFILE=/var/log/syslog
-        minfo "Displaying 'VPN' entries in log file: $LOGFILE"
-        if [[ ! -f $LOGFILE ]]; then
-            mwarn "No such log file: $LOGFILE"
-            _exit 1
-        fi
-        grep VPN "$LOGFILE"
-    elif [[ $method == "pulse" ]]; then
-        LOGFILE=$HOME/.pulse_secure/pulse/pulsesvc.log
-        minfo "Displaying log file: $LOGFILE"
-        if [[ ! -f $LOGFILE ]]; then
-            mwarn "No such log file: $LOGFILE"
-            _exit 1
-        fi
-        cat "$LOGFILE"
+    LOGFILE=/var/log/syslog
+    minfo "Displaying 'VPN' entries in log file: $LOGFILE"
+    if [[ ! -f $LOGFILE ]]; then
+        mwarn "No such log file: $LOGFILE"
+        _exit 1
     fi
-elif [[ $action == "troubleshoot" ]]; then
-    if [[ $method == "openconnect" ]]; then
-        merror "ucsf-vpn troubleshoot is not implemented for --method=openconnect"
-    elif [[ $method == "pulse" ]]; then
-        pulse_troubleshoot
-    fi
+    grep VPN "$LOGFILE"
 fi
-
 
 _exit 0

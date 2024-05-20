@@ -24,6 +24,7 @@ Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your 
 OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-05-13T09:05:20-07:00; PID=14549)
 OK: IP routing tunnels: [n=1] tun0
 OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
+OK: Flavor: default
 OK: Connected to the VPN
 ```
 
@@ -60,6 +61,7 @@ $ ucsf-vpn status
 OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-05-13T16:20:00-07:00; PID=17419)
 IP routing tunnels: [n=1] tun0
 Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
+Flavor: default
 Connected to the VPN
 ```
 
@@ -104,13 +106,13 @@ Usage:
 Commands:
  start            Connect to VPN
  stop             Disconnect from VPN
+ reconnect        Reconnect to VPN
  restart          Disconnect and reconnect to VPN
  toggle           Connect to or disconnect from VPN
  status           Display VPN connection status
  details          Display connection details in JSON format
  routing          Display IP routing details
  log              Display log file
- troubleshoot     Scan log file for errors (only for '--method=pulse')
 
 Options:
  --token=<token>  One-time two-factor authentication (2FA) token or method:
@@ -127,7 +129,6 @@ Options:
  --server=<host>  VPN server (default is 'remote.ucsf.edu')
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
- --method=<mth>   Either 'openconnect' (default) or 'pulse' (deprecated)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
                   'pid,iproute,ipinfo' (default)
@@ -152,7 +153,6 @@ Examples:
 
 
 Environment variables:
- UCSF_VPN_METHOD       Default value for --method
  UCSF_VPN_PROTOCOL     Default value for --protocol
  UCSF_VPN_SERVER       Default value for --server
  UCSF_VPN_TOKEN        Default value for --token
@@ -161,16 +161,6 @@ Environment variables:
  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
-
-Commands and Options for Pulse Security Client only (--method=pulse):
- open-gui         Open the Pulse Secure GUI
- close-gui        Close the Pulse Secure GUI (and any VPN connections)
-
- --gui            Connect to VPN via Pulse Secure GUI
- --no-gui         Connect to VPN via Pulse Secure CLI (default)
- --speed=<factor> Control speed of --gui interactions (default is 1.0)
-
-Any other options are passed to Pulse Secure CLI as is (only --no-gui).
 
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given
@@ -186,15 +176,8 @@ the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* Requirements when using OpenConnect (CLI):
-  - OpenConnect (>= 7.08) (installed: 8.20-1)
-  - sudo
-* Requirements when using Junos Pulse Secure Client (GUI):
-  - Junos Pulse Secure client (>= 5.3) (installed: <PLEASE INSTALL>)
-  - Ports 4242 (UDP) and 443 (TCP)
-  - `curl`
-  - `xdotool` (when using 'ucsf-vpn start --method=pulse --gui')
-  - No need for sudo rights
+* OpenConnect (>= 7.08) (installed: 8.20-1)
+* sudo
 
 VPN Protocol:
 Different versions of OpenConnect support different VPN protocols.
@@ -205,26 +188,14 @@ and 'pulse' the newer "Pulse Secure" protocol.  For older version of
 OpenConnect that recognizes neither, specify '--protocol=juniper',
 which will results in using 'openconnect' legacy option '--juniper'.
 
-Pulse Secure GUI configuration:
-Calling 'ucsf-vpn start --method=pulse --gui' will, if missing,
-automatically add a valid VPN connection to the Pulse Secure GUI
-with the following details:
- - Name: UCSF
- - URL: https://remote.ucsf.edu/pulse
-You may change the name to you own liking.
-
 Troubleshooting:
 * Verify your username and password at https://remote.ucsf.edu/.
   This should be your UCSF Active Directory ID (username); neither
   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
-* If you are using the Pulse Secure client (`ucsf-vpn --method=pulse`),
-  - Make sure ports 4242 & 443 are not used by other processes
-  - Make sure 'https://remote.ucsf.edu/pulse' is used as the URL
-  - Run 'ucsf-vpn troubleshoot' to inspect the Pulse Secure logs
 
 Useful resources:
-* UCSF VPN information:
-  - https://software.ucsf.edu/content/vpn-virtual-private-network
+* UCSF VPN - Remote connection:
+  - https://it.ucsf.edu/service/vpn-remote-connection
 * UCSF Web-based VPN Interface:
   - https://remote-vpn01.ucsf.edu/ (preferred)
   - https://remote.ucsf.edu/
@@ -233,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 5.8.0
+Version: 6.0.0
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -243,27 +214,14 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 ## Required software
 
-### OpenConnect (default)
-
 The `uscf-vpn` tool requires:
 
 1. OpenConnect (>= 7.08)
 2. Curl
 3. Bash
-4. Admin rights (sudo). If not, use the below Pulse Secure Client approach instead
+4. Admin rights (sudo)
 
 OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beaver), but not on older LTS version.  For instance, Ubuntu 16.04 (Xenial Xerus) only provides OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3 installed at the same time.
-
-
-### Pulse Secure Client (legacy; deprecated)
-
-If you don't have OpenConnect (>= 7.08) you can use `ucsf-vpn --method=pulse` (or set environment variable `UCSF_VPN_METHOD=pulse`) to connect to the UCSF VPN using the Junos Pulse Secure client (Pulse Secure, LLC).  That software, which is a **closed-source proprietary software** (*), can be downloaded from UCSF website:
-
-* https://software.ucsf.edu/content/vpn-virtual-private-network
-
-Access to that page requires UCSF MyAccess Login (but no UCSF VPN).
-
-Note: `ucsf-vpn --method=pulse` is just a convenient wrapper script around the Pulse Secure client.  It is assumed that `pulsesvc` is available under `/usr/local/pulse/`. If not, set `PULSEPATH` to the folder where it is installed.
 
 
 ## Privacy
@@ -278,7 +236,7 @@ whether a VPN connection is established or not, and to provide public IP
 information on your current internet connection.  To disable this check, use
 `--validate=pid`, or environment variable `UCSF_VPN_VALIDATE=pid`, which
 uses the PID file of OpenConnect to decide whether a VPN connection is
-established or not.  This only works for `--method=openconnect`.
+established or not.
 
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.
@@ -294,8 +252,8 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn ...
--rwxrwxr-x 1 alice alice May 18 09:34 bin/ucsf-vpn
-Version built: 5.8.0
+-rwxrwxr-x 1 alice alice May 20 07:34 bin/ucsf-vpn
+Version built: 6.0.0
 Building bin/ucsf-vpn from src/ucsf-vpn ... done
 ```
 

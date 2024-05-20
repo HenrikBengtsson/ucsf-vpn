@@ -9,6 +9,7 @@ function _tput() {
 }
 
 function mecho() { echo "$@" 1>&2; }
+
 function mdebug() {
     if ! $debug; then
         return
@@ -19,6 +20,7 @@ function mdebug() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function merror() {
     local info version
     {
@@ -36,6 +38,7 @@ function merror() {
     } 1>&2
     _exit 1
 }
+
 function mwarn() {
     {
         _tput setaf 3 ## yellow
@@ -43,6 +46,7 @@ function mwarn() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function minfo() {
     if ! $verbose; then
         return
@@ -53,6 +57,8 @@ function minfo() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
+# shellcheck disable=SC2317
 function mok() {
     {
         _tput setaf 2 ## green
@@ -60,6 +66,7 @@ function mok() {
         _tput sgr0    ## reset
     } 1>&2
 }
+
 function mdefunct() {
     {
         _tput setaf 1 ## red
@@ -68,6 +75,7 @@ function mdefunct() {
         exit 1
     } 1>&2
 }
+
 function mnote() {
     {
         _tput setaf 11  ## bright yellow

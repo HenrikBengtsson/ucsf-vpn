@@ -22,6 +22,7 @@ README.md: README.md.tmpl bin/ucsf-vpn
 ## Check code using static-code analysis
 shellcheck:
 	echo "ShellCheck $$(shellcheck --version | grep version:)"
+	cd src; shellcheck -x ucsf-vpn.sh vpnc/ucsf-vpn-flavors.sh
 	shellcheck bin/ucsf
 	shellcheck bin/ucsf-vpn
 

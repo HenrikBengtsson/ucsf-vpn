@@ -9,7 +9,7 @@ function help() {
     local what res
 
     what=$1
-    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{pulsesvc_version}}/$(pulsesvc_version)/" | sed "s/{{openconnect_version}}/$(openconnect_version)/")
+    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
     if [[ $what == "full" ]]; then
         res=$(echo "$res" | sed '/^---/d')
