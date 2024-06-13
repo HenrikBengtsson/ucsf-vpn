@@ -37,7 +37,7 @@
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
 ###                   'pid,iproute,ipinfo' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --flavor=<flvr>  Use a customized flavor of the VPN
+###  --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.0.0
+### Version: 6.0.0-9002
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -806,7 +806,7 @@ function openconnect_flavor() {
     mdebug "Flavor file exists: ${flavor_file}"
     res=$(cat "${flavor_file}")
     if [[ -z ${res} ]]; then
-        res="default"
+        res="none"
     fi
     echo "${res}"
 }
@@ -880,7 +880,7 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    if [[ -n ${flavor} ]]; then
+    if [[ ${flavor} != "none" ]]; then
         ## Are vpnc generic hook scripts installed?
         if ! install_vpnc "check"; then
             if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
@@ -1304,7 +1304,11 @@ function status() {
             "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
-            "$mcmd" "Flavor: $(openconnect_flavor)"
+            msg="$(openconnect_flavor)"
+            if [[ ${msg} != "none" ]]; then
+                msg="${flavor} (${msg})"
+            fi
+            "$mcmd" "Flavor: ${msg}"
             msg="Connected to the VPN"
         else
             msg="Not connected to the VPN"
@@ -1397,7 +1401,7 @@ function flavor_home() {
     local -i count
 
     ## No flavor specified
-    if [[ -z ${flavor} ]]; then
+    if [[ ${flavor} == "none" ]]; then
         echo
         return
     fi
@@ -1548,7 +1552,7 @@ realm=
 extras=("${UCSF_VPN_EXTRAS[@]}")
 protocol=${UCSF_VPN_PROTOCOL:-nc}
 presudo=${UCSF_VPN_PRESUDO:-true}
-flavor=${UCSF_VPN_FLAVOR}
+flavor=${UCSF_VPN_FLAVOR:-none}
 
 ## User credentials
 user=

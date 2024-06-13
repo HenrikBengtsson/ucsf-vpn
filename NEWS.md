@@ -3,7 +3,11 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### New Features
+
+ * Now `ucsf vpn start --flavor=none` sets the default flavor. This
+   can be used to override environment variable `UCSF_VPN_FLAVOR`,
+   which may be preset in for instance `~/.config/ucsf-vpn/envs`.
  
 
 ## Version 6.0.0 (2024-05-20)
