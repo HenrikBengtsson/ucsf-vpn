@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.0.0-9002
+### Version: 6.0.0-9003
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -342,8 +342,13 @@ function routing_details() {
         echo "Tunnel interfaces: none"
     fi
 
+    echo
+    echo "Nameserve configuration (/etc/resolv.conf):"
+    grep -v -E "^[[:space:]]*(#|$)" /etc/resolv.conf
+
     mapfile -t ip_route < <(ip route show)
-    echo "IP routing table (${#ip_route[@]} entries):"
+    echo
+    echo "IP routing table (ip route show) [${#ip_route[@]} entries]:"
     for kk in "${!ip_route[@]}"; do
         row="${ip_route[${kk}]}"
         if $use_dig || $use_whois; then

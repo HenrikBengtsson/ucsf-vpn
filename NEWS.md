@@ -9,6 +9,8 @@ ucsf-vpn
    can be used to override environment variable `UCSF_VPN_FLAVOR`,
    which may be preset in for instance `~/.config/ucsf-vpn/envs`.
  
+ * Now `ucsf vpn routing` also reports on nameserver settings.
+
 
 ## Version 6.0.0 (2024-05-20)
 
