@@ -3,6 +3,13 @@ ucsf-vpn
 
 ## Version (development version)
 
+### Significant changes
+
+ * Now `ucsf vpn` validates the VPN connection using a UCSF IT web
+   service hosted under `*.ucsf.edu`. Previously
+   <https://ipinfo.io/ip> was the default method.  Note that `ucsf vpn
+   connection` still uses ipinfo.io.
+ 
 ### New Features
 
  * Now `ucsf vpn start --flavor=none` sets the default flavor. This
