@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.0.0-9004
+### Version: 6.0.0-9005
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -289,6 +289,10 @@ function assert_sudo() {
 # -------------------------------------------------------------------------
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
+function ucsf_it_network_info() {
+    curl --silent https://help.ucsf.edu/HelpApps/ipNetVerify.php | grep -E "<td>(Connected to UCSF Network|IP Address|Network Location)</td>" | sed 's/<\/td><td>/=/' | sed -E 's/<[^>]+>//g' | sed 's/.*Connected to UCSF Network/connected/' | sed 's/.*IP Address/public_ip/' | sed 's/.*Network Location/network/' | sed 's/=No/=false/' | sed 's/=Yes/=true/' | sed -E "s/network=(.*)/network='\1'/" | sort
+}
+
 function connection_details() {
     mdebug "connection_details()"
     if [[ ! -f "$pii_file" ]]; then
@@ -1297,13 +1301,23 @@ function status() {
                 msg="none"
             fi
             msgs+=("IP routing tunnels: ${msg}")
+        elif [[ $method == ucsfit ]]; then
+            mapfile -t info < <(ucsf_it_network_info)
+            if grep -q "connected=true" <<< "${info[0]}"; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="no (n=${#info[@]} ${info[*]})"
+            fi
+            msgs+=("Public IP information (UCSF IT): ${info[2]}, ${info[1]}")
         elif [[ $method == ipinfo ]]; then
             if is_connected; then
                 connected+=(true)
             else
                 connected+=(false)
             fi
-            msgs+=("Public IP information: $(public_info)")
+            msgs+=("Public IP information (ipinfo.io): $(public_info)")
         else
             merror "Unknown --validate value: $method"
         fi

@@ -14,6 +14,9 @@ ucsf-vpn
  * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
    changes to your nameserver settings (`/etc/resolv.conf`).
 
+ * Add support for `ucsf vpn status --validate=ucsfit`, which infers
+   VPN status from <https://help.ucsf.edu/HelpApps/ipNetVerify.php>.
+
 
 ## Version 6.0.0 (2024-05-20)
 
