@@ -11,6 +11,9 @@ ucsf-vpn
  
  * Now `ucsf vpn routing` reports also on nameserver settings.
 
+ * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
+   changes to your nameserver settings (`/etc/resolv.conf`).
+
 
 ## Version 6.0.0 (2024-05-20)
 
