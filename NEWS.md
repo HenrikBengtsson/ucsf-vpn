@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version (development version)
+## Version 6.1.0 (2024-06-26)
 
 ### Significant changes
 
