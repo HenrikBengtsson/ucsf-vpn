@@ -26,8 +26,9 @@ grep -q -F 'source "${incl}/' "${tmpl}"
         fi
     done < "${tmpl}"
 } > "${target}.tmp"
+chmod ugo-w "${target}.tmp"
 chmod ugo+x "${target}.tmp"
-mv "${target}.tmp" "${target}"
+mv -f "${target}.tmp" "${target}"
 ls -l "${target}"
 
 echo "Version built: $(bash "${target}" --version)"
