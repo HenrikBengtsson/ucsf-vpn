@@ -137,7 +137,7 @@ function openconnect_flavor() {
     mdebug "Flavor file exists: ${flavor_file}"
     res=$(cat "${flavor_file}")
     if [[ -z ${res} ]]; then
-        res="default"
+        res="none"
     fi
     echo "${res}"
 }
@@ -211,7 +211,7 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    if [[ -n ${flavor} ]]; then
+    if [[ ${flavor} != "none" ]]; then
         ## Are vpnc generic hook scripts installed?
         if ! install_vpnc "check"; then
             if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
@@ -308,6 +308,9 @@ function openconnect_start() {
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
+    ## Record hostname resolve file before connecting to the VPN
+    cat /etc/resolv.conf > "${resolv_novpn_file}"
+    
     log "ip route show:"
     ip route show >> "${log_file}"
 
@@ -391,14 +394,24 @@ function openconnect_start() {
     ## Record IP routing table after having connected to the VPN
     ip route show > "${ip_route_vpn_file}"
 
+    ## Record hostname resolve file after having connected to the VPN
+    cat /etc/resolv.conf > "${resolv_vpn_file}"
+
     default_route_after=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
     
     if $debug; then
-        mdebug "Changes made to the IP routing table:"
+        mdebug "Changes made to the IP routing table (ip route show):"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_novpn_file}" "${ip_route_vpn_file}"
+            _tput sgr0    ## reset
+        } 1>&2
+
+        mdebug "Changes made to /etc/resolv.conf:"
+        {
+            _tput setaf 8 ## gray
+            diff -u -w "${resolv_novpn_file}" "${resolv_vpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi
@@ -438,6 +451,9 @@ function openconnect_stop() {
 
     ## Record IP routing table while still connected to the VPN
     ip route show > "${ip_route_vpn_file}"
+
+    ## Record hostname resolve file while still connected to the VPN
+    cat /etc/resolv.conf > "${resolv_vpn_file}"
     
     ## Signal SIGINT to terminate OpenConnect. If the first one fails,
     ## try another one
@@ -480,16 +496,26 @@ function openconnect_stop() {
     
     ## Record IP routing table after being disconnected from the VPN
     ip route show > "${ip_route_novpn_file}"
+
+    ## Record hostname resolve file after being disconnected from the VPN
+    cat /etc/resolv.conf > "${resolv_novpn_file}"
     
     default_route_after=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
 
     
     if $debug; then
-        mdebug "Changes made to the IP routing table:"
+        mdebug "Changes made to the IP routing table (ip route show):"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_vpn_file}" "${ip_route_novpn_file}"
+            _tput sgr0    ## reset
+        } 1>&2
+
+        mdebug "Changes made to /etc/resolv.conf:"
+        {
+            _tput setaf 8 ## gray
+            diff -u -w "${resolv_vpn_file}" "${resolv_novpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi

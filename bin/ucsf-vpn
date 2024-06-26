@@ -1085,7 +1085,7 @@ function openconnect_start() {
             diff -u -w "${ip_route_novpn_file}" "${ip_route_vpn_file}"
             _tput sgr0    ## reset
         } 1>&2
-        
+
         mdebug "Changes made to /etc/resolv.conf:"
         {
             _tput setaf 8 ## gray
@@ -1129,7 +1129,7 @@ function openconnect_stop() {
 
     ## Record IP routing table while still connected to the VPN
     ip route show > "${ip_route_vpn_file}"
-    
+
     ## Record hostname resolve file while still connected to the VPN
     cat /etc/resolv.conf > "${resolv_vpn_file}"
     
@@ -1177,7 +1177,7 @@ function openconnect_stop() {
 
     ## Record hostname resolve file after being disconnected from the VPN
     cat /etc/resolv.conf > "${resolv_novpn_file}"
-
+    
     default_route_after=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
 
@@ -1189,7 +1189,7 @@ function openconnect_stop() {
             diff -u -w "${ip_route_vpn_file}" "${ip_route_novpn_file}"
             _tput sgr0    ## reset
         } 1>&2
-        
+
         mdebug "Changes made to /etc/resolv.conf:"
         {
             _tput setaf 8 ## gray

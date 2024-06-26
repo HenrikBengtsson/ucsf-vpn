@@ -1,6 +1,10 @@
 # -------------------------------------------------------------------------
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
+function ucsf_it_network_info() {
+    curl --silent https://help.ucsf.edu/HelpApps/ipNetVerify.php | grep -E "<td>(Connected to UCSF Network|IP Address|Network Location)</td>" | sed 's/<\/td><td>/=/' | sed -E 's/<[^>]+>//g' | sed 's/.*Connected to UCSF Network/connected/' | sed 's/.*IP Address/public_ip/' | sed 's/.*Network Location/network/' | sed 's/=No/=false/' | sed 's/=Yes/=true/' | sed -E "s/network=(.*)/network='\1'/" | sort
+}
+
 function connection_details() {
     mdebug "connection_details()"
     if [[ ! -f "$pii_file" ]]; then
@@ -54,8 +58,13 @@ function routing_details() {
         echo "Tunnel interfaces: none"
     fi
 
+    echo
+    echo "Nameserve configuration (/etc/resolv.conf):"
+    grep -v -E "^[[:space:]]*(#|$)" /etc/resolv.conf
+
     mapfile -t ip_route < <(ip route show)
-    echo "IP routing table (${#ip_route[@]} entries):"
+    echo
+    echo "IP routing table (ip route show) [${#ip_route[@]} entries]:"
     for kk in "${!ip_route[@]}"; do
         row="${ip_route[${kk}]}"
         if $use_dig || $use_whois; then
