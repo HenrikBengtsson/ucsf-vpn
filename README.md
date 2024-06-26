@@ -21,9 +21,9 @@ WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
 Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-05-13T09:05:20-07:00; PID=14549)
+OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-06-25T09:05:20-07:00; PID=14549)
 OK: IP routing tunnels: [n=1] tun0
-OK: Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
+OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
 OK: Flavor: default
 OK: Connected to the VPN
 ```
@@ -47,7 +47,7 @@ To disconnect from the UCSF VPN, call:
 $ ucsf-vpn stop
 OK: OpenConnect status: No 'openconnect' process running
 OK: IP routing tunnels: none
-OK: Public IP information: ip=123.145.254.42, hostname=123.145.254.42.fiber.dynamic.sonic.net, org=AS46375 Sonic Telecom LLC
+OK: Public IP information (UCSF IT): public_ip=123.145.254.42, network='not UCSF'
 OK: Not connected to the VPN
 ```
 
@@ -58,9 +58,9 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-05-13T16:20:00-07:00; PID=17419)
+OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-06-25T16:20:00-07:00; PID=17419)
 IP routing tunnels: [n=1] tun0
-Public IP information: ip=128.218.43.42, hostname=, org=AS5653 University of California San Francisco
+OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
 Flavor: default
 Connected to the VPN
 ```
@@ -70,7 +70,7 @@ To get full details of your current internet connection in JSON format, call:
 ```sh
 $ ucsf-vpn details
 {
-  "ip": "128.218.43.42",
+  "ip": "10.49.88.54",
   "city": "San Francisco",
   "region": "California",
   "country": "US",
@@ -130,10 +130,10 @@ Options:
  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
  --url=<url>      VPN URL (default is https://{{server}}/pulse)
  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
- --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
-                  'pid,iproute,ipinfo' (default)
+ --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
+                  e.g. 'pid,iproute,ucsfit' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
- --flavor=<flvr>  Use a customized flavor of the VPN
+ --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 
 Flags:
  --verbose        More verbose output
@@ -204,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.0.0
+Version: 6.1.0
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -221,7 +221,16 @@ The `uscf-vpn` tool requires:
 3. Bash
 4. Admin rights (sudo)
 
-OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS (Bionic Beaver), but not on older LTS version.  For instance, Ubuntu 16.04 (Xenial Xerus) only provides OpenConnect 7.06, which [fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).  [There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4) on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it is not clear whether such an installation leaves the system in a stable state or not.  Moreover, due to library dependencies, it appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3 installed at the same time.
+OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS
+(Bionic Beaver), but not on older LTS version.  For instance, Ubuntu
+16.04 (Xenial Xerus) only provides OpenConnect 7.06, which
+[fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).
+[There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4)
+on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it
+is not clear whether such an installation leaves the system in a
+stable state or not.  Moreover, due to library dependencies, it
+appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3
+installed at the same time.
 
 
 ## Privacy
@@ -245,15 +254,15 @@ credentials.
 ## Building from source
 
 The self-contained `bin/ucsf-vpn` script is generated from
-`src/ucsf-vpn.sh` and `src/incl/*.sh`. The rebuild `bin/ucsf-vpn`,
+`src/ucsf-vpn.sh` and `src/incl/*.sh`. To rebuild `bin/ucsf-vpn`,
 use:
 
 ```sh
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn ...
--rwxrwxr-x 1 alice alice May 20 07:34 bin/ucsf-vpn
-Version built: 6.0.0
+-r-xr-xr-x 1 alice alice 58584 Jun 26 09:43 bin/ucsf-vpn
+Version built: 6.1.0
 Building bin/ucsf-vpn from src/ucsf-vpn ... done
 ```
 

@@ -34,10 +34,10 @@
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
-###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
-###                   'pid,iproute,ipinfo' (default)
+###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
+###                   e.g. 'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --flavor=<flvr>  Use a customized flavor of the VPN
+###  --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.0.0
+### Version: 6.1.0
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -289,6 +289,10 @@ function assert_sudo() {
 # -------------------------------------------------------------------------
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
+function ucsf_it_network_info() {
+    curl --silent https://help.ucsf.edu/HelpApps/ipNetVerify.php | grep -E "<td>(Connected to UCSF Network|IP Address|Network Location)</td>" | sed 's/<\/td><td>/=/' | sed -E 's/<[^>]+>//g' | sed 's/.*Connected to UCSF Network/connected/' | sed 's/.*IP Address/public_ip/' | sed 's/.*Network Location/network/' | sed 's/=No/=false/' | sed 's/=Yes/=true/' | sed -E "s/network=(.*)/network='\1'/" | sort
+}
+
 function connection_details() {
     mdebug "connection_details()"
     if [[ ! -f "$pii_file" ]]; then
@@ -342,8 +346,13 @@ function routing_details() {
         echo "Tunnel interfaces: none"
     fi
 
+    echo
+    echo "Nameserve configuration (/etc/resolv.conf):"
+    grep -v -E "^[[:space:]]*(#|$)" /etc/resolv.conf
+
     mapfile -t ip_route < <(ip route show)
-    echo "IP routing table (${#ip_route[@]} entries):"
+    echo
+    echo "IP routing table (ip route show) [${#ip_route[@]} entries]:"
     for kk in "${!ip_route[@]}"; do
         row="${ip_route[${kk}]}"
         if $use_dig || $use_whois; then
@@ -806,7 +815,7 @@ function openconnect_flavor() {
     mdebug "Flavor file exists: ${flavor_file}"
     res=$(cat "${flavor_file}")
     if [[ -z ${res} ]]; then
-        res="default"
+        res="none"
     fi
     echo "${res}"
 }
@@ -880,7 +889,7 @@ function openconnect_start() {
 
     minfo "Preparing to connect to VPN server '$server'"
 
-    if [[ -n ${flavor} ]]; then
+    if [[ ${flavor} != "none" ]]; then
         ## Are vpnc generic hook scripts installed?
         if ! install_vpnc "check"; then
             if prompt_yesno "Do you want to install required ucsf-vpn hook scripts?"; then
@@ -977,6 +986,9 @@ function openconnect_start() {
     ## Record IP routing table before connecting to the VPN
     ip route show > "${ip_route_novpn_file}"
 
+    ## Record hostname resolve file before connecting to the VPN
+    cat /etc/resolv.conf > "${resolv_novpn_file}"
+    
     log "ip route show:"
     ip route show >> "${log_file}"
 
@@ -1060,14 +1072,24 @@ function openconnect_start() {
     ## Record IP routing table after having connected to the VPN
     ip route show > "${ip_route_vpn_file}"
 
+    ## Record hostname resolve file after having connected to the VPN
+    cat /etc/resolv.conf > "${resolv_vpn_file}"
+
     default_route_after=$(grep -E '^default[[:space:]].*tun' "${ip_route_vpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
     
     if $debug; then
-        mdebug "Changes made to the IP routing table:"
+        mdebug "Changes made to the IP routing table (ip route show):"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_novpn_file}" "${ip_route_vpn_file}"
+            _tput sgr0    ## reset
+        } 1>&2
+
+        mdebug "Changes made to /etc/resolv.conf:"
+        {
+            _tput setaf 8 ## gray
+            diff -u -w "${resolv_novpn_file}" "${resolv_vpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi
@@ -1107,6 +1129,9 @@ function openconnect_stop() {
 
     ## Record IP routing table while still connected to the VPN
     ip route show > "${ip_route_vpn_file}"
+
+    ## Record hostname resolve file while still connected to the VPN
+    cat /etc/resolv.conf > "${resolv_vpn_file}"
     
     ## Signal SIGINT to terminate OpenConnect. If the first one fails,
     ## try another one
@@ -1149,16 +1174,26 @@ function openconnect_stop() {
     
     ## Record IP routing table after being disconnected from the VPN
     ip route show > "${ip_route_novpn_file}"
+
+    ## Record hostname resolve file after being disconnected from the VPN
+    cat /etc/resolv.conf > "${resolv_novpn_file}"
     
     default_route_after=$(grep -E '^default[[:space:]]' "${ip_route_novpn_file}" | sed 's/default //' | sed -E 's/ +$//')
     mdebug "Default IP routing changed to: ${default_route_after}"
 
     
     if $debug; then
-        mdebug "Changes made to the IP routing table:"
+        mdebug "Changes made to the IP routing table (ip route show):"
         {
             _tput setaf 8 ## gray
             diff -u -w "${ip_route_vpn_file}" "${ip_route_novpn_file}"
+            _tput sgr0    ## reset
+        } 1>&2
+
+        mdebug "Changes made to /etc/resolv.conf:"
+        {
+            _tput setaf 8 ## gray
+            diff -u -w "${resolv_vpn_file}" "${resolv_novpn_file}"
             _tput sgr0    ## reset
         } 1>&2
     fi
@@ -1266,13 +1301,23 @@ function status() {
                 msg="none"
             fi
             msgs+=("IP routing tunnels: ${msg}")
+        elif [[ $method == ucsfit ]]; then
+            mapfile -t info < <(ucsf_it_network_info)
+            if grep -q "connected=true" <<< "${info[0]}"; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="no (n=${#info[@]} ${info[*]})"
+            fi
+            msgs+=("Public IP information (UCSF IT): ${info[2]}, ${info[1]}")
         elif [[ $method == ipinfo ]]; then
             if is_connected; then
                 connected+=(true)
             else
                 connected+=(false)
             fi
-            msgs+=("Public IP information: $(public_info)")
+            msgs+=("Public IP information (ipinfo.io): $(public_info)")
         else
             merror "Unknown --validate value: $method"
         fi
@@ -1304,7 +1349,11 @@ function status() {
             "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
-            "$mcmd" "Flavor: $(openconnect_flavor)"
+            msg="$(openconnect_flavor)"
+            if [[ ${msg} != "none" ]]; then
+                msg="${flavor} (${msg})"
+            fi
+            "$mcmd" "Flavor: ${msg}"
             msg="Connected to the VPN"
         else
             msg="Not connected to the VPN"
@@ -1397,7 +1446,7 @@ function flavor_home() {
     local -i count
 
     ## No flavor specified
-    if [[ -z ${flavor} ]]; then
+    if [[ ${flavor} == "none" ]]; then
         echo
         return
     fi
@@ -1523,6 +1572,8 @@ pid_file="$(xdg_state_path)/openconnect.pid"
 flavor_file="$(xdg_state_path)/openconnect.flavor"
 ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
+resolv_novpn_file="$(xdg_state_path)/resolv.novpn.out"
+resolv_vpn_file="$(xdg_state_path)/resolv.vpn.out"
 pii_file=$(make_pii_file)
 
 source_envs
@@ -1548,7 +1599,7 @@ realm=
 extras=("${UCSF_VPN_EXTRAS[@]}")
 protocol=${UCSF_VPN_PROTOCOL:-nc}
 presudo=${UCSF_VPN_PRESUDO:-true}
-flavor=${UCSF_VPN_FLAVOR}
+flavor=${UCSF_VPN_FLAVOR:-none}
 
 ## User credentials
 user=
@@ -1747,7 +1798,7 @@ fi
 
 ## Validate 'validate'
 if [[ -z $validate ]]; then
-    validate=${UCSF_VPN_VALIDATE:-pid,iproute,ipinfo}
+    validate=${UCSF_VPN_VALIDATE:-pid,iproute,ucsfit}
 fi
 
 

@@ -31,10 +31,10 @@
 ###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
 ###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
 ###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
-###  --validate=<how> One or more of 'ipinfo', 'iproute', and 'pid', e.g.
-###                   'pid,iproute,ipinfo' (default)
+###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
+###                   e.g. 'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --flavor=<flvr>  Use a customized flavor of the VPN
+###  --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.0.0
+### Version: 6.1.0
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -193,13 +193,23 @@ function status() {
                 msg="none"
             fi
             msgs+=("IP routing tunnels: ${msg}")
+        elif [[ $method == ucsfit ]]; then
+            mapfile -t info < <(ucsf_it_network_info)
+            if grep -q "connected=true" <<< "${info[0]}"; then
+                connected+=(true)
+                msg="yes (n=${#info[@]} ${info[*]})"
+            else
+                connected+=(false)
+                msg="no (n=${#info[@]} ${info[*]})"
+            fi
+            msgs+=("Public IP information (UCSF IT): ${info[2]}, ${info[1]}")
         elif [[ $method == ipinfo ]]; then
             if is_connected; then
                 connected+=(true)
             else
                 connected+=(false)
             fi
-            msgs+=("Public IP information: $(public_info)")
+            msgs+=("Public IP information (ipinfo.io): $(public_info)")
         else
             merror "Unknown --validate value: $method"
         fi
@@ -231,7 +241,11 @@ function status() {
             "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
-            "$mcmd" "Flavor: $(openconnect_flavor)"
+            msg="$(openconnect_flavor)"
+            if [[ ${msg} != "none" ]]; then
+                msg="${flavor} (${msg})"
+            fi
+            "$mcmd" "Flavor: ${msg}"
             msg="Connected to the VPN"
         else
             msg="Not connected to the VPN"
@@ -324,7 +338,7 @@ function flavor_home() {
     local -i count
 
     ## No flavor specified
-    if [[ -z ${flavor} ]]; then
+    if [[ ${flavor} == "none" ]]; then
         echo
         return
     fi
@@ -410,6 +424,8 @@ pid_file="$(xdg_state_path)/openconnect.pid"
 flavor_file="$(xdg_state_path)/openconnect.flavor"
 ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
+resolv_novpn_file="$(xdg_state_path)/resolv.novpn.out"
+resolv_vpn_file="$(xdg_state_path)/resolv.vpn.out"
 pii_file=$(make_pii_file)
 
 source_envs
@@ -435,7 +451,7 @@ realm=
 extras=("${UCSF_VPN_EXTRAS[@]}")
 protocol=${UCSF_VPN_PROTOCOL:-nc}
 presudo=${UCSF_VPN_PRESUDO:-true}
-flavor=${UCSF_VPN_FLAVOR}
+flavor=${UCSF_VPN_FLAVOR:-none}
 
 ## User credentials
 user=
@@ -634,7 +650,7 @@ fi
 
 ## Validate 'validate'
 if [[ -z $validate ]]; then
-    validate=${UCSF_VPN_VALIDATE:-pid,iproute,ipinfo}
+    validate=${UCSF_VPN_VALIDATE:-pid,iproute,ucsfit}
 fi
 
 

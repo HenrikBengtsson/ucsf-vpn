@@ -1,6 +1,30 @@
 ucsf-vpn
 ========
 
+## Version 6.1.0 (2024-06-26)
+
+### Significant changes
+
+ * Now `ucsf vpn` validates the VPN connection using a UCSF IT web
+   service hosted under `*.ucsf.edu`. Previously
+   <https://ipinfo.io/ip> was the default method.  Note that `ucsf vpn
+   details` still uses ipinfo.io.
+ 
+### New Features
+
+ * Now `ucsf vpn start --flavor=none` sets the default flavor. This
+   can be used to override environment variable `UCSF_VPN_FLAVOR`,
+   which may be preset in for instance `~/.config/ucsf-vpn/envs`.
+ 
+ * Now `ucsf vpn routing` reports also on nameserver settings.
+
+ * Now `ucsf vpn start --debug` and `ucsf vpn stop --debug` reports on
+   changes to your nameserver settings (`/etc/resolv.conf`).
+
+ * Add support for `ucsf vpn status --validate=ucsfit`, which infers
+   VPN status from <https://help.ucsf.edu/HelpApps/ipNetVerify.php>.
+
+
 ## Version 6.0.0 (2024-05-20)
 
 ### Significant changes
