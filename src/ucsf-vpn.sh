@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.1.0-9000
+### Version: 6.1.0-9001
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -485,11 +485,9 @@ while [[ $# -gt 0 ]]; do
         action=$1
     elif [[ "$1" == "log" ]]; then
         action=$1
-    elif [[ "$1" == "troubleshoot" ]]; then
-        pulse_is_defunct
-    elif [[ "$1" == "open-gui" ]]; then
-        pulse_is_defunct
-    elif [[ "$1" == "close-gui" ]]; then
+    elif [[ "$1" == "troubleshoot" ]] || 
+         [[ "$1" == "open-gui"     ]] ||
+         [[ "$1" == "close-gui"    ]]; then
         pulse_is_defunct
 
     ## Options (--flags):
@@ -517,13 +515,10 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$flag" == "notification" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "no-notification" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "gui" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "no-gui" ]]; then
+        elif [[ "$flag" == "notification"    ]] ||
+             [[ "$flag" == "no-notification" ]] ||
+             [[ "$flag" == "gui"             ]] ||
+             [[ "$flag" == "no-gui"          ]]; then
             pulse_is_defunct
         else
             merror "Unknown option: '$1'"
@@ -555,8 +550,6 @@ while [[ $# -gt 0 ]]; do
             pwd=$value
         elif [[ "$key" == "token" ]]; then
             token=$value
-        elif [[ "$key" == "speed" ]]; then
-            pulse_is_defunct
         elif [[ "$key" == "theme" ]]; then
             theme=$value
         elif [[ "$key" == "validate" ]]; then
@@ -571,6 +564,8 @@ while [[ $# -gt 0 ]]; do
             fi
         elif [[ "$key" == "flavor" ]]; then
             flavor=$value
+        elif [[ "$key" == "speed" ]]; then
+            pulse_is_defunct
         else
             merror "Unknown option: '$1'"
         fi
