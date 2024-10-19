@@ -3,7 +3,10 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### Deprecated and Defunct
+
+ * Command-line option `--method=<value>` and corresponding
+   environment variable `UCSF_VPN_METHOD` are defunct.
  
 
 ## Version 6.1.0 (2024-06-26)
