@@ -569,9 +569,6 @@ while [[ $# -gt 0 ]]; do
             merror "Unknown option: '$1'"
         fi
 
-    ## DEPRECATED: Options (--key value):
-    elif [[ "$1" == "--skip" ]]; then
-        mdefunct "Command-line option '$1' is defunct."
     else
         merror "Unknown option: '$1'"
     fi
