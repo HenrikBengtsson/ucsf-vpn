@@ -106,7 +106,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.1.0
+### Version: 6.2.0
 ### Copyright: Henrik Bengtsson (2016-2024)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -414,7 +414,7 @@ log() {
 # Deprecated and defunct
 # -------------------------------------------------------------------------
 pulse_is_defunct() {
-    merror "Support for the Pulse Secure GUI, and command-line options associated with it, are defunct as of ucsf-vpn 6.0.0 (2024-05-20) in favor of OpenConnect (--method=openconnect; default)"
+    merror "Support for the Pulse Secure GUI, and command-line options associated with it, are defunct as of ucsf-vpn 6.0.0 (2024-05-20) in favor of OpenConnect"
 }
 
 # -------------------------------------------------------------------------
@@ -430,12 +430,12 @@ pii_file=$(make_pii_file)
 
 source_envs
 
+if [[ -n ${UCSF_VPN_METHOD} ]]; then
+     mdefunct "Environment variable 'UCSF_VPN_METHOD' is defunct, because command-line option '--method=<value>' is defunct: UCSF_VPN_METHOD='${UCSF_VPN_METHOD}'"
+fi    
 
 ## Actions
 action=
-
-## VPN method: 'openconnect' (default)
-method=${UCSF_VPN_METHOD:-openconnect}
 
 ## Options
 server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
@@ -485,11 +485,9 @@ while [[ $# -gt 0 ]]; do
         action=$1
     elif [[ "$1" == "log" ]]; then
         action=$1
-    elif [[ "$1" == "troubleshoot" ]]; then
-        pulse_is_defunct
-    elif [[ "$1" == "open-gui" ]]; then
-        pulse_is_defunct
-    elif [[ "$1" == "close-gui" ]]; then
+    elif [[ "$1" == "troubleshoot" ]] || 
+         [[ "$1" == "open-gui"     ]] ||
+         [[ "$1" == "close-gui"    ]]; then
         pulse_is_defunct
 
     ## Options (--flags):
@@ -517,13 +515,10 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$flag" == "notification" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "no-notification" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "gui" ]]; then
-            pulse_is_defunct
-        elif [[ "$flag" == "no-gui" ]]; then
+        elif [[ "$flag" == "notification"    ]] ||
+             [[ "$flag" == "no-notification" ]] ||
+             [[ "$flag" == "gui"             ]] ||
+             [[ "$flag" == "no-gui"          ]]; then
             pulse_is_defunct
         else
             merror "Unknown option: '$1'"
@@ -538,10 +533,7 @@ while [[ $# -gt 0 ]]; do
         if [[ -z $value ]]; then
             merror "Option '--$key' must not be empty"
         fi
-        if [[ "$key" == "method" ]]; then
-            mwarn "There is no longer a need to specify method, because the default --method=openconnect is the only support one"
-            method=$value
-        elif [[ "$key" == "url" ]]; then
+        if [[ "$key" == "url" ]]; then
             url=$value
         elif [[ "$key" == "server" ]]; then
             server=$value
@@ -555,8 +547,6 @@ while [[ $# -gt 0 ]]; do
             pwd=$value
         elif [[ "$key" == "token" ]]; then
             token=$value
-        elif [[ "$key" == "speed" ]]; then
-            pulse_is_defunct
         elif [[ "$key" == "theme" ]]; then
             theme=$value
         elif [[ "$key" == "validate" ]]; then
@@ -571,15 +561,14 @@ while [[ $# -gt 0 ]]; do
             fi
         elif [[ "$key" == "flavor" ]]; then
             flavor=$value
+        elif [[ "$key" == "method" ]]; then
+            mdefunct "Command-line option '--$key=<value>' is defunct"
+        elif [[ "$key" == "speed" ]]; then
+            pulse_is_defunct
         else
             merror "Unknown option: '$1'"
         fi
 
-    ## DEPRECATED: Options (--key value):
-    elif [[ "$1" == "--skip" ]]; then
-        mdefunct "Command-line option '$1' is defunct."
-    elif [[ "$1" =~ ^--(method|pwd|realm|server|speed|token|url|user)$ ]]; then
-        mdefunct "Command-line option format '$1 $2' is defunct. Use '$1=$2' instead."
     else
         merror "Unknown option: '$1'"
     fi
@@ -604,15 +593,6 @@ fi
 # -------------------------------------------------------------------------
 # Validate options
 # -------------------------------------------------------------------------
-## Validate 'method'
-if [[ ${method} == "openconnect" ]]; then
-    mdebug "Method: $method"
-elif [[ ${method} == "pulse" ]]; then
-    pulse_is_defunct
-else
-    merror "Unknown value on option --method: '$method'"
-fi
-
 ## Validate 'realm'
 if [[ -z $realm ]]; then
     realm="Dual-Factor Pulse Clients"

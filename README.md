@@ -204,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.1.0
+Version: 6.2.0
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -240,12 +240,8 @@ organization) to check whether there is a working internet connection or not.
 Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
 ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
 
-The `ucsf-vpn` software also queries the https://ipinfo.io/ service to infer
-whether a VPN connection is established or not, and to provide public IP
-information on your current internet connection.  To disable this check, use
-`--validate=pid`, or environment variable `UCSF_VPN_VALIDATE=pid`, which
-uses the PID file of OpenConnect to decide whether a VPN connection is
-established or not.
+The `ucsf-vpn details` queries the https://ipinfo.io/ service for
+information on the current internet connection.
 
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
 credentials.
@@ -260,10 +256,10 @@ use:
 ```sh
 $ make build
 ./build.sh
-Building bin/ucsf-vpn from src/ucsf-vpn ...
--r-xr-xr-x 1 alice alice 58584 Jun 26 09:43 bin/ucsf-vpn
-Version built: 6.1.0
-Building bin/ucsf-vpn from src/ucsf-vpn ... done
+Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
+-r-xr-xr-x 1 henrik henrik 57955 Nov 11 15:33 bin/ucsf-vpn
+Version built: 6.2.0
+Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 
 [NEWS]: NEWS.md
