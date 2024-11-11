@@ -14,6 +14,7 @@ README.md: README.md.tmpl bin/ucsf-vpn
 	help=`bin/ucsf-vpn --help`; \
 	bfr=`echo "$${bfr/\{\{ HELP \}\}/$$help}"`; \
 	printf "$$bfr" > $@
+	grep -F "Version " "$@"
 	@echo "README.md"
 
 

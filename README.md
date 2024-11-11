@@ -204,7 +204,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.1.0-9003
+Version: 6.2.0
 Copyright: Henrik Bengtsson (2016-2024)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -256,10 +256,10 @@ use:
 ```sh
 $ make build
 ./build.sh
-Building bin/ucsf-vpn from src/ucsf-vpn ...
--r-xr-xr-x 1 alice alice 58584 Jun 26 09:43 bin/ucsf-vpn
-Version built: 6.1.0
-Building bin/ucsf-vpn from src/ucsf-vpn ... done
+Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
+-r-xr-xr-x 1 henrik henrik 57955 Nov 11 15:33 bin/ucsf-vpn
+Version built: 6.2.0
+Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 
 [NEWS]: NEWS.md
