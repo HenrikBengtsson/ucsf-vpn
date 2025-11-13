@@ -109,7 +109,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.2.0-9001
+### Version: 6.3.0
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -1565,6 +1565,12 @@ pulse_is_defunct() {
     merror "Support for the Pulse Secure GUI, and command-line options associated with it, are defunct as of ucsf-vpn 6.0.0 (2024-05-20) in favor of OpenConnect"
 }
 
+ucsf_vpn_non_working() {
+    if ${UCSF_VPN_DEFUNCT:-true}; then
+           merror "'ucsf-vpn' no longer works, because UCSF migrated to use the GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which 'ucsf-vpn' used, was decommissioned on 2025-04-16. The plan is to re-implement 'ucsf-vpn' for GlobalProtect VPN, which is major work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for updates"
+    fi
+}    
+
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
@@ -1727,12 +1733,13 @@ done
 ## --help should always be available prior to any validation errors
 if [[ -z $action ]]; then
     help
+    ucsf_vpn_non_working
     _exit 0
 elif [[ $action == "help" ]]; then
     help full
+    ucsf_vpn_non_working
     _exit 0
 fi
-
 
 ## Use default URL?
 [[ -z "$url" ]] && url=https://${server}/pulse
@@ -1835,8 +1842,12 @@ if [[ $action == "version" ]]; then
     else
         version
     fi
+    ucsf_vpn_non_working
     _exit 0
 fi
+
+ucsf_vpn_non_working
+
 
 if [[ $action == "status" ]]; then
     status

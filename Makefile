@@ -4,15 +4,17 @@ all: build README.md shellcheck spelling
 
 .PHONY: help
 
-build:
-	./build.sh
+build: src/ucsf-vpn.sh
+	./build.sh | tee "$@.log"
 
 
 ## Regenerate README.md
-README.md: README.md.tmpl bin/ucsf-vpn
-	@bfr=`cat $<`; \
-	help=`bin/ucsf-vpn --help`; \
-	bfr=`echo "$${bfr/\{\{ HELP \}\}/$$help}"`; \
+README.md: README.md.tmpl bin/ucsf-vpn build.log
+	@bfr=$$(cat "$<"); \
+	help=$$(bin/ucsf-vpn --help 2> /dev/null || true); \
+	build_log=$$(sed -E "s/\b$$USER\b/alice/g" build.log); \
+	bfr=$$(echo "$${bfr/\{\{ HELP \}\}/$$help}"); \
+	bfr=$$(echo "$${bfr/\{\{ BUILD_LOG \}\}/$$build_log}"); \
 	printf "$$bfr" > $@
 	grep -F "Version " "$@"
 	@echo "README.md"

@@ -176,7 +176,7 @@ the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* OpenConnect (>= 7.08) (installed: 8.20-1)
+* OpenConnect (>= 7.08) (installed: 9.12-1build5)
 * sudo
 
 VPN Protocol:
@@ -204,8 +204,8 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.2.0
-Copyright: Henrik Bengtsson (2016-2024)
+Version: 6.3.0
+Copyright: Henrik Bengtsson (2016-2025)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
 ```
@@ -220,17 +220,6 @@ The `uscf-vpn` tool requires:
 2. Curl
 3. Bash
 4. Admin rights (sudo)
-
-OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS
-(Bionic Beaver), but not on older LTS version.  For instance, Ubuntu
-16.04 (Xenial Xerus) only provides OpenConnect 7.06, which
-[fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).
-[There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4)
-on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it
-is not clear whether such an installation leaves the system in a
-stable state or not.  Moreover, due to library dependencies, it
-appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3
-installed at the same time.
 
 
 ## Privacy
@@ -257,8 +246,8 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 henrik henrik 57955 Nov 11 15:33 bin/ucsf-vpn
-Version built: 6.2.0
+-r-xr-xr-x 1 alice alice 58480 Nov 13 11:02 bin/ucsf-vpn
+Version built: 6.3.0
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 
