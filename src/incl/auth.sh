@@ -16,17 +16,22 @@ function source_netrc() {
         else
             home=${HOME}
         fi
-        rcfile=${home}/.netrc
+        
+        ## Check ~/.config/ucsf-vpn/netrc first
+        rcfile=${home}/.config/ucsf-vpn/netrc
+        if [[ ! -f "${rcfile}" ]]; then
+            rcfile=${home}/.netrc
+        fi
     else
         rcfile=${NETRC}
     fi
 
     ## No such file?
     if [[ ! -f "${rcfile}" ]]; then
-        mdebug "No .netrc file: $rcfile"
+        mdebug "No NETRC file found: ${rcfile}"
         return
     fi
-    mdebug "Detected .netrc file: $rcfile"
+    mdebug "Detected NETRC file: ${rcfile}"
 
     ## Nothing to do?
     if [[ -n "$user" && -n "$pwd" ]]; then

@@ -8,6 +8,11 @@ ucsf-vpn
  * `ucsf-vpn' supports the GlobalProtect VPN protocol that UCSF
    migrated to on 2025-04-16.
 
+### New Features
+
+ * `ucsf-vpn start` will look for user credentials in NETRC file
+   ~/.config/ucsf-vpn/netrc before ~/.netrc.
+
  * `uscf-vpn details` queries the <https://ip-api.com/> service,
    because 'ipinfo.io' is blocked on the UCSF network.
 

@@ -48,17 +48,20 @@
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 ###
 ### User credentials:
-### If user credentials (--user and --pwd) are neither specified nor given
-### in ~/.netrc, then you will be prompted to enter them. To specify them
-### in ~/.netrc file, use the following format:
+### If user credentials (--user and --pwd) are not specified, 'ucsf-vpn' looks
+### for VPN credentical in your NETRC file as given by environment variable
+### 'NETRC'. If not set, then it looks for file ~/.config/ucsf-vpn/netrc, and
+### if that does not exist, ~/.netrc. To specify your credentials in the NETRC
+### file, use the following format:
 ###
 ###   machine gp-ucsf.ucsf.edu
 ###       login alice.bobson@ucsf.edu
 ###       password secrets
 ###
-### For security, the ~/.netrc file should be readable only by
-### the user / owner of the file. If not, then 'ucsf-vpn start' will
-### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
+### For security, the NETRC should be readable only by the owner of that file.
+### If not, then 'ucsf-vpn start' will set its permission accordingly (by
+### calling chmod go-rwx ~/.netrc). If the credentials are not still not
+### found, you will be prompted to enter them.
 ###
 ### Requirements:
 ### * GlobalProtect gpclient (installed: {{gpclient_version}})
@@ -79,7 +82,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9004
+### Version: 6.9.9-9005
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
