@@ -85,7 +85,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9005
+### Version: 6.9.9-9006
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -296,7 +296,7 @@ function connection_details() {
         fi
         mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi
-    cat "$pii_file"
+    cat "$pii_file" | sed -E 's/","/",\n  "/g' | sed -E 's/\{/{\n  /g' | sed -E 's/\}/\n}/g'
     echo
 }
 

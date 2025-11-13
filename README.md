@@ -66,10 +66,18 @@ To get full details of your current internet connection in JSON format, call:
 ```sh
 $ ucsf-vpn details
 {
-  "ip": "128.218.44.123",
-  "location": "United States California San Francisco",
-  "isp": "UCSF",
-  "time": "2025-11-14 05:54:58"
+  "status":"success",
+  "country":"United States",
+  "countryCode":"US",
+  "region":"CA",
+  "regionName":"California",
+  "city":"San Francisco",
+  "zip":"94122",
+  "lat":37.7562,"lon":-122.4866,"timezone":"America/Los_Angeles",
+  "isp":"University of California - Office of the President",
+  "org":"University of California San Francisco",
+  "as":"AS5653 University of California San Francisco",
+  "query":"169.230.248.43"
 }
 ```
 
@@ -137,17 +145,20 @@ Environment variables:
  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 
 User credentials:
-If user credentials (--user and --pwd) are neither specified nor given
-in ~/.netrc, then you will be prompted to enter them. To specify them
-in ~/.netrc file, use the following format:
+If user credentials (--user and --pwd) are not specified, 'ucsf-vpn' looks
+for VPN credentical in your NETRC file as given by environment variable
+'NETRC'. If not set, then it looks for file ~/.config/ucsf-vpn/netrc, and
+if that does not exist, ~/.netrc. To specify your credentials in the NETRC
+file, use the following format:
 
   machine gp-ucsf.ucsf.edu
       login alice.bobson@ucsf.edu
       password secrets
 
-For security, the ~/.netrc file should be readable only by
-the user / owner of the file. If not, then 'ucsf-vpn start' will
-set its permission accordingly (by calling chmod go-rwx ~/.netrc).
+For security, the NETRC should be readable only by the owner of that file.
+If not, then 'ucsf-vpn start' will set its permission accordingly (by
+calling chmod go-rwx ~/.netrc). If the credentials are not still not
+found, you will be prompted to enter them.
 
 Requirements:
 * GlobalProtect gpclient (installed: 2.4.5)
@@ -168,7 +179,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.9.9-9004
+Version: 6.9.9-9006
 Copyright: Henrik Bengtsson (2016-2025)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -211,8 +222,8 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 43889 Nov 13 14:22 bin/ucsf-vpn
-Version built: 6.9.9-9004
+-r-xr-xr-x 1 alice alice 44349 Nov 13 14:42 bin/ucsf-vpn
+Version built: 6.9.9-9006
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 

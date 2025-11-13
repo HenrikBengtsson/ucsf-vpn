@@ -24,7 +24,7 @@ function connection_details() {
         fi
         mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi
-    cat "$pii_file"
+    cat "$pii_file" | sed -E 's/","/",\n  "/g' | sed -E 's/\{/{\n  /g' | sed -E 's/\}/\n}/g'
     echo
 }
 
