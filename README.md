@@ -3,6 +3,13 @@
 
 For recent updates, see [NEWS].
 
+_WARNING: `ucsf-vpn` no longer works, because UCSF migrated to use the
+GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which
+`ucsf-vpn` used, was decommissioned on 2025-04-16. The plan is to
+re-implement `ucsf-vpn` for GlobalProtect VPN, which is major
+work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for
+updates._
+
 
 # A UCSF VPN Client for Linux
 
@@ -246,7 +253,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 58480 Nov 13 11:05 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 58480 Nov 13 11:07 bin/ucsf-vpn
 Version built: 6.3.0
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
