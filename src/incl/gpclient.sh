@@ -312,11 +312,8 @@ function gpclient_stop() {
         merror "Failed to terminate VPN process ('gpclient' with PID $pid). You could manually kill *all* gpclient processes by calling 'sudo pkill -INT gpclient'. CAREFUL!"
     fi
 
-    ## gpclient should remove PID file when terminated properly,
-    ## but if not, let us remove it here
     if [[ -f "$pid_file" ]]; then
         rm -f "$pid_file"
-        mwarn "gpclient PID file removed manually: $pid_file"
     fi
 
     ## Wait for IP routing table to stabilize
