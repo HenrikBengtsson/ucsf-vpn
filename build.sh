@@ -31,6 +31,6 @@ chmod ugo+x "${target}.tmp"
 mv -f "${target}.tmp" "${target}"
 ls -l "${target}"
 
-echo "Version built: $(bash "${target}" --version)"
+echo "Version built: $(bash "${target}" --version 2> /dev/null || true)"
 
 echo "Building ${target} from ${tmpl} ... done"

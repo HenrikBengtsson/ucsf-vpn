@@ -1,6 +1,21 @@
 ucsf-vpn
 ========
 
+## Version 6.3.0 (2025-11-13)
+
+### Significant changes
+
+ * UCSF stopped supporting the Pulse/Ivanti VPN protocol on
+   2025-04-16. If attempted, a message "Ivanti VPN has been
+   deactivated. Use GlobalProtect VPN" will be displayed and the
+   attempt will eventually fail with error message "ERROR: Failed to
+   connect to VPN server. Likely reason: Incorrect username or
+   password. You can test your credentials via the Web VPN at
+   https://remote-vpn01.ucsf.edu/. Miscellaneous: The VPN server
+   (remote.ucsf.edu) responds to ping [ucsf-vpn 6.2.0, OpenConnect
+   8.20-1]".
+
+
 ## Version 6.2.0 (2024-11-11)
 
 ### Deprecated and Defunct

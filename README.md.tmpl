@@ -112,17 +112,6 @@ The `uscf-vpn` tool requires:
 3. Bash
 4. Admin rights (sudo)
 
-OpenConnect (>= 7.08) is available on for instance Ubuntu 18.04 LTS
-(Bionic Beaver), but not on older LTS version.  For instance, Ubuntu
-16.04 (Xenial Xerus) only provides OpenConnect 7.06, which
-[fails to connect with an error](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4).
-[There is a confirmed way to force install this](https://github.com/HenrikBengtsson/ucsf-vpn/issues/4)
-on to Ubuntu 16.04 from the Ubuntu 17.04 (Zesty) distribution, but it
-is not clear whether such an installation leaves the system in a
-stable state or not.  Moreover, due to library dependencies, it
-appears not possible to have OpenConnect 7.08 and Pulse Secure 5.3-3
-installed at the same time.
-
 
 ## Privacy
 
@@ -147,10 +136,7 @@ use:
 ```sh
 $ make build
 ./build.sh
-Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 henrik henrik 57955 Nov 11 15:33 bin/ucsf-vpn
-Version built: 6.2.0
-Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
+{{ BUILD_LOG }}
 ```
 
 [NEWS]: NEWS.md
