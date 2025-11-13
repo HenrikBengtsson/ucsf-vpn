@@ -6,19 +6,21 @@ function ucsf_it_network_info() {
 }
 
 function connection_details() {
+    local ipinfo_url="http://ip-api.com/json"
+    
     mdebug "connection_details()"
     if [[ ! -f "$pii_file" ]]; then
         if ! is_online; then
             merror "Internet connection is not working"
         fi
         minfo "Verified that internet connection works"
-        minfo "Getting public IP (from https://ipinfo.im/ip)"
-        mdebug "Calling: curl --silent  --connect-timeout 3.0 https://ipinfo.im/json > \"$pii_file\""
-        if ! curl --silent --connect-timeout 3.0 https://ipinfo.im/json > "$pii_file"; then
+        minfo "Getting public IP (from <${ipinfo_url}>)"
+        mdebug "Calling: curl --silent  --connect-timeout 3.0 ${ipinfo_url} > \"$pii_file\""
+        if ! curl --silent --connect-timeout 3.0 "${ipinfo_url}" > "$pii_file"; then
             rm "$pii_file"
         fi
         if [[ ! -f "$pii_file" ]]; then
-            merror "Failed to get public IP (from https://ipinfo.im/ip)"
+            merror "Failed to get public IP (from <${ipinfo_url}>)"
         fi
         mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi
