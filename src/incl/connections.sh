@@ -12,13 +12,13 @@ function connection_details() {
             merror "Internet connection is not working"
         fi
         minfo "Verified that internet connection works"
-        minfo "Getting public IP (from https://ipinfo.io/ip)"
-        mdebug "Calling: curl --silent  --connect-timeout 3.0 https://ipinfo.io/json > \"$pii_file\""
-        if ! curl --silent --connect-timeout 3.0 https://ipinfo.io/json > "$pii_file"; then
+        minfo "Getting public IP (from https://ipinfo.im/ip)"
+        mdebug "Calling: curl --silent  --connect-timeout 3.0 https://ipinfo.im/json > \"$pii_file\""
+        if ! curl --silent --connect-timeout 3.0 https://ipinfo.im/json > "$pii_file"; then
             rm "$pii_file"
         fi
         if [[ ! -f "$pii_file" ]]; then
-            merror "Failed to get public IP (from https://ipinfo.io/ip)"
+            merror "Failed to get public IP (from https://ipinfo.im/ip)"
         fi
         mdebug "Public connection information: $(tr -d $'\n' < "$pii_file" | sed 's/  / /g')"
     fi

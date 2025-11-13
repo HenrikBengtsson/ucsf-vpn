@@ -66,15 +66,10 @@ To get full details of your current internet connection in JSON format, call:
 ```sh
 $ ucsf-vpn details
 {
-  "ip": "10.49.88.54",
-  "city": "San Francisco",
-  "region": "California",
-  "country": "US",
-  "loc": "37.7749,-122.4194",
-  "org": "AS5653 University of California San Francisco",
-  "postal": "94103",
-  "timezone": "America/Los_Angeles",
-  "readme": "https://ipinfo.io/missingauth"
+  "ip": "128.218.44.123",
+  "location": "United States California San Francisco",
+  "isp": "UCSF",
+  "time": "2025-11-14 05:54:58"
 }
 ```
 
@@ -173,7 +168,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.9.9-9000
+Version: 6.9.9-9001
 Copyright: Henrik Bengtsson (2016-2025)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -199,7 +194,7 @@ organization) to check whether there is a working internet connection or not.
 Environment variable `UCSF_VPN_PING_SERVER` can be use to specify a different
 ping server, e.g. `UCSF_VPN_PING_SERVER=www.ucsf.edu`.
 
-The `ucsf-vpn details` queries the https://ipinfo.io/ service for
+The `ucsf-vpn details` queries the https://ipinfo.im/ service for
 information on the current internet connection.
 
 The `ucsf-vpn` software _neither_ collects nor stores your local or UCSF
@@ -216,8 +211,8 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 43425 Nov 13 13:50 bin/ucsf-vpn
-Version built: 6.9.9-9000
+-r-xr-xr-x 1 alice alice 43425 Nov 13 13:58 bin/ucsf-vpn
+Version built: 6.9.9-9001
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 

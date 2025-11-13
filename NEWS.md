@@ -1,13 +1,16 @@
 ucsf-vpn
 ========
 
-## Version 6.9.9-9000 (2025-11-13)
+## Version (development version)
 
 ### Significant changes
 
  * `ucsf-vpn' supports the GlobalProtect VPN protocol that UCSF
    migrated to on 2025-04-16.
-   
+
+ * `uscf-vpn details` queries <https://ipinfo.im/json>, because
+   <https://ipinfo.io/> is blocked on the UCSF network.
+
 
 ## Version 6.3.0 (2025-11-13)
 
