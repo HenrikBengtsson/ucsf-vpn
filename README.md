@@ -3,13 +3,6 @@
 
 For recent updates, see [NEWS].
 
-_WARNING: `ucsf-vpn` no longer works, because UCSF migrated to use the
-GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which
-`ucsf-vpn` used, was decommissioned on 2025-04-16. The plan is to
-re-implement `ucsf-vpn` for GlobalProtect VPN, which is major
-work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for
-updates._
-
 
 # A UCSF VPN Client for Linux
 
@@ -23,16 +16,14 @@ The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnect
 To connect to the UCSF VPN, call:
 
 ```sh
-$ ucsf-vpn start --user=alice --token=prompt
+$ ucsf-vpn start --user=alice
 WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
-Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-06-25T09:05:20-07:00; PID=14549)
-OK: IP routing tunnels: [n=1] tun0
-OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
-OK: Flavor: default
-OK: Connected to the VPN
+GlobalProtect status: 'gpclient' process running (started 00h00m05s ago on 2025-11-13T13:37:58-08:00; PID=1929509)
+IP routing tunnels: yes (n=1 tun0)
+Public IP information (UCSF IT): public_ip=10.51.19.45, network='UCSF Network - Private Space'
+Connected to the VPN
 ```
 
 If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy].
@@ -43,7 +34,6 @@ Alternatively to command-line options, the username and password can also be spe
 $ ucsf-vpn start
 NOTE: Open the Duo Mobile app on your smartphone or tablet to confirm ...
 ```
-after approving the push notification on your Duo Mobile app (the default is `--token=push`).
 
 
 ## Disconnect from the VPN
@@ -52,7 +42,7 @@ To disconnect from the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn stop
-OK: OpenConnect status: No 'openconnect' process running
+OK: GlobalProtect status: No 'gpclient' process running
 OK: IP routing tunnels: none
 OK: Public IP information (UCSF IT): public_ip=123.145.254.42, network='not UCSF'
 OK: Not connected to the VPN
@@ -65,10 +55,9 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-06-25T16:20:00-07:00; PID=17419)
-IP routing tunnels: [n=1] tun0
-OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
-Flavor: default
+GlobalProtect status: 'gpclient' process running (started 00h31m54s ago on 2025-11-13T13:37:58-08:00; PID=1929509)
+IP routing tunnels: yes (n=1 tun0)
+Public IP information (UCSF IT): public_ip=10.51.19.45, network='UCSF Network - Private Space'
 Connected to the VPN
 ```
 
@@ -122,25 +111,12 @@ Commands:
  log              Display log file
 
 Options:
- --token=<token>  One-time two-factor authentication (2FA) token or method:
-                   - 'prompt' (user is prompted to enter the token),
-                   - 'push' ("approve and confirm" in Duo app; default),
-                   - 'phone' (receive phone call and "press any key"),
-                   - 'sms' (receive code via text message),
-                   -  6 or 7 digit token (from Duo app), or
-                   -  44-letter YubiKey token ("press YubiKey")
  --user=<user>    UCSF Active Directory ID (username)
  --pwd=<pwd>      UCSF Active Directory ID password
- --presudo=<lgl>  Established sudo upfront (true; default) or not (false)
 
- --server=<host>  VPN server (default is 'remote.ucsf.edu')
- --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
- --url=<url>      VPN URL (default is https://{{server}}/pulse)
- --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
                   e.g. 'pid,iproute,ucsfit' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
- --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 
 Flags:
  --verbose        More verbose output
@@ -148,34 +124,30 @@ Flags:
  --version        Display version
  --full           Display more information
  --force          Force command
- --args           Pass any remaining options to 'openconnect'
+ --args           Pass any remaining options to 'gpclient'
 
 Examples:
  ucsf-vpn --version --full
- ucsf-vpn start --user=alice --token=push
- ucsf-vpn stop
- UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
+ ucsf-vpn start --user=alice
+ ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
- ucsf-vpn routings --full
+ ucsf-vpn stop
 
 
 Environment variables:
- UCSF_VPN_PROTOCOL     Default value for --protocol
- UCSF_VPN_SERVER       Default value for --server
- UCSF_VPN_TOKEN        Default value for --token
- UCSF_VPN_THEME        Default value for --theme
  UCSF_VPN_VALIDATE     Default value for --validate
  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
- UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
+ UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 
 User credentials:
 If user credentials (--user and --pwd) are neither specified nor given
 in ~/.netrc, then you will be prompted to enter them. To specify them
 in ~/.netrc file, use the following format:
 
-  machine remote.ucsf.edu
-      login alice
+  machine gp-ucsf.ucsf.edu
+      login alice.bobson@ucsf.edu
       password secrets
 
 For security, the ~/.netrc file should be readable only by
@@ -183,35 +155,25 @@ the user / owner of the file. If not, then 'ucsf-vpn start' will
 set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 
 Requirements:
-* OpenConnect (>= 7.08) (installed: 9.12-1build5)
+* GlobalProtect gpclient (installed: 2.4.5)
+* xdotool (installed: 3.20160805.1)
 * sudo
 
-VPN Protocol:
-Different versions of OpenConnect support different VPN protocols.
-Using '--protocol=nc' (default) has been confirmed to work when using
-OpenConnect 7.08, and '--protocol=pulse' for OpenConnect 8.10.
-The 'nc' protocol specifies the old "Juniper Network Connect" protocol,
-and 'pulse' the newer "Pulse Secure" protocol.  For older version of
-OpenConnect that recognizes neither, specify '--protocol=juniper',
-which will results in using 'openconnect' legacy option '--juniper'.
-
 Troubleshooting:
-* Verify your username and password at https://remote.ucsf.edu/.
-  This should be your UCSF Active Directory ID (username); neither
-  MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
+* Verify your UCSF credentials at https://remote.ucsf.edu/.
+  Use your UCSF email address for 'Username'.
 
 Useful resources:
 * UCSF VPN - Remote connection:
   - https://it.ucsf.edu/service/vpn-remote-connection
 * UCSF Web-based VPN Interface:
-  - https://remote-vpn01.ucsf.edu/ (preferred)
   - https://remote.ucsf.edu/
 * UCSF Two-Factory Authentication (2FA):
-  - https://it.ucsf.edu/services/duo-two-factor-authentication
+  - https://it.ucsf.edu/service/multi-factor-authentication-duo
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 6.3.0
+Version: 6.9.9-9000
 Copyright: Henrik Bengtsson (2016-2025)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -223,10 +185,11 @@ Source: https://github.com/HenrikBengtsson/ucsf-vpn
 
 The `uscf-vpn` tool requires:
 
-1. OpenConnect (>= 7.08)
-2. Curl
-3. Bash
-4. Admin rights (sudo)
+1. [gpclient] - GlobalProtect VPN client for Linux
+1. [xdotools] - command-line X11 Automation Tool
+2. curl
+3. bash
+4. admin rights (sudo)
 
 
 ## Privacy
@@ -253,10 +216,12 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 58480 Nov 13 11:07 bin/ucsf-vpn
-Version built: 6.3.0
+-r-xr-xr-x 1 alice alice 43425 Nov 13 13:50 bin/ucsf-vpn
+Version built: 6.9.9-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 
 [NEWS]: NEWS.md
-[UCSF VPN web proxy]: https://remote-vpn01.ucsf.edu/
+[UCSF VPN web proxy]: https://remote.ucsf.edu/
+[gpclient]: https://github.com/yuezk/GlobalProtect-openconnect
+[xdotools]: https://github.com/jordansissel/xdotool

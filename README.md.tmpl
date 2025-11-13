@@ -3,13 +3,6 @@
 
 For recent updates, see [NEWS].
 
-_WARNING: `ucsf-vpn` no longer works, because UCSF migrated to use the
-GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which
-`ucsf-vpn` used, was decommissioned on 2025-04-16. The plan is to
-re-implement `ucsf-vpn` for GlobalProtect VPN, which is major
-work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for
-updates._
-
 
 # A UCSF VPN Client for Linux
 
@@ -23,16 +16,14 @@ The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnect
 To connect to the UCSF VPN, call:
 
 ```sh
-$ ucsf-vpn start --user=alice --token=prompt
+$ ucsf-vpn start --user=alice
 WARNING: This action ('ucsf-vpn start') requires administrative ("sudo") rights.
 Enter the password for your account ('alice84') on your local computer ('alice-laptop'):
 Enter your UCSF Active Directory password: <password>
-Enter 'push' (default), 'phone', 'sms', a 6 or 7 digit Duo token, or press your YubiKey: <six-digit token>
-OK: OpenConnect status: 'openconnect' process running (started 00h00m01s ago on 2024-06-25T09:05:20-07:00; PID=14549)
-OK: IP routing tunnels: [n=1] tun0
-OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
-OK: Flavor: default
-OK: Connected to the VPN
+GlobalProtect status: 'gpclient' process running (started 00h00m05s ago on 2025-11-13T13:37:58-08:00; PID=1929509)
+IP routing tunnels: yes (n=1 tun0)
+Public IP information (UCSF IT): public_ip=10.51.19.45, network='UCSF Network - Private Space'
+Connected to the VPN
 ```
 
 If you have problems connecting to the VPN using `ucsf-vpn`, make sure you use the correct username and password by logging in via the [UCSF VPN web proxy].
@@ -43,7 +34,6 @@ Alternatively to command-line options, the username and password can also be spe
 $ ucsf-vpn start
 NOTE: Open the Duo Mobile app on your smartphone or tablet to confirm ...
 ```
-after approving the push notification on your Duo Mobile app (the default is `--token=push`).
 
 
 ## Disconnect from the VPN
@@ -52,7 +42,7 @@ To disconnect from the UCSF VPN, call:
 
 ```sh
 $ ucsf-vpn stop
-OK: OpenConnect status: No 'openconnect' process running
+OK: GlobalProtect status: No 'gpclient' process running
 OK: IP routing tunnels: none
 OK: Public IP information (UCSF IT): public_ip=123.145.254.42, network='not UCSF'
 OK: Not connected to the VPN
@@ -65,10 +55,9 @@ To check whether you are connected to the UCSF VPN or not, call:
 
 ```sh
 $ ucsf-vpn status
-OpenConnect status: 'openconnect' process running (started 08h31m27s ago on 2024-06-25T16:20:00-07:00; PID=17419)
-IP routing tunnels: [n=1] tun0
-OK: Public IP information (UCSF IT): public_ip=10.49.88.54, network='UCSF Network - Private Space'
-Flavor: default
+GlobalProtect status: 'gpclient' process running (started 00h31m54s ago on 2025-11-13T13:37:58-08:00; PID=1929509)
+IP routing tunnels: yes (n=1 tun0)
+Public IP information (UCSF IT): public_ip=10.51.19.45, network='UCSF Network - Private Space'
 Connected to the VPN
 ```
 
@@ -114,10 +103,11 @@ $ chmod ugo+x ucsf-vpn
 
 The `uscf-vpn` tool requires:
 
-1. OpenConnect (>= 7.08)
-2. Curl
-3. Bash
-4. Admin rights (sudo)
+1. [gpclient] - GlobalProtect VPN client for Linux
+1. [xdotools] - command-line X11 Automation Tool
+2. curl
+3. bash
+4. admin rights (sudo)
 
 
 ## Privacy
@@ -147,4 +137,6 @@ $ make build
 ```
 
 [NEWS]: NEWS.md
-[UCSF VPN web proxy]: https://remote-vpn01.ucsf.edu/
+[UCSF VPN web proxy]: https://remote.ucsf.edu/
+[gpclient]: https://github.com/yuezk/GlobalProtect-openconnect
+[xdotools]: https://github.com/jordansissel/xdotool

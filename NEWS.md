@@ -1,6 +1,14 @@
 ucsf-vpn
 ========
 
+## Version 6.9.9-9000 (2025-11-13)
+
+### Significant changes
+
+ * `ucsf-vpn' supports the GlobalProtect VPN protocol that UCSF
+   migrated to on 2025-04-16.
+   
+
 ## Version 6.3.0 (2025-11-13)
 
 ### Significant changes

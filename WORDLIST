@@ -8,13 +8,10 @@ LTS
 MyAccess
 OpenConnect
 PID
-PULSEPATH
 Pre
 ShellCheck
 UCSF
 VPN
-Xenial
-Xerus
 YubiKey
 awk
 codespell
@@ -22,6 +19,7 @@ config
 dns
 edu
 env
+gpclient
 hostname
 https
 io

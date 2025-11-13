@@ -6,19 +6,27 @@ function version() {
 }
 
 function help() {
-    local what res
+    local what
+    local -a res
 
     what=$1
-    res=$(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5- | sed "s/{{openconnect_version}}/$(openconnect_version)/")
 
+    ## Extract help section, which are all lines starting with '###'
+    mapfile -t res < <(grep "^###" "$0" | grep -vE '^(####|### whatis: )' | cut -b 5-)
+
+    ## Inject tool versions
+    mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{gpclient_version}}/$(gpclient_version)/")
+    mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{xdotool_version}}/$(xdotool_version)/")
+    
     if [[ $what == "full" ]]; then
-        res=$(echo "$res" | sed '/^---/d')
+        mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed '/^---/d')
     else
-        res=$(echo "$res" | sed '/^---/Q')
+        mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed '/^---/Q')
     fi
 
     if [[ ${UCSF_TOOLS} == "true" ]]; then
-        res=$(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
+        mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed -E 's/([^/])ucsf-vpn/\1ucsf vpn/')
     fi
+    
     printf "%s\\n" "${res[@]}"
 }

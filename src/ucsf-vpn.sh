@@ -16,25 +16,12 @@
 ###  log              Display log file
 ###
 ### Options:
-###  --token=<token>  One-time two-factor authentication (2FA) token or method:
-###                    - 'prompt' (user is prompted to enter the token),
-###                    - 'push' ("approve and confirm" in Duo app; default),
-###                    - 'phone' (receive phone call and "press any key"),
-###                    - 'sms' (receive code via text message),
-###                    -  6 or 7 digit token (from Duo app), or
-###                    -  44-letter YubiKey token ("press YubiKey")
 ###  --user=<user>    UCSF Active Directory ID (username)
 ###  --pwd=<pwd>      UCSF Active Directory ID password
-###  --presudo=<lgl>  Established sudo upfront (true; default) or not (false)
 ###
-###  --server=<host>  VPN server (default is 'remote.ucsf.edu')
-###  --realm=<realm>  VPN realm (default is 'Dual-Factor Pulse Clients')
-###  --url=<url>      VPN URL (default is https://{{server}}/pulse)
-###  --protocol=<ptl> VPN protocol, e.g. 'nc' (default) and 'pulse'
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
 ###                   e.g. 'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
-###  --flavor=<flvr>  Use a customized flavor of the VPN (default: 'none')
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -42,35 +29,31 @@
 ###  --version        Display version
 ###  --full           Display more information
 ###  --force          Force command
-###  --args           Pass any remaining options to 'openconnect'
+###  --args           Pass any remaining options to 'gpclient'
 ###
 ### Examples:
 ###  ucsf-vpn --version --full
-###  ucsf-vpn start --user=alice --token=push
-###  ucsf-vpn stop
-###  UCSF_VPN_TOKEN=prompt ucsf-vpn start --user=alice --pwd=secrets
+###  ucsf-vpn start --user=alice
+###  ucsf-vpn start --user=alice --pwd=secrets
 ###  ucsf-vpn start
-###  ucsf-vpn routings --full
+###  ucsf-vpn stop
 ###
 ### ---
 ###
 ### Environment variables:
-###  UCSF_VPN_PROTOCOL     Default value for --protocol
-###  UCSF_VPN_SERVER       Default value for --server
-###  UCSF_VPN_TOKEN        Default value for --token
-###  UCSF_VPN_THEME        Default value for --theme
 ###  UCSF_VPN_VALIDATE     Default value for --validate
 ###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
 ###  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
-###  UCSF_VPN_EXTRAS       Additional arguments passed to OpenConnect
+###  UCSF_VPN_THEME        Default value for --theme
+###  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 ###
 ### User credentials:
 ### If user credentials (--user and --pwd) are neither specified nor given
 ### in ~/.netrc, then you will be prompted to enter them. To specify them
 ### in ~/.netrc file, use the following format:
 ###
-###   machine remote.ucsf.edu
-###       login alice
+###   machine gp-ucsf.ucsf.edu
+###       login alice.bobson@ucsf.edu
 ###       password secrets
 ###
 ### For security, the ~/.netrc file should be readable only by
@@ -78,35 +61,25 @@
 ### set its permission accordingly (by calling chmod go-rwx ~/.netrc).
 ###
 ### Requirements:
-### * OpenConnect (>= 7.08) (installed: {{openconnect_version}})
+### * GlobalProtect gpclient (installed: {{gpclient_version}})
+### * xdotool (installed: {{xdotool_version}})
 ### * sudo
 ###
-### VPN Protocol:
-### Different versions of OpenConnect support different VPN protocols.
-### Using '--protocol=nc' (default) has been confirmed to work when using
-### OpenConnect 7.08, and '--protocol=pulse' for OpenConnect 8.10.
-### The 'nc' protocol specifies the old "Juniper Network Connect" protocol,
-### and 'pulse' the newer "Pulse Secure" protocol.  For older version of
-### OpenConnect that recognizes neither, specify '--protocol=juniper',
-### which will results in using 'openconnect' legacy option '--juniper'.
-###
 ### Troubleshooting:
-### * Verify your username and password at https://remote.ucsf.edu/.
-###   This should be your UCSF Active Directory ID (username); neither
-###   MyAccess SFID (e.g. 'sf*****') nor UCSF email address will work.
+### * Verify your UCSF credentials at https://remote.ucsf.edu/.
+###   Use your UCSF email address for 'Username'.
 ###
 ### Useful resources:
 ### * UCSF VPN - Remote connection:
 ###   - https://it.ucsf.edu/service/vpn-remote-connection
 ### * UCSF Web-based VPN Interface:
-###   - https://remote-vpn01.ucsf.edu/ (preferred)
 ###   - https://remote.ucsf.edu/
 ### * UCSF Two-Factory Authentication (2FA):
-###   - https://it.ucsf.edu/services/duo-two-factor-authentication
+###   - https://it.ucsf.edu/service/multi-factor-authentication-duo
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.3.0
+### Version: 6.9.9-9000
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -114,7 +87,6 @@ call="$0 $*"
 
 this="${BASH_SOURCE%/}"; [[ -L "${this}" ]] && this=$(readlink "${this}")
 incl="$(dirname "${this}")/incl"
-vpnc="$(dirname "${this}")/vpnc"
 
 # shellcheck source=incl/output.sh
 source "${incl}/output.sh"
@@ -131,8 +103,11 @@ source "${incl}/connections.sh"
 # shellcheck source=incl/auth.sh
 source "${incl}/auth.sh"
 
-# shellcheck source=incl/openconnect.sh
-source "${incl}/openconnect.sh"
+# shellcheck source=incl/gpclient.sh
+source "${incl}/gpclient.sh"
+
+# shellcheck source=incl/xdotool.sh
+source "${incl}/xdotool.sh"
 
 
 function status() {
@@ -162,10 +137,10 @@ function status() {
     for method in "${methods[@]}"; do
         mdebug "Checking with ${method} ..."
         if [[ $method == pid ]]; then
-            pid=$(openconnect_pid)
+            pid=$(gpclient_pid)
             if [[ $pid == -1 ]]; then
                 connected+=(false)
-                msg="No 'openconnect' process running"
+                msg="No 'gpclient' process running"
             else
                 connected+=(true)
                 timestamp=$(ps -p "${pid}" -o lstart=)
@@ -180,9 +155,9 @@ function status() {
 		    m=$((m - 60 * h))
 		    age=$(printf "%02dh%02dm%02ds" "${h}" "${m}"  "${s}")
                 fi
-                msg="'openconnect' process running (started ${age} ago on ${timestamp}; PID=${pid})"
+                msg="'gpclient' process running (started ${age} ago on ${timestamp}; PID=${pid})"
             fi
-            msgs+=("OpenConnect status: $msg")
+            msgs+=("GlobalProtect status: $msg")
         elif [[ $method == iproute ]]; then
             mapfile -t info < <(ip route show | grep -E "\btun[[:digit:]]?\b" | cut -d ' ' -f 3 | sort -u)
             if [[ ${#info[@]} -gt 0 ]]; then
@@ -241,11 +216,6 @@ function status() {
             "$mcmd" "${msg}"
         done
         if ${connected[0]}; then
-            msg="$(openconnect_flavor)"
-            if [[ ${msg} != "none" ]]; then
-                msg="${flavor} (${msg})"
-            fi
-            "$mcmd" "Flavor: ${msg}"
             msg="Connected to the VPN"
         else
             msg="Not connected to the VPN"
@@ -333,47 +303,7 @@ function source_envs() {
 }
 
 
-function flavor_home() {
-    local path hook pathname
-    local -i count
-
-    ## No flavor specified
-    if [[ ${flavor} == "none" ]]; then
-        echo
-        return
-    fi
-
-    path="$(xdg_config_path)/flavors/${flavor}"
-    if [[ ! -d "${path}" ]]; then
-        merror "Folder not found: ${path}"
-    fi
-
-    count=0
-    for hook in pre-init connect post-connect disconnect post-disconnect attempt-reconnect post-attempt-reconnect reconnect; do
-        pathname=${path}/${hook}.sh
-        if [[ -f "${pathname}" ]]; then
-            if ! bash -n "${pathname}"; then
-                merror "File syntax error: ${pathname}"
-            fi
-            count+=1
-        fi
-    done
-
-    if [[ "${count}" -eq 0 ]]; then
-        merror "Flavor folder contains no known hook script files: ${path}"
-    fi
-
-    echo "${path}"    
-}    
-
-
-## Note, this function needs to be in src/ucsf-vpn.sh in order for 'make build' to work
-function ucsf-vpn-flavors_code() {
-    cat "${vpnc}/ucsf-vpn-flavors.sh"
-}
-
-
-function openconnect_logfile() {
+function gpclient_logfile() {
     local path file
     
     path="$(xdg_state_path)/logs"
@@ -381,7 +311,7 @@ function openconnect_logfile() {
         mkdir -p "$path"
     fi
 
-    file="${path}"/openconnect.log
+    file="${path}"/gpclient.log
 
     ## Create log file
     touch "${file}"
@@ -413,21 +343,11 @@ log() {
 # -------------------------------------------------------------------------
 # Deprecated and defunct
 # -------------------------------------------------------------------------
-pulse_is_defunct() {
-    merror "Support for the Pulse Secure GUI, and command-line options associated with it, are defunct as of ucsf-vpn 6.0.0 (2024-05-20) in favor of OpenConnect"
-}
-
-ucsf_vpn_non_working() {
-    if ${UCSF_VPN_DEFUNCT:-true}; then
-           merror "'ucsf-vpn' no longer works, because UCSF migrated to use the GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which 'ucsf-vpn' used, was decommissioned on 2025-04-16. The plan is to re-implement 'ucsf-vpn' for GlobalProtect VPN, which is major work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for updates"
-    fi
-}    
 
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
-pid_file="$(xdg_state_path)/openconnect.pid"
-flavor_file="$(xdg_state_path)/openconnect.flavor"
+pid_file="$(xdg_state_path)/gpclient.pid"
 ip_route_novpn_file="$(xdg_state_path)/ip-route.novpn.out"
 ip_route_vpn_file="$(xdg_state_path)/ip-route.vpn.out"
 resolv_novpn_file="$(xdg_state_path)/resolv.novpn.out"
@@ -444,8 +364,7 @@ fi
 action=
 
 ## Options
-server=${UCSF_VPN_SERVER:-remote.ucsf.edu}
-url=
+server=gp-ucsf.ucsf.edu
 theme=${UCSF_VPN_THEME:-cli}
 force=false
 full=false
@@ -453,16 +372,12 @@ debug=false
 verbose=false
 validate=
 dryrun=false
-realm=
 extras=("${UCSF_VPN_EXTRAS[@]}")
-protocol=${UCSF_VPN_PROTOCOL:-nc}
-presudo=${UCSF_VPN_PRESUDO:-true}
-flavor=${UCSF_VPN_FLAVOR:-none}
+presudo=true
 
 ## User credentials
 user=
 pwd=
-token=${UCSF_VPN_TOKEN:-push}
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
@@ -487,14 +402,8 @@ while [[ $# -gt 0 ]]; do
         action=$1
     elif [[ "$1" == "routing" ]]; then
         action=$1
-    elif [[ "$1" == "install-vpnc" ]]; then
-        action=$1
     elif [[ "$1" == "log" ]]; then
         action=$1
-    elif [[ "$1" == "troubleshoot" ]] || 
-         [[ "$1" == "open-gui"     ]] ||
-         [[ "$1" == "close-gui"    ]]; then
-        pulse_is_defunct
 
     ## Options (--flags):
     elif [[ "$1" =~ ^--[^=]*$ ]]; then
@@ -521,11 +430,8 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$flag" == "notification"    ]] ||
-             [[ "$flag" == "no-notification" ]] ||
-             [[ "$flag" == "gui"             ]] ||
-             [[ "$flag" == "no-gui"          ]]; then
-            pulse_is_defunct
+        elif [[ "$key" == "server" ]]; then
+            server=$value
         else
             merror "Unknown option: '$1'"
         fi
@@ -538,39 +444,14 @@ while [[ $# -gt 0 ]]; do
         mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
         if [[ -z $value ]]; then
             merror "Option '--$key' must not be empty"
-        fi
-        if [[ "$key" == "url" ]]; then
-            url=$value
-        elif [[ "$key" == "server" ]]; then
-            server=$value
-        elif [[ "$key" == "realm" ]]; then
-            realm=$value
         elif [[ "$key" == "user" ]]; then
             user=$value
-        elif [[ "$key" == "protocol" ]]; then
-            protocol=$value
         elif [[ "$key" == "pwd" ]]; then
             pwd=$value
-        elif [[ "$key" == "token" ]]; then
-            token=$value
         elif [[ "$key" == "theme" ]]; then
             theme=$value
         elif [[ "$key" == "validate" ]]; then
             validate=$value
-        elif [[ "$key" == "presudo" ]]; then
-            if [[ $value == "true" ]]; then
-                presudo=true
-            elif [[ $value == "false" ]]; then
-                presudo=false
-            else
-                merror "Unknown value --presudo=$value"
-            fi
-        elif [[ "$key" == "flavor" ]]; then
-            flavor=$value
-        elif [[ "$key" == "method" ]]; then
-            mdefunct "Command-line option '--$key=<value>' is defunct"
-        elif [[ "$key" == "speed" ]]; then
-            pulse_is_defunct
         else
             merror "Unknown option: '$1'"
         fi
@@ -585,51 +466,16 @@ done
 ## --help should always be available prior to any validation errors
 if [[ -z $action ]]; then
     help
-    ucsf_vpn_non_working
     _exit 0
 elif [[ $action == "help" ]]; then
     help full
-    ucsf_vpn_non_working
     _exit 0
 fi
-
-## Use default URL?
-[[ -z "$url" ]] && url=https://${server}/pulse
 
 
 # -------------------------------------------------------------------------
 # Validate options
 # -------------------------------------------------------------------------
-## Validate 'realm'
-if [[ -z $realm ]]; then
-    realm="Dual-Factor Pulse Clients"
-fi
-if [[ $realm == "Single-Factor Pulse Clients" ]]; then
-    true
-elif [[ $realm == "Dual-Factor Pulse Clients" ]]; then
-    true
-elif [[ $realm == "single" ]]; then
-    realm="Single-Factor Pulse Clients"
-elif [[ $realm == "dual" ]]; then
-    realm="Dual-Factor Pulse Clients"
-else
-    merror "Unknown value on option --realm: '$realm'"
-fi
-
-## Validate 'token':
-if [[ ${token} == "true" ]]; then  ## Backward compatibility
-    token="prompt"
-fi
-if [[ $realm != "Dual-Factor Pulse Clients" ]]; then
-    token=false
-elif [[ ${token} == "prompt" || ${token} == "true" ]]; then
-    mdebug "Will prompt user for 2FA token"
-elif [[ ${token} == "false" ]]; then
-    mdebug "Will not use 2FA authentication"
-elif [[ $(type_of_token "$token") == "unknown" ]]; then
-    merror "The token (--token) must be 6 or 7 digits or 44 letters (YubiKey)"
-fi
-
 ## Validate 'theme'
 if [[ ! $theme =~ ^(cli|none)$ ]]; then
     merror "Unknown --theme value: '$theme'"
@@ -646,31 +492,22 @@ fi
 # Initiate
 # -------------------------------------------------------------------------
 ## Regular expression for locating the proper netrc entry
-if [[ "$server" == "remote.ucsf.edu" ]]; then
+if [[ "$server" == "gp-ucsf.ucsf.edu" ]]; then
     netrc_machines=${server}
 else
-    netrc_machines=("${server}" remote.ucsf.edu)
+    netrc_machines=("${server}" gp-ucsf.ucsf.edu)
 fi
+
+
 
 mdebug "call: $call"
 mdebug "action: $action"
 mdebug "VPN server: $server"
-mdebug "Realm: '$realm'"
-mdebug "protocol: $protocol"
 mdebug "user: $user"
 if [[ -z "${pwd}" ]]; then
     mdebug "pwd=<missing>"
 else
     mdebug "pwd=<hidden>"
-fi
-if [[ -z "${token}" ]]; then
-    mdebug "token=<missing>"
-elif [[ $token == "prompt" ]]; then
-    mdebug "token=<prompt>"
-elif [[ $token == "push" || $token == "sms" || $token =~ ^phone[1-9]*$ ]]; then
-    mdebug "token=$token"
-else
-    mdebug "token=<hidden>"
 fi
 mdebug "verbose: $verbose"
 mdebug "force: $force"
@@ -680,7 +517,7 @@ mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
 mdebug "method: $method"
 mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
-mdebug "openconnect_pid: $(openconnect_pid)"
+mdebug "gpclient_pid: $(gpclient_pid)"
 mdebug "pii_file: $pii_file"
 
 
@@ -690,15 +527,13 @@ mdebug "pii_file: $pii_file"
 if [[ $action == "version" ]]; then
     if $full; then
         echo "ucsf-vpn $(version)"
-        echo "OpenConnect $(openconnect_version)"
+        echo "gpclient $(gpclient_version)"
+        echo "xdotool $(xdotool_version)"
     else
         version
     fi
-    ucsf_vpn_non_working
     _exit 0
 fi
-
-ucsf_vpn_non_working
 
 
 if [[ $action == "status" ]]; then
@@ -709,31 +544,28 @@ elif [[ $action == "details" ]]; then
 elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
-elif [[ $action == "install-vpnc" ]]; then
-    install_vpnc "install"
-    _exit $?
 elif [[ $action == "start" ]]; then
-    openconnect_start
+    gpclient_start
     res=$?
     status "connected"
 elif [[ $action == "stop" ]]; then
-    openconnect_stop
+    gpclient_stop
     status "disconnected"
 elif [[ $action == "reconnect" ]]; then
-    openconnect_reconnect
+    gpclient_reconnect
 elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
-        openconnect_stop
+        gpclient_stop
     fi
-    openconnect_start
+    gpclient_start
     res=$?
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
-      openconnect_start
+      gpclient_start
       status "connected"
     else
-      openconnect_stop
+      gpclient_stop
       status "disconnected"
     fi
 elif [[ $action == "log" ]]; then
