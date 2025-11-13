@@ -82,7 +82,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9003
+### Version: 6.9.9-9004
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -707,35 +707,49 @@ function gpclient_start() {
     mdebug "gpclient PID: ${gpclient_pid}"
     
     ## Enter credential in 'GlobalProtect Login' pop-up window
+    mdebug "Wait for 'GlobalProtect Login' pop-up window to appear"
     while ! xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
         sleep 0.5
     done
     
     sleep 0.5
     WINDOW_ID=$(xdotool search --name "GlobalProtect Login" | head -1)
-    mdebug "WINDOW_ID=${WINDOW_ID} (the 'GlobalProtect Login' window)"
+    mdebug "'GlobalProtect Login' window WINDOW_ID=${WINDOW_ID}"
     if [[ -z ${WINDOW_ID} ]]; then
         merror "Failed to locate the 'GlobalProtect Login' pop-up window"
     fi
     
+    mdebug "'GlobalProtect Login' window: focus window"
     xdotool windowfocus "${WINDOW_ID}"
     sleep 0.5
     
-    echo "* Entering UCSF VPN credentials"
+    mdebug "'GlobalProtect Login' window: unfocus form"
     xdotool mousemove --window "${WINDOW_ID}" 50 50 click 1
     sleep 0.5
     
+    mdebug "'GlobalProtect Login' window: move to 'Login name' field"
     xdotool key --window "${WINDOW_ID}" Tab
     xdotool key --window "${WINDOW_ID}" ctrl+a
+    mdebug "'GlobalProtect Login' window: type 'Login name' (${user})"
     xdotool type --window "${WINDOW_ID}" "${user}"
-    echo "Login name: ${user}"
+    
+    mdebug "'GlobalProtect Login' window: move to 'Password' field"
     xdotool key --window "${WINDOW_ID}" Tab
     xdotool key --window "${WINDOW_ID}" ctrl+a
+    mdebug "'GlobalProtect Login' window: type 'Password' (${pwd//?/*})"
     xdotool type --window "${WINDOW_ID}" "${pwd}"
-    echo "Password: ${pwd//?/*}"
+
+    mdebug "'GlobalProtect Login' window: Press ENTER"
     xdotool key --window "${WINDOW_ID}" Tab
     xdotool key --window "${WINDOW_ID}" Return
-    
+
+    mdebug "Wait for 'GlobalProtect Login' pop-up window to close"
+    while xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+        sleep 0.5
+    done
+
+    mdebug "'GlobalProtect Login' closed"
+
     ## Update IP-info file
     pii_file=$(make_pii_file)
 
