@@ -6,7 +6,7 @@ For recent updates, see [NEWS].
 
 # A UCSF VPN Client for Linux
 
-The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
+The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/service/vpn-remote-connection) with additional instructions obtained through private communication.
 
 
 ## Connect to the VPN
