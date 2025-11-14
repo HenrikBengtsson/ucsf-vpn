@@ -5,10 +5,12 @@ For recent updates, see [NEWS].
 
 _WARNING: `ucsf-vpn` no longer works, because UCSF migrated to use the
 GlobalProtect VPN protocol. The Pulse/Ivanti VPN protocol, which
-`ucsf-vpn` used, was decommissioned on 2025-04-16. The plan is to
-re-implement `ucsf-vpn` for GlobalProtect VPN, which is major
-work. Please see <https://github.com/HenrikBengtsson/ucsf-vpn/> for
-updates._
+`ucsf-vpn` used, was decommissioned on 2025-04-16.
+
+The plan is to re-implement `ucsf-vpn` for GlobalProtect VPN, which is
+major work. Please see
+<https://github.com/HenrikBengtsson/ucsf-vpn/issues/69/> for updates._
+
 
 
 # A UCSF VPN Client for Linux
