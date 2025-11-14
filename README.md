@@ -8,8 +8,6 @@ For recent updates, see [NEWS].
 
 The `ucsf-vpn` CLI command is a Linux-only tool for connecting to and disconnecting from the UCSF VPN server.  It is based on the official UCSF instructions provided by the [UCSF IT](https://it.ucsf.edu/services/vpn) with additional instructions obtained through private communication.
 
-![](screencast.gif)
-
 
 ## Connect to the VPN
 
@@ -222,7 +220,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 44349 Nov 13 14:42 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 44349 Nov 14 11:55 bin/ucsf-vpn
 Version built: 6.9.9-9006
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
