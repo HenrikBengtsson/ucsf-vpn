@@ -86,7 +86,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9008
+### Version: 6.9.9-9009
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -580,9 +580,9 @@ function prompt_pwd() {
 # gplient: The GlobalProtect VPN client
 # -------------------------------------------------------------------------
 function gpclient_version() {
-    local res
+    local -a res
 
-    res=$(gpclient --version 2> /dev/null)
+    mapfile -t res < <(gpclient --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
@@ -995,9 +995,9 @@ function curl_version() {
 # xdotool: command-line X11 automation tool
 # -------------------------------------------------------------------------
 function xdotool_version() {
-    local res
+    local -a res
 
-    res=$(xdotool version 2> /dev/null)
+    mapfile -t res < <(xdotool version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"

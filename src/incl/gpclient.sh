@@ -2,9 +2,9 @@
 # gplient: The GlobalProtect VPN client
 # -------------------------------------------------------------------------
 function gpclient_version() {
-    local res
+    local -a res
 
-    res=$(gpclient --version 2> /dev/null)
+    mapfile -t res < <(gpclient --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
