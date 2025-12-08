@@ -25,11 +25,11 @@ function merror() {
     local info version
     {
         info="ucsf-vpn $(version)"
-        version=$(openconnect_version 2> /dev/null)
+        version=$(gpclient_version 2> /dev/null)
         if [[ -n $version ]]; then
-            info="$info, OpenConnect $version"
+            info="$info, gpclient $version"
         else
-            info="$info, OpenConnect version unknown"
+            info="$info, gpclient version unknown"
         fi
         [[ -n $info ]] && info=" [$info]"
         _tput setaf 1 ## red
@@ -58,7 +58,7 @@ function minfo() {
     } 1>&2
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 function mok() {
     {
         _tput setaf 2 ## green
