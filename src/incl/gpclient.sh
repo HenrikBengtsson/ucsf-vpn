@@ -398,3 +398,16 @@ function gpclient_reconnect() {
 
     minfo "Reconnected to VPN server"
 }
+
+
+function curl_version() {
+    local -a res
+
+    mapfile -t res < <(curl --version 2> /dev/null)
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+        echo "<PLEASE INSTALL>"
+    else
+        printf "%s\\n" "${res[@]}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
+    fi
+}

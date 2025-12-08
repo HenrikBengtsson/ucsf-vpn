@@ -66,6 +66,7 @@
 ### Requirements:
 ### * GlobalProtect gpclient (installed: {{gpclient_version}})
 ### * xdotool (installed: {{xdotool_version}})
+### * curl (installed: {{curl_version}})
 ### * sudo
 ###
 ### Troubleshooting:
@@ -82,7 +83,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9007
+### Version: 6.9.9-9008
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -532,6 +533,7 @@ if [[ $action == "version" ]]; then
         echo "ucsf-vpn $(version)"
         echo "gpclient $(gpclient_version)"
         echo "xdotool $(xdotool_version)"
+        echo "curl $(curl_version)"
     else
         version
     fi
