@@ -83,7 +83,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 6.9.9-9009
+### Version: 6.9.9-9010
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -550,8 +550,7 @@ elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
 elif [[ $action == "start" ]]; then
-    gpclient_start
-    res=$?
+    gpclient_start || error "Failed to start VPN client"
     status "connected"
 elif [[ $action == "stop" ]]; then
     gpclient_stop
@@ -562,8 +561,7 @@ elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
         gpclient_stop
     fi
-    gpclient_start
-    res=$?
+    gpclient_start || error "Failed to start VPN client"
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then

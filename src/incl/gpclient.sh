@@ -1,15 +1,27 @@
 # -------------------------------------------------------------------------
 # gplient: The GlobalProtect VPN client
 # -------------------------------------------------------------------------
-function gpclient_version() {
-    local -a res
+function curl_version() {
+    local -a out
 
-    mapfile -t res < <(gpclient --version 2> /dev/null)
+    mapfile -t out < <(curl --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${res[@]}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
+        printf "%s\\n" "${out[@]}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
+    fi
+}
+
+function gpclient_version() {
+    local -a out
+
+    mapfile -t out < <(gpclient --version 2> /dev/null)
+    # shellcheck disable=SC2181
+    if [[ $? -ne 0 ]]; then
+        echo "<PLEASE INSTALL>"
+    else
+        printf "%s\\n" "${out[@]}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
     fi
 }
 
@@ -109,7 +121,7 @@ function gpclient_start() {
     mdebug "opts: [n=${#opts[@]}] ${opts[*]}"
     mdebug "call: sudo UCSF_VPN_VERSION=$(version) UCSF_VPN_LOGFILE=$(logfile) gpclient ${opts[*]}"
 
-    mnote "Open the Duo Mobile app on your smartphone or tablet to confirm ..."
+    mnote "Open the Duo Mobile app on your smartphone to confirm, unless recently authenticated ..."
 
     minfo "Connecting to VPN server '${server}'"
 
@@ -397,17 +409,4 @@ function gpclient_reconnect() {
     log "gpclient_reconnect() ... done"
 
     minfo "Reconnected to VPN server"
-}
-
-
-function curl_version() {
-    local -a res
-
-    mapfile -t res < <(curl --version 2> /dev/null)
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
-        echo "<PLEASE INSTALL>"
-    else
-        printf "%s\\n" "${res[@]}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
-    fi
 }
