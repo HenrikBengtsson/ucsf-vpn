@@ -86,7 +86,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.0
+### Version: 7.0.0-9001
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -208,6 +208,7 @@ function help() {
     ## Inject tool versions
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{gpclient_version}}/$(gpclient_version)/")
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{xdotool_version}}/$(xdotool_version)/")
+    mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{curl_version}}/$(curl_version)/")
     
     if [[ $what == "full" ]]; then
         mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed '/^---/d')
