@@ -284,7 +284,7 @@ function gpclient_stop() {
     if [[ $pid == -1 ]]; then
         mwarn "Could not detect a VPN ('gpclient') process. Skipping."
         return
-#        merror "Failed to located a VPN ('gpclient') process. Are you really connected by VPN? If so, you could manually kill *all* gpclient processes by calling 'sudo pkill -INT gpclient'. CAREFUL!"
+#        merror "Failed to located a VPN ('gpclient') process. Are you really connected by VPN? If so, you could manually kill *all* gpclient processes by calling 'sudo pkill -TERM gpclient'. CAREFUL!"
     fi
 
     minfo "Disconnecting from VPN server"
@@ -297,16 +297,13 @@ function gpclient_stop() {
     ## Record hostname resolve file while still connected to the VPN
     cat /etc/resolv.conf > "${resolv_vpn_file}"
     
-    ## Signal SIGINT to terminate gpclient. If the first one fails,
+    ## Signal SIGTERM to terminate gpclient. If the first one fails,
     ## try another one
     # shellcheck disable=SC2034
     for kk in {1..2}; do
-        ## From 'man gpclient': SIGINT performs a clean shutdown by logging the
-        ## session off, disconnecting from the gateway, and running the vpnc-script
-        ## to restore the network configuration.
-        mdebug "Killing gpclient process: sudo kill -s INT \"$pid\" 2> /dev/null"
-        log "- sudo kill -s INT $pid"
-        sudo kill -s INT $pid 2> /dev/null
+        mdebug "Terminating gpclient process: sudo kill -s TERM \"$pid\" 2> /dev/null"
+        log "- sudo kill -s TERM $pid"
+        sudo kill -s TERM $pid 2> /dev/null
     
          ## Wait for process to terminate
         kill_timeout=10
@@ -323,7 +320,7 @@ function gpclient_stop() {
 
     ## Assert that the process was terminated
     if ps -p $pid > /dev/null; then
-        merror "Failed to terminate VPN process ('gpclient' with PID $pid). You could manually kill *all* gpclient processes by calling 'sudo pkill -INT gpclient'. CAREFUL!"
+        merror "Failed to terminate VPN process ('gpclient' with PID $pid). You could manually kill *all* gpclient processes by calling 'sudo pkill -TERM gpclient'. CAREFUL!"
     fi
 
     if [[ -f "$pid_file" ]]; then
