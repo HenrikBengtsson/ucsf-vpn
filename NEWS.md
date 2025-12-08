@@ -3,7 +3,9 @@ ucsf-vpn
 
 ## Version (development version)
 
- * ...
+### Bug Fixes
+
+ * `ucsf-vpn --version --full` failed to report on the `curl` version.
 
 
 ## Version 7.0.0 (2025-12-08)

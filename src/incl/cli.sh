@@ -17,6 +17,7 @@ function help() {
     ## Inject tool versions
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{gpclient_version}}/$(gpclient_version)/")
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{xdotool_version}}/$(xdotool_version)/")
+    mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{curl_version}}/$(curl_version)/")
     
     if [[ $what == "full" ]]; then
         mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed '/^---/d')
