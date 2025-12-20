@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version (development version)
+## Version 7.0.1 (2025-12-20)
 
 ### Bug Fixes
 
