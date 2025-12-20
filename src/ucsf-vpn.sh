@@ -83,7 +83,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.0-9003
+### Version: 7.0.1
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
