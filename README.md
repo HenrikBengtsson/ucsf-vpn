@@ -159,7 +159,7 @@ calling chmod go-rwx ~/.netrc). If the credentials are not still not
 found, you will be prompted to enter them.
 
 Requirements:
-* GlobalProtect gpclient (installed: 2.4.5)
+* GlobalProtect gpclient (installed: <PLEASE INSTALL>)
 * xdotool (installed: 3.20160805.1)
 * curl (installed: 8.5.0)
 * sudo
@@ -178,7 +178,7 @@ Useful resources:
 * UCSF Managing Your Passwords:
   - https://it.ucsf.edu/services/managing-your-passwords
 
-Version: 7.0.0-9001
+Version: 7.0.0-9002
 Copyright: Henrik Bengtsson (2016-2025)
 License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -221,8 +221,8 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 44727 Dec  8 11:10 bin/ucsf-vpn
-Version built: 7.0.0-9001
+-r-xr-xr-x 1 alice alice 44593 Dec 20 12:27 bin/ucsf-vpn
+Version built: 7.0.0
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
 

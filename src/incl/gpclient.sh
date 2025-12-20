@@ -2,28 +2,29 @@
 # gplient: The GlobalProtect VPN client
 # -------------------------------------------------------------------------
 function curl_version() {
-    local -a out
+    local out
 
-    mapfile -t out < <(curl --version 2> /dev/null)
+    out=$(curl --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${out[@]}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
+        printf "%s\\n" "${out}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
     fi
 }
 
 function gpclient_version() {
-    local -a out
+    local out
 
-    mapfile -t out < <(gpclient --version 2> /dev/null)
+    out=$(gpclient --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${out[@]}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
+        printf "%s\\n" "${out}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
     fi
 }
+
 
 function gpclient_pid() {
     local -i pid
