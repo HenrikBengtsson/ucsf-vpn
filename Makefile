@@ -4,9 +4,13 @@ all: build README.md shellcheck spelling
 
 .PHONY: help
 
-build: src/ucsf-vpn.sh
+bin/ucsf-vpn: src/ucsf-vpn.sh src/*
+	chmod u+w "$@"
 	./build.sh | tee "$@.log"
+	chmod ugo-w "$@"
 
+build: bin/ucsf-vpn
+	@true
 
 ## Regenerate README.md
 README.md: README.md.tmpl bin/ucsf-vpn build.log
