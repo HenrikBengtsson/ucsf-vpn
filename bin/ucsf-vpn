@@ -86,7 +86,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.0
+### Version: 7.0.1
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -208,6 +208,7 @@ function help() {
     ## Inject tool versions
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{gpclient_version}}/$(gpclient_version)/")
     mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{xdotool_version}}/$(xdotool_version)/")
+    mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed "s/{{curl_version}}/$(curl_version)/")
     
     if [[ $what == "full" ]]; then
         mapfile -t res < <(printf "%s\\n" "${res[@]}" | sed '/^---/d')
@@ -580,28 +581,29 @@ function prompt_pwd() {
 # gplient: The GlobalProtect VPN client
 # -------------------------------------------------------------------------
 function curl_version() {
-    local -a out
+    local out
 
-    mapfile -t out < <(curl --version 2> /dev/null)
+    out=$(curl --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${out[@]}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
+        printf "%s\\n" "${out}" | grep -E "^curl" | sed -E 's/^curl +//' | sed -E 's/ .*//'
     fi
 }
 
 function gpclient_version() {
-    local -a out
+    local out
 
-    mapfile -t out < <(gpclient --version 2> /dev/null)
+    out=$(gpclient --version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${out[@]}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
+        printf "%s\\n" "${out}" | sed -E 's/^gpclient +//' | sed -E 's/ .*//'
     fi
 }
+
 
 function gpclient_pid() {
     local -i pid
@@ -994,14 +996,14 @@ function gpclient_reconnect() {
 # xdotool: command-line X11 automation tool
 # -------------------------------------------------------------------------
 function xdotool_version() {
-    local -a out
+    local out
 
-    mapfile -t out < <(xdotool version 2> /dev/null)
+    out=$(xdotool version 2> /dev/null)
     # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "<PLEASE INSTALL>"
     else
-        printf "%s\\n" "${out[@]}" | sed -E 's/.* //'
+        printf "%s\\n" "${out}" | sed -E 's/.* //'
     fi
 }
 
@@ -1431,6 +1433,15 @@ if [[ $action == "version" ]]; then
         version
     fi
     _exit 0
+fi
+
+
+if ! command -v gpclient &> /dev/null; then
+    merror "Please install 'gpclient' (https://github.com/yuezk/GlobalProtect-openconnect)"
+elif ! command -v xdotool &> /dev/null; then
+    merror "Please install 'xdotool' (https://github.com/jordansissel/xdotool)"
+elif ! command -v xdotool ^> /dev/null; then
+    merror "Please install 'curl'"
 fi
 
 

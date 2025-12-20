@@ -1,6 +1,16 @@
 ucsf-vpn
 ========
 
+## Version 7.0.1 (2025-12-20)
+
+### Bug Fixes
+
+ * `ucsf-vpn` did not assert that `gplient`, `xdotool`, and `curl` are
+   installed.
+ 
+ * `ucsf-vpn --version --full` failed to report on the `curl` version.
+
+
 ## Version 7.0.0 (2025-12-08)
 
 ### Significant changes
