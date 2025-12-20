@@ -159,7 +159,7 @@ calling chmod go-rwx ~/.netrc). If the credentials are not still not
 found, you will be prompted to enter them.
 
 Requirements:
-* GlobalProtect gpclient (installed: <PLEASE INSTALL>)
+* GlobalProtect gpclient (installed: 2.5.0)
 * xdotool (installed: 3.20160805.1)
 * curl (installed: 8.5.0)
 * sudo
