@@ -83,7 +83,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.0-9002
+### Version: 7.0.0-9003
 ### Copyright: Henrik Bengtsson (2016-2025)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
@@ -538,6 +538,15 @@ if [[ $action == "version" ]]; then
         version
     fi
     _exit 0
+fi
+
+
+if ! command -v gpclient &> /dev/null; then
+    merror "Please install 'gpclient' (https://github.com/yuezk/GlobalProtect-openconnect)"
+elif ! command -v xdotool &> /dev/null; then
+    merror "Please install 'xdotool' (https://github.com/jordansissel/xdotool)"
+elif ! command -v xdotool ^> /dev/null; then
+    merror "Please install 'curl'"
 fi
 
 

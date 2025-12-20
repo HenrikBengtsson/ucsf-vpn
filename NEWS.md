@@ -5,6 +5,9 @@ ucsf-vpn
 
 ### Bug Fixes
 
+ * `ucsf-vpn` did not assert that `gplient`, `xdotool`, and `curl` are
+   installed.
+ 
  * `ucsf-vpn --version --full` failed to report on the `curl` version.
 
 
