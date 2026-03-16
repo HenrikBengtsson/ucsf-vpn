@@ -70,6 +70,10 @@
 ### * sudo
 ###
 ### Troubleshooting:
+### * `ucsf vpn start` uses `ping` to assert there is a working internet
+###   connection. If ping is disabled on your network, try with:
+###   `UCSF_VPN_PING_SERVER=127.0.0.1 ucsf vpn start`
+### 
 ### * Verify your UCSF credentials at https://remote.ucsf.edu/.
 ###   Use your UCSF email address for 'Username'.
 ###
@@ -83,8 +87,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.1-9000
-### Copyright: Henrik Bengtsson (2016-2025)
+### Version: 7.0.1-9001
+### Copyright: Henrik Bengtsson (2016-2026)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
