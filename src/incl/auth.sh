@@ -2,7 +2,7 @@
 # Credentials, e.g. .netrc, prompting for password, etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local rcfile pattern found bfr home
+    local rcfile pattern found bfr home machine
 
     if [[ -z ${NETRC} ]]; then
         if [[ ${EUID} -eq 0 ]]; then
