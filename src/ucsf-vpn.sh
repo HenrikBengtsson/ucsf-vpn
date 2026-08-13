@@ -444,9 +444,9 @@ while [[ $# -gt 0 ]]; do
 
     ## Options (--key=value):
     elif [[ "$1" =~ ^--.*=.*$ ]]; then
-        key=${1//--}
-        key=${key//=*}
-        value=${1//--[[:alpha:]]*=}
+        key=${1%%=*}    ## split by first '='
+        key=${key#--}
+        value=${1#*=}
         mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
         if [[ -z $value ]]; then
             merror "Option '--$key' must not be empty"
