@@ -144,8 +144,9 @@ function gpclient_start() {
     log "ip route show:"
     ip route show >> "${log_file}"
 
-    # shellcheck disable=SC2086
-    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" 2> "${gpclient_log_file}" 1> "${gpclient_log_file}" &
+    # shellcheck disable=SC2024
+    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" > "${gpclient_log_file}" 2>&1 &
+    
     gpclient_pid=$!
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"

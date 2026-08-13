@@ -3,7 +3,10 @@ ucsf-vpn
 
 ## Version 7.0.1-9000 (2025-12-20)
 
- * ...
+### Bug Fixes
+
+ * The `gpclient` log file could have intertwined output and error
+   messages.
  
 
 ## Version 7.0.1 (2025-12-20)
