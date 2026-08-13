@@ -9,7 +9,28 @@ ucsf-vpn
    messages.
 
  * `ucsf-vpn` did not assert that `curl` is installed as intended.
+
+ * `ucsf-vpn start` failed with "error: command not found" when the
+   VPN client could not be started.
  
+ * Option `--server=<server>` was not recognized.
+
+ * Options `--user=<user>` and `--pwd=<pwd>` dropped everything up to
+   the last `=` of the value, e.g. `--pwd=secret=x9` was parsed as
+   password `x9`.
+
+ * `ucsf-vpn start` dropped the first space of a password entered at
+   the prompt.
+
+ * Environment variable `UCSF_VPN_EXTRAS` was passed as a single
+   argument to `gpclient`, instead of as separate arguments.
+
+ * When `ucsf-vpn start` failed, it did not ping the VPN server, if
+   environment variable `UCSF_VPN_PING_SERVER` was set.
+
+ * `ucsf-vpn start` never reported on an already running `gpclient`
+   process.
+
 
 ## Version 7.0.1 (2025-12-20)
 

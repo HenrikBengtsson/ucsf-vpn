@@ -563,7 +563,7 @@ elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
 elif [[ $action == "start" ]]; then
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "stop" ]]; then
     gpclient_stop
@@ -574,7 +574,7 @@ elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
         gpclient_stop
     fi
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
