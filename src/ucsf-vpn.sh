@@ -549,7 +549,7 @@ if ! command -v gpclient &> /dev/null; then
     merror "Please install 'gpclient' (https://github.com/yuezk/GlobalProtect-openconnect)"
 elif ! command -v xdotool &> /dev/null; then
     merror "Please install 'xdotool' (https://github.com/jordansissel/xdotool)"
-elif ! command -v xdotool ^> /dev/null; then
+elif ! command -v curl &> /dev/null; then
     merror "Please install 'curl'"
 fi
 

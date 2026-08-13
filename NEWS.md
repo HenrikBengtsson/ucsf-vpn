@@ -7,6 +7,8 @@ ucsf-vpn
 
  * The `gpclient` log file could have intertwined output and error
    messages.
+
+ * `ucsf-vpn` did not assert that `curl` is installed as intended.
  
 
 ## Version 7.0.1 (2025-12-20)
