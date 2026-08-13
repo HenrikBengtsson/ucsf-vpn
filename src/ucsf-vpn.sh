@@ -438,8 +438,6 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$key" == "server" ]]; then
-            server=$value
         else
             merror "Unknown option: '$1'"
         fi
