@@ -235,7 +235,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 52648 Aug 14 18:17 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 52941 Aug 14 18:24 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```

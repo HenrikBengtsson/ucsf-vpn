@@ -5,6 +5,14 @@ ucsf-vpn
 
 ### Bug Fixes
 
+ * `ucsf-vpn start --force` failed with "Hmm, this might be a bug. Do
+   you already have an active VPN connection?" when a VPN process was
+   already running. Now it explains that such a process has to be
+   terminated first, e.g. by calling `ucsf-vpn stop` or `ucsf-vpn
+   restart`. The check for a VPN process without a VPN tunnel, i.e. a
+   login that never completed, now applies also to `--force`, and
+   regardless of `--validate`.
+
  * `ucsf-vpn start --args <options>`, and environment variable
    `UCSF_VPN_EXTRAS`, could only pass options that `gpclient` itself
    accepts, e.g. `--ignore-tls-errors`. All other options were rejected

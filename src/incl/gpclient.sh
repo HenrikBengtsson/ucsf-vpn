@@ -101,30 +101,32 @@ function gpclient_start() {
 
     pid=$(gpclient_pid)
     if [[ $pid != -1 ]]; then
-        if ! $force; then
-            merror "A VPN process ('gpclient' PID $pid) is already running."
+        ## A 'gpclient' process without a VPN tunnel is not a VPN connection.
+        ## It is a login that never completed, e.g. because a previous
+        ## 'ucsf-vpn start' was interrupted. Note that not even --force will
+        ## start a second VPN process; the running one has to be terminated
+        ## first, which is what 'ucsf-vpn stop' and 'ucsf-vpn restart' do
+        if ! has_ip_route_tunnel; then
+            merror "A VPN process ('gpclient' PID $pid) is running, but there is no VPN tunnel, i.e. you are not connected to the VPN. Was a previous 'ucsf-vpn start' interrupted before the login completed? If so, call 'ucsf-vpn stop' to terminate that process, or 'ucsf-vpn restart' to reconnect from scratch"
         fi
+        if ! $force && [[ $validate == *pid* ]]; then
+            mwarn "Skipping - already connected to the VPN"
+            return
+        fi
+        merror "A VPN process ('gpclient' PID $pid) is already running. Call 'ucsf-vpn stop' to disconnect from the VPN, or 'ucsf-vpn restart' to reconnect"
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $pid != -1 ]]; then
-           ## A 'gpclient' process without a VPN tunnel is not a VPN
-           ## connection. It is a login that never completed, e.g. because a
-           ## previous 'ucsf-vpn start' was interrupted
-           if ! has_ip_route_tunnel; then
-               merror "A VPN process ('gpclient' PID $pid) is running, but there is no VPN tunnel, i.e. you are not connected to the VPN. Was a previous 'ucsf-vpn start' interrupted before the login completed? If so, call 'ucsf-vpn stop' to terminate that process, and then try again"
-           fi
-           mwarn "Skipping - already connected to the VPN"
-           return
-        elif [[ $validate == *ipinfo* ]] && is_connected; then
+        if [[ $validate == *ipinfo* ]] && is_connected; then
            mwarn "Skipping - already connected to the VPN"
            return
         fi
     fi
 
-    ## Assert that gpclient is not already running
+    ## Assert that there is no PID file left from a VPN process that is no
+    ## longer running. Note, gpclient_pid() removes such stray PID files
     if [[ -f "$pid_file" ]]; then
-        merror "Hmm, this might be a bug. Do you already have an active VPN connection? (Detected PID file '$pid_file'; if incorrect, remove with 'sudo rm $pid_file')"
+        merror "Detected a PID file, but no VPN process running: '$pid_file'. Remove it with 'rm $pid_file', and try again"
     fi
 
     if ! is_online; then
