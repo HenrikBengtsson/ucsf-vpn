@@ -3,6 +3,16 @@ ucsf-vpn
 
 ## Version 7.1.0-9000 (2026-08-14)
 
+### New Features
+
+ * Add `--browser[=<browser>]`, with default given by environment
+   variable `UCSF_VPN_BROWSER`, for signing in to the VPN in an
+   external web browser, e.g. `--browser=firefox`, instead of in the
+   built-in pop-up window. The web browser can then fill in the single
+   sign-on form, and remember the two-factor authentication, the same
+   way it does for any other web page. Without a value, `--browser`
+   uses the default web browser of your desktop environment.
+
 ### Bug Fixes
 
  * `ucsf-vpn start --force` failed with "Hmm, this might be a bug. Do

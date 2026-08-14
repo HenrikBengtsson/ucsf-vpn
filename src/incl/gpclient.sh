@@ -139,9 +139,13 @@ function gpclient_start() {
 
     ## Is the login pop-up window automated by 'xdotool'? Only on X11, because
     ## 'xdotool' can only see X11 windows, i.e. on Wayland it would wait forever
-    ## for a window that it can never find
+    ## for a window that it can never find. There is also no pop-up window to
+    ## automate, when we sign in via an external web browser
     use_xdotool=true
-    if [[ "${XDG_SESSION_TYPE}" != "x11" ]]; then
+    if [[ -n "${browser}" ]]; then
+        mdebug "Signing in via an external web browser ('${browser}'), i.e. there is no login pop-up window to automate"
+        use_xdotool=false
+    elif [[ "${XDG_SESSION_TYPE}" != "x11" ]]; then
         mdebug "Not an X11 session (XDG_SESSION_TYPE='${XDG_SESSION_TYPE}'), i.e. cannot automate the login pop-up window"
         use_xdotool=false
     fi
@@ -176,6 +180,17 @@ function gpclient_start() {
                 ;;
         esac
     done
+    ## Sign in via an external web browser? Note that 'gpclient' rejects a
+    ## duplicated --browser option, which is why we assert there is only one
+    if [[ -n "${browser}" ]]; then
+        for opt in "${connect_opts[@]}"; do
+            if [[ "${opt}" == "--browser" ]] || [[ "${opt}" == --browser=* ]]; then
+                merror "Cannot use both --browser and '${opt}', where the latter was passed via --args or UCSF_VPN_EXTRAS"
+            fi
+        done
+        connect_opts+=("--browser=${browser}")
+    fi
+
     mdebug "gpclient options: [n=${#global_opts[@]}] ${global_opts[*]}"
     mdebug "gpclient connect options: [n=${#connect_opts[@]}] ${connect_opts[*]}"
 
@@ -287,6 +302,8 @@ function gpclient_start() {
         done
 
         mdebug "'GlobalProtect Login' closed"
+    elif [[ -n "${browser}" ]]; then
+        mnote "Sign in to the VPN in the web browser that just opened, and confirm with Duo, if asked to ..."
     else
         mnote "Enter your credentials in the 'GlobalProtect' pop-up window that just opened, and confirm with Duo, if asked to ..."
     fi

@@ -22,6 +22,13 @@
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
 ###                   e.g. 'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
+###  --browser[=<browser>]
+###                   Sign in to the VPN in an external web browser, instead of
+###                   in the built-in pop-up window, e.g. 'firefox', 'chrome',
+###                   or 'default'. Without a value, the default web browser of
+###                   your desktop environment is used. Use this to have the web
+###                   browser, and not 'ucsf-vpn', fill in the single sign-on
+###                   form
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -38,6 +45,7 @@
 ###  ucsf-vpn start --user=alice
 ###  ucsf-vpn start --user=alice --pwd=secrets
 ###  ucsf-vpn start
+###  ucsf-vpn start --browser=firefox
 ###  ucsf-vpn stop
 ###
 ### ---
@@ -50,6 +58,7 @@
 ###                        replies is used
 ###  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
 ###  UCSF_VPN_THEME        Default value for --theme
+###  UCSF_VPN_BROWSER      Default value for --browser
 ###  UCSF_VPN_AUTH_TIMEOUT Seconds to wait for the login to complete, e.g.
 ###                        entering credentials and confirming with Duo
 ###                        (default: 300 seconds)
@@ -393,6 +402,7 @@ debug=false
 verbose=false
 validate=
 dryrun=false
+browser=${UCSF_VPN_BROWSER:-}
 extras=("${UCSF_VPN_EXTRAS[@]}")
 presudo=true
 
@@ -447,6 +457,11 @@ while [[ $# -gt 0 ]]; do
             force=true
         elif [[ "$flag" == "full" ]]; then
             full=true
+        elif [[ "$flag" == "browser" ]]; then
+            ## Use the default web browser of the current desktop environment.
+            ## Note, without a value, 'gpclient' would pick the web browser
+            ## itself, which is Chrome, if installed
+            browser=default
         elif [[ "$flag" == "dry-run" ]]; then
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
@@ -471,6 +486,8 @@ while [[ $# -gt 0 ]]; do
             theme=$value
         elif [[ "$key" == "validate" ]]; then
             validate=$value
+        elif [[ "$key" == "browser" ]]; then
+            browser=$value
         else
             merror "Unknown option: '$1'"
         fi
@@ -498,6 +515,11 @@ fi
 ## Validate 'theme'
 if [[ ! $theme =~ ^(cli|none)$ ]]; then
     merror "Unknown --theme value: '$theme'"
+fi
+
+## Validate 'browser'
+if [[ $browser == "remote" ]]; then
+    merror "Option --browser=remote is not yet supported"
 fi
 
 ## Validate 'validate'
@@ -532,6 +554,7 @@ mdebug "verbose: $verbose"
 mdebug "force: $force"
 mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
+mdebug "browser: ${browser:-<built-in pop-up window>}"
 mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
 mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"

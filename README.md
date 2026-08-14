@@ -118,6 +118,13 @@ Options:
  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
                   e.g. 'pid,iproute,ucsfit' (default)
  --theme=<theme>  Either 'cli' (default) or 'none'
+ --browser[=<browser>]
+                  Sign in to the VPN in an external web browser, instead of
+                  in the built-in pop-up window, e.g. 'firefox', 'chrome',
+                  or 'default'. Without a value, the default web browser of
+                  your desktop environment is used. Use this to have the web
+                  browser, and not 'ucsf-vpn', fill in the single sign-on
+                  form
 
 Flags:
  --verbose        More verbose output
@@ -134,6 +141,7 @@ Examples:
  ucsf-vpn start --user=alice
  ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
+ ucsf-vpn start --browser=firefox
  ucsf-vpn stop
 
 
@@ -145,6 +153,7 @@ Environment variables:
                        replies is used
  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
  UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_BROWSER      Default value for --browser
  UCSF_VPN_AUTH_TIMEOUT Seconds to wait for the login to complete, e.g.
                        entering credentials and confirming with Duo
                        (default: 300 seconds)
@@ -235,7 +244,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 52941 Aug 14 18:24 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 54993 Aug 14 18:41 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```
