@@ -125,16 +125,19 @@ function is_online() {
     local ping_server ping_timeout spec
     local -a ping_servers
 
-    ## Environment variables can only hold strings, which is why multiple
-    ## ping servers are specified as a space- or comma-separated string
-    spec="${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    ## An explicitly specified ping server, e.g. the VPN server, takes
+    ## precedence over UCSF_VPN_PING_SERVER, which in turn takes precedence
+    ## over the default. Environment variables can only hold strings, which is
+    ## why multiple ping servers are specified as a space- or comma-separated
+    ## string
+    spec="${1:-${UCSF_VPN_PING_SERVER:-9.9.9.9}}"
     IFS=$' \t,' read -r -a ping_servers <<< "${spec}"
     mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
 
     ## Nothing to ping? This is the case if, and only if, the specification
     ## comprises nothing but separators, e.g. UCSF_VPN_PING_SERVER=" " or ",,"
     if [[ -z "${spec//[[:space:],]/}" ]]; then
-        mwarn "Cannot verify the internet connection, because no ping server was specified. Check environment variable UCSF_VPN_PING_SERVER='${UCSF_VPN_PING_SERVER}'"
+        mwarn "Cannot verify the internet connection, because no ping server was specified: '${spec}' (see environment variable UCSF_VPN_PING_SERVER)"
         return 1
     fi
 
