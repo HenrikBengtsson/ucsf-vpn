@@ -124,7 +124,11 @@ Options:
                   or 'default'. Without a value, the default web browser of
                   your desktop environment is used. Use this to have the web
                   browser, and not 'ucsf-vpn', fill in the single sign-on
-                  form
+                  form. At the end of the sign-in, the web browser asks to
+                  open 'GP Connect', which has to be confirmed, otherwise
+                  the sign-in never reaches the VPN client. As of
+                  2026-08-14, the UCSF sign-on completes with
+                  '--browser=chrome', but not with Firefox
 
 Flags:
  --verbose        More verbose output
@@ -141,7 +145,7 @@ Examples:
  ucsf-vpn start --user=alice
  ucsf-vpn start --user=alice --pwd=secrets
  ucsf-vpn start
- ucsf-vpn start --browser=firefox
+ ucsf-vpn start --browser=chrome
  ucsf-vpn stop
 
 
@@ -244,7 +248,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 55315 Aug 14 18:58 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 55784 Aug 14 19:16 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```

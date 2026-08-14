@@ -309,7 +309,7 @@ function gpclient_start() {
 
         mdebug "'GlobalProtect Login' closed"
     elif [[ -n "${browser}" ]]; then
-        mnote "Sign in to the VPN in the web browser that just opened, and confirm with Duo, if asked to ..."
+        mnote "Sign in to the VPN in the web browser that just opened, and confirm with Duo, if asked to. Finally, when the web browser asks to open 'GP Connect', confirm that too, because that is how the sign-in is passed back to the VPN client ..."
     else
         mnote "Enter your credentials in the 'GlobalProtect' pop-up window that just opened, and confirm with Duo, if asked to ..."
     fi

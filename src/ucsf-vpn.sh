@@ -28,7 +28,11 @@
 ###                   or 'default'. Without a value, the default web browser of
 ###                   your desktop environment is used. Use this to have the web
 ###                   browser, and not 'ucsf-vpn', fill in the single sign-on
-###                   form
+###                   form. At the end of the sign-in, the web browser asks to
+###                   open 'GP Connect', which has to be confirmed, otherwise
+###                   the sign-in never reaches the VPN client. As of
+###                   2026-08-14, the UCSF sign-on completes with
+###                   '--browser=chrome', but not with Firefox
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -45,7 +49,7 @@
 ###  ucsf-vpn start --user=alice
 ###  ucsf-vpn start --user=alice --pwd=secrets
 ###  ucsf-vpn start
-###  ucsf-vpn start --browser=firefox
+###  ucsf-vpn start --browser=chrome
 ###  ucsf-vpn stop
 ###
 ### ---

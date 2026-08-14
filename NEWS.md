@@ -11,7 +11,12 @@ ucsf-vpn
    built-in pop-up window. The web browser can then fill in the single
    sign-on form, and remember the two-factor authentication, the same
    way it does for any other web page. Without a value, `--browser`
-   uses the default web browser of your desktop environment.
+   uses the default web browser of your desktop environment. At the end
+   of the sign-in, the web browser asks to open 'GP Connect', which has
+   to be confirmed, because that is how the sign-in is passed back to
+   the VPN client. As of 2026-08-14, the UCSF sign-on completes with
+   `--browser=chrome`, but not with Firefox, which fails with
+   "Authentication Failed".
 
 ### Bug Fixes
 
