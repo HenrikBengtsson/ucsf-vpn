@@ -151,8 +151,11 @@ function status() {
                 msg="No 'gpclient' process running"
             else
                 connected+=(true)
+                age="<unknown>"
                 timestamp=$(ps -p "${pid}" -o lstart=)
-                if [[ -n ${timestamp} ]]; then
+                if [[ -z ${timestamp} ]]; then
+                    timestamp="<unknown>"
+                else
                     timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
                     since=$(date -d "${timestamp}" +%s)
                     now=$(date +%s)
