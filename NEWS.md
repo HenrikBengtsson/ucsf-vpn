@@ -5,18 +5,26 @@ ucsf-vpn
 
 ### New Features
 
+ * Add `--server=<host>`, with default given by environment variable
+   `UCSF_VPN_SERVER`, for connecting to another UCSF VPN server
+   (gateway) than `gp-ucsf.ucsf.edu`, e.g.
+   `--server=gp-ucsf-mb.ucsf.edu`. If the NETRC file has no entry for
+   that server, the entry for `gp-ucsf.ucsf.edu` is used.
+
  * Add `--browser[=<browser>]`, with default given by environment
    variable `UCSF_VPN_BROWSER`, for signing in to the VPN in an
    external web browser, e.g. `--browser=firefox`, instead of in the
    built-in pop-up window. The web browser can then fill in the single
    sign-on form, and remember the two-factor authentication, the same
    way it does for any other web page. Without a value, `--browser`
-   uses the default web browser of your desktop environment. At the end
-   of the sign-in, the web browser asks to open 'GP Connect', which has
-   to be confirmed, because that is how the sign-in is passed back to
-   the VPN client. As of 2026-08-14, the UCSF sign-on completes with
-   `--browser=chrome`, but not with Firefox, which fails with
-   "Authentication Failed".
+   uses the default web browser of your desktop environment. The value
+   may also be the path to a web browser, e.g.
+   `--browser=/path/to/firefox`. At the end of the sign-in, the web
+   browser asks to open the 'GP Connect' application, which has to be
+   confirmed, because that is how the sign-in is passed back to the VPN
+   client. Note, a web browser installed as a Snap, e.g. Ubuntu's
+   `/usr/bin/firefox`, cannot open that application, and will therefore
+   never complete the sign-in.
 
 ### Bug Fixes
 

@@ -19,20 +19,25 @@
 ###  --user=<user>    UCSF Active Directory ID (username)
 ###  --pwd=<pwd>      UCSF Active Directory ID password
 ###
+###  --server=<host>  VPN server (gateway) to connect to, specified as a
+###                   hostname (default: gp-ucsf.ucsf.edu)
+###
 ###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
 ###                   e.g. 'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###  --browser[=<browser>]
 ###                   Sign in to the VPN in an external web browser, instead of
 ###                   in the built-in pop-up window, e.g. 'firefox', 'chrome',
-###                   or 'default'. Without a value, the default web browser of
-###                   your desktop environment is used. Use this to have the web
-###                   browser, and not 'ucsf-vpn', fill in the single sign-on
-###                   form. At the end of the sign-in, the web browser asks to
-###                   open 'GP Connect', which has to be confirmed, otherwise
-###                   the sign-in never reaches the VPN client. As of
-###                   2026-08-14, the UCSF sign-on completes with
-###                   '--browser=chrome', but not with Firefox
+###                   'default', or the path to a web browser. Without a value,
+###                   the default web browser of your desktop environment is
+###                   used. Use this to have the web browser, and not
+###                   'ucsf-vpn', fill in the single sign-on form. At the end of
+###                   the sign-in, the web browser asks to open the 'GP Connect'
+###                   application, which has to be confirmed, because that is
+###                   how the sign-in reaches the VPN client. Note, a web
+###                   browser installed as a Snap, e.g. Ubuntu's
+###                   /usr/bin/firefox, cannot open that application, and will
+###                   therefore never complete the sign-in
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -55,6 +60,7 @@
 ### ---
 ###
 ### Environment variables:
+###  UCSF_VPN_SERVER       Default value for --server
 ###  UCSF_VPN_VALIDATE     Default value for --validate
 ###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9).
 ###                        Multiple servers may be specified separated by
@@ -97,6 +103,16 @@
 ###   connection. If ping is disabled on your network, try with:
 ###   `UCSF_VPN_PING_SERVER=127.0.0.1 ucsf vpn start`
 ### 
+### * With `--browser`, the web browser asks for permission to open the
+###   'globalprotectcallback' link with the 'GP Connect' application, e.g.
+###   "Open GP Connect?" in Chrome. That permission has to be granted,
+###   because it is how the sign-in reaches the VPN client. If it is denied,
+###   or the prompt is dismissed, the web browser reports "Authentication
+###   Complete", but `ucsf-vpn start` waits until it times out. The
+###   permission is remembered per website, if you accept it permanently.
+###   Note, a web browser installed as a Snap, e.g. Ubuntu's
+###   /usr/bin/firefox, is never allowed to open that application
+###
 ### * Verify your UCSF credentials at https://remote.ucsf.edu/.
 ###   Use your UCSF email address for 'Username'.
 ###
@@ -398,7 +414,7 @@ fi
 action=
 
 ## Options
-server=gp-ucsf.ucsf.edu
+server=${UCSF_VPN_SERVER:-gp-ucsf.ucsf.edu}
 theme=${UCSF_VPN_THEME:-cli}
 force=false
 full=false
@@ -486,6 +502,8 @@ while [[ $# -gt 0 ]]; do
             user=$value
         elif [[ "$key" == "pwd" ]]; then
             pwd=$value
+        elif [[ "$key" == "server" ]]; then
+            server=$value
         elif [[ "$key" == "theme" ]]; then
             theme=$value
         elif [[ "$key" == "validate" ]]; then
@@ -519,6 +537,11 @@ fi
 ## Validate 'theme'
 if [[ ! $theme =~ ^(cli|none)$ ]]; then
     merror "Unknown --theme value: '$theme'"
+fi
+
+## Validate 'server'
+if [[ $server == *://* ]] || [[ $server == */* ]]; then
+    merror "Option --server should be a hostname, not a URL: '$server'"
 fi
 
 ## Validate 'browser'
