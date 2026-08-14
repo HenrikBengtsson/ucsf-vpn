@@ -122,13 +122,22 @@ function public_info() {
 ## replies, i.e. the remaining ones are not pinged. Returns 1 only if all of
 ## them fail to reply
 function is_online() {
-    local ping_server ping_timeout
+    local ping_server ping_timeout spec
     local -a ping_servers
 
     ## Environment variables can only hold strings, which is why multiple
     ## ping servers are specified as a space- or comma-separated string
-    IFS=$' \t,' read -r -a ping_servers <<< "${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    spec="${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    IFS=$' \t,' read -r -a ping_servers <<< "${spec}"
     mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
+
+    ## Nothing to ping? This is the case if, and only if, the specification
+    ## comprises nothing but separators, e.g. UCSF_VPN_PING_SERVER=" " or ",,"
+    if [[ -z "${spec//[[:space:],]/}" ]]; then
+        mwarn "Cannot verify the internet connection, because no ping server was specified. Check environment variable UCSF_VPN_PING_SERVER='${UCSF_VPN_PING_SERVER}'"
+        return 1
+    fi
+
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
     for ping_server in "${ping_servers[@]}"; do
