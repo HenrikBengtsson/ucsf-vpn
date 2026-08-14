@@ -1,4 +1,5 @@
 CLI
+GPL
 GlobalProtect
 Ivanti
 JSON
@@ -8,6 +9,7 @@ LTS
 MyAccess
 OpenConnect
 PID
+POSIX
 Pre
 ShellCheck
 UCSF

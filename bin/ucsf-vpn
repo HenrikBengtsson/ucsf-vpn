@@ -396,14 +396,20 @@ function public_info() {
     fi
 }
 
+## Pings the ping servers one by one, and returns 0 as soon as one of them
+## replies, i.e. the remaining ones are not pinged. Returns 1 only if all of
+## them fail to reply
 function is_online() {
-    local ping_server ping_servers ping_timeout
+    local ping_server ping_timeout
+    local -a ping_servers
 
-    ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
-    mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    ## Environment variables can only hold strings, which is why multiple
+    ## ping servers are specified as a space- or comma-separated string
+    IFS=$' \t\n,' read -r -a ping_servers <<< "${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
-    for ping_server in $ping_servers; do
+    for ping_server in "${ping_servers[@]}"; do
       mdebug "Ping server: '$ping_server'"
       minfo "Pinging '$ping_server' once"
       if ping -c 1 -W "$ping_timeout" "$ping_server" > /dev/null 2> /dev/null; then
@@ -459,7 +465,7 @@ function wait_for_ip_route() {
 # Credentials, e.g. .netrc, prompting for password, etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local rcfile pattern found bfr home
+    local rcfile pattern found bfr home machine
 
     if [[ -z ${NETRC} ]]; then
         if [[ ${EUID} -eq 0 ]]; then
@@ -522,7 +528,7 @@ function source_netrc() {
     fi
 
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
-    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines[*]}"
 
     if [[ -z "$user" ]]; then
         user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
@@ -549,10 +555,10 @@ function prompt_user() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory username: "
             _tput setaf 15  ## bright white
-            read -r user
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r user
             _tput sgr0      ## reset
         } 1>&2
-        user=${user/ /}
     done
     mdebug "- user=${user}"
 }
@@ -566,10 +572,10 @@ function prompt_pwd() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory password: "
             _tput setaf 15  ## bright white
-            read -r -s pwd
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r -s pwd
             _tput sgr0      ## reset
         } 1>&2
-        pwd=${pwd/ /}
     done
     mecho "<password>"
 
@@ -652,7 +658,7 @@ function gpclient_start() {
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $(gpclient_pid) != -1 ]]; then
+        if [[ $validate == *pid* ]] && [[ $pid != -1 ]]; then
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
@@ -727,8 +733,9 @@ function gpclient_start() {
     log "ip route show:"
     ip route show >> "${log_file}"
 
-    # shellcheck disable=SC2086
-    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" 2> "${gpclient_log_file}" 1> "${gpclient_log_file}" &
+    # shellcheck disable=SC2024
+    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" > "${gpclient_log_file}" 2>&1 &
+    
     gpclient_pid=$!
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"
@@ -1046,8 +1053,11 @@ function status() {
                 msg="No 'gpclient' process running"
             else
                 connected+=(true)
+                age="<unknown>"
                 timestamp=$(ps -p "${pid}" -o lstart=)
-                if [[ -n ${timestamp} ]]; then
+                if [[ -z ${timestamp} ]]; then
+                    timestamp="<unknown>"
+                else
                     timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
                     since=$(date -d "${timestamp}" +%s)
                     now=$(date +%s)
@@ -1333,17 +1343,15 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$key" == "server" ]]; then
-            server=$value
         else
             merror "Unknown option: '$1'"
         fi
 
     ## Options (--key=value):
     elif [[ "$1" =~ ^--.*=.*$ ]]; then
-        key=${1//--}
-        key=${key//=*}
-        value=${1//--[[:alpha:]]*=}
+        key=${1%%=*}    ## split by first '='
+        key=${key#--}
+        value=${1#*=}
         mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
         if [[ -z $value ]]; then
             merror "Option '--$key' must not be empty"
@@ -1417,7 +1425,6 @@ mdebug "force: $force"
 mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
 mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
-mdebug "method: $method"
 mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "gpclient_pid: $(gpclient_pid)"
@@ -1444,7 +1451,7 @@ if ! command -v gpclient &> /dev/null; then
     merror "Please install 'gpclient' (https://github.com/yuezk/GlobalProtect-openconnect)"
 elif ! command -v xdotool &> /dev/null; then
     merror "Please install 'xdotool' (https://github.com/jordansissel/xdotool)"
-elif ! command -v xdotool ^> /dev/null; then
+elif ! command -v curl &> /dev/null; then
     merror "Please install 'curl'"
 fi
 
@@ -1458,7 +1465,7 @@ elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
 elif [[ $action == "start" ]]; then
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "stop" ]]; then
     gpclient_stop
@@ -1469,7 +1476,7 @@ elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
         gpclient_stop
     fi
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
