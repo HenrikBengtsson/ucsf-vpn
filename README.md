@@ -168,6 +168,10 @@ Environment variables:
                        entering credentials and confirming with Duo
                        (default: 300 seconds)
  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
+ UCSF_VPN_UCSFIT_ATTEMPTS
+                       Number of times --validate=ucsfit queries the UCSF IT
+                       network service before giving up (default: 5)
+ UCSF_VPN_UCSFIT_DELAY Seconds to wait between those attempts (default: 3)
 
 User credentials:
 If user credentials (--user and --pwd) are not specified, 'ucsf-vpn' looks
@@ -265,7 +269,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 59981 Aug 14 20:33 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 61688 Aug 15 00:24 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```

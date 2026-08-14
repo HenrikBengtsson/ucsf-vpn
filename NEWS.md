@@ -30,6 +30,19 @@ ucsf-vpn
 
 ### Bug Fixes
 
+ * `ucsf-vpn start` could end with "ERROR: Conflicting results whether
+   connected to the VPN", despite the VPN connection working. The reason
+   was that it may take a few seconds from that the VPN tunnel appears
+   until the traffic goes through it, and the query of the UCSF IT
+   network service, which `--validate=ucsfit` uses, was done too early.
+   Now that query is attempted several times, controlled by environment
+   variables `UCSF_VPN_UCSFIT_ATTEMPTS` (default: 5) and
+   `UCSF_VPN_UCSFIT_DELAY` (default: 3 seconds), before giving up. Also,
+   a failed query no longer counts as being disconnected from the VPN,
+   because a service that cannot be reached says nothing about which
+   network we are on. It is now reported as unknown, and ignored when
+   validation methods are compared.
+
  * The query of the UCSF IT network service, which `--validate=ucsfit`
    uses, had no timeout, and a failed query was indistinguishable from
    a query reporting that we are not on the UCSF network. Now it times

@@ -2,16 +2,37 @@
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
 function ucsf_it_network_info() {
-    local url out
+    local url out ok
+    local -i attempt attempts delay
     local -a info
 
     url="https://help.ucsf.edu/HelpApps/ipNetVerify.php"
     mdebug "ucsf_it_network_info()"
 
-    ## Note, without a timeout, this could hang for a long time, e.g. when the
-    ## traffic does not reach UCSF, despite there being a VPN tunnel
-    if ! out=$(curl --silent --connect-timeout 5.0 --max-time 20.0 "${url}"); then
-        mwarn "Failed to query the UCSF IT network service <${url}>. If you are connected to the VPN, then this suggests that your traffic does not go via the VPN"
+    ## It may take several seconds from that the VPN tunnel appears until the
+    ## traffic actually goes through it. Because of this, we retry the query a
+    ## few times before giving up
+    attempts=${UCSF_VPN_UCSFIT_ATTEMPTS:-5}
+    [[ ${attempts} -ge 1 ]] || attempts=1
+    delay=${UCSF_VPN_UCSFIT_DELAY:-3}
+
+    ok=false
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        mdebug "- querying <${url}> (attempt ${attempt} of ${attempts})"
+        ## Note, without a timeout, this could hang for a long time, e.g. when
+        ## the traffic does not reach UCSF, despite there being a VPN tunnel
+        if out=$(curl --silent --connect-timeout 5.0 --max-time 20.0 "${url}"); then
+            ok=true
+            break
+        fi
+        if [[ ${attempt} -lt ${attempts} ]]; then
+            mdebug "- query failed; retrying in ${delay} seconds"
+            sleep "${delay}"
+        fi
+    done
+
+    if ! $ok; then
+        mwarn "Failed to query the UCSF IT network service <${url}> (${attempts} attempts). If you are connected to the VPN, then this suggests that your traffic does not go via the VPN"
         return 1
     fi
 

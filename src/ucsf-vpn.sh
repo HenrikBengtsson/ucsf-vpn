@@ -73,6 +73,10 @@
 ###                        entering credentials and confirming with Duo
 ###                        (default: 300 seconds)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
+###  UCSF_VPN_UCSFIT_ATTEMPTS
+###                        Number of times --validate=ucsfit queries the UCSF IT
+###                        network service before giving up (default: 5)
+###  UCSF_VPN_UCSFIT_DELAY Seconds to wait between those attempts (default: 3)
 ###
 ### User credentials:
 ### If user credentials (--user and --pwd) are not specified, 'ucsf-vpn' looks
@@ -159,7 +163,7 @@ source "${incl}/xdotool.sh"
 
 
 function status() {
-    local assert mcmd msg ok
+    local assert mcmd msg ok out
     local -i pid
     local -a info
     local -a msgs
@@ -220,15 +224,20 @@ function status() {
             fi
             msgs+=("IP routing tunnels: ${msg}")
         elif [[ $method == ucsfit ]]; then
-            mapfile -t info < <(ucsf_it_network_info)
-            if grep -q "connected=true" <<< "${info[0]}"; then
-                connected+=(true)
-                msg="yes (n=${#info[@]} ${info[*]})"
+            if out=$(ucsf_it_network_info); then
+                mapfile -t info <<< "${out}"
+                if grep -q "connected=true" <<< "${info[0]}"; then
+                    connected+=(true)
+                else
+                    connected+=(false)
+                fi
+                msgs+=("Public IP information (UCSF IT): ${info[2]}, ${info[1]}")
             else
-                connected+=(false)
-                msg="no (n=${#info[@]} ${info[*]})"
+                ## The UCSF IT network service could not be queried, which means
+                ## we cannot tell whether we are on the UCSF network or not.
+                ## Because of this, this method does not vote on the consensus
+                msgs+=("Public IP information (UCSF IT): <unknown, because the UCSF IT network service could not be queried>")
             fi
-            msgs+=("Public IP information (UCSF IT): ${info[2]}, ${info[1]}")
         elif [[ $method == ipinfo ]]; then
             if is_connected; then
                 connected+=(true)
@@ -245,10 +254,17 @@ function status() {
     done
 
     ## Consensus
-    mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
+    if [[ ${#connected[@]} -gt 0 ]]; then
+        mapfile -t connected < <(printf "%s\n" "${connected[@]}" | sort -u)
+    fi
     mdebug "- connected: [n=${#connected[@]}] ${connected[*]}"
 
-    if [[ ${#connected[@]} -eq 1 ]]; then
+    if [[ ${#connected[@]} -eq 0 ]]; then
+        for msg in "${msgs[@]}"; do
+            echo "${msg}"
+        done
+        merror "Failed to infer whether connected to the VPN or not, because none of the validation methods could tell (--validate=${validate})"
+    elif [[ ${#connected[@]} -eq 1 ]]; then
         mcmd="echo"
         if [[ -n $assert ]]; then
             ok=true
