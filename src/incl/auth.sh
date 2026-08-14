@@ -92,10 +92,10 @@ function prompt_user() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory username: "
             _tput setaf 15  ## bright white
-            read -r user
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r user
             _tput sgr0      ## reset
         } 1>&2
-        user=${user/ /}
     done
     mdebug "- user=${user}"
 }
@@ -109,10 +109,10 @@ function prompt_pwd() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory password: "
             _tput setaf 15  ## bright white
-            read -r -s pwd
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r -s pwd
             _tput sgr0      ## reset
         } 1>&2
-        pwd=${pwd/ /}
     done
     mecho "<password>"
 
