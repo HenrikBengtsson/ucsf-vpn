@@ -132,6 +132,8 @@ function is_online() {
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
     for ping_server in "${ping_servers[@]}"; do
+      ## Skip empty entries, e.g. from a ",," typo
+      [[ -n "$ping_server" ]] || continue
       mdebug "Ping server: '$ping_server'"
       minfo "Pinging '$ping_server' once"
       if ping -c 1 -W "$ping_timeout" "$ping_server" > /dev/null 2> /dev/null; then
