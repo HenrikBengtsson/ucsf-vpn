@@ -170,6 +170,11 @@ function ip_route_novpn_interface() {
 }
 
 
+function has_ip_route_tunnel() {
+    grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"
+}
+
+
 ## Usage: wait_for_ip_route_tunnel [<timeout> [<pid>]]
 ## Waits for up to <timeout> seconds (default: 10) for the VPN tunnel to appear.
 ## If <pid> is given, it gives up as soon as that process is no longer running
@@ -182,7 +187,7 @@ function wait_for_ip_route_tunnel() {
     fi
     mdebug "Wait for tunnel to appear in IP routing table (timeout: ${timeout} seconds; watching PID: ${watch_pid})"
     max_iter=$((10 * timeout)) ## Each iteration waits 0.1 seconds
-    while ! grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"; do
+    while ! has_ip_route_tunnel; do
         if [[ ${watch_pid} -gt 0 ]] && [[ ! -d "/proc/${watch_pid}" ]]; then
             merror "The VPN process (PID ${watch_pid}) terminated before the VPN tunnel was created. Did the sign in fail or was it cancelled? See 'ucsf-vpn log' for details"
         fi
