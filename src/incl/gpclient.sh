@@ -101,7 +101,7 @@ function gpclient_start() {
 
     pid=$(gpclient_pid)
     if [[ $pid != -1 ]]; then
-        if [[ ! $force ]]; then
+        if ! $force; then
             merror "A VPN process ('gpclient' PID $pid) is already running."
         fi
     fi
