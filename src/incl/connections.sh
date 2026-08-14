@@ -127,7 +127,7 @@ function is_online() {
 
     ## Environment variables can only hold strings, which is why multiple
     ## ping servers are specified as a space- or comma-separated string
-    IFS=$' \t\n,' read -r -a ping_servers <<< "${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    IFS=$' \t,' read -r -a ping_servers <<< "${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
     mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
