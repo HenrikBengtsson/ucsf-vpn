@@ -15,6 +15,14 @@ ucsf-vpn
 
 ### Bug Fixes
 
+ * `ucsf-vpn start` left the `gpclient` process running, when it gave up
+   waiting for the login to complete, e.g. after the
+   `UCSF_VPN_AUTH_TIMEOUT` seconds. Because of this, the next
+   `ucsf-vpn start` would report that a login never completed. Only an
+   interrupted `ucsf-vpn start`, e.g. by `Ctrl-C`, terminated that
+   process. Now it is terminated whenever `ucsf-vpn start` ends before
+   the VPN tunnel is up.
+
  * `ucsf-vpn start --force` failed with "Hmm, this might be a bug. Do
    you already have an active VPN connection?" when a VPN process was
    already running. Now it explains that such a process has to be

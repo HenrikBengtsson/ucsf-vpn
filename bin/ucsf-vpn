@@ -700,11 +700,15 @@ function gpclient_pid() {
 function gpclient_abort() {
     local -i pid
 
+    ## Disable the traps that take us here, because we call _exit() below,
+    ## which would otherwise take us here again
+    trap - INT TERM HUP EXIT
+
     pid=${1:-0}
     mdebug "gpclient_abort(pid=${pid}) ..."
     log "gpclient_abort(pid=${pid}) ..."
 
-    mwarn "Interrupted before the VPN connection was established"
+    mwarn "The VPN connection was not established"
 
     if [[ ${pid} -gt 0 ]] && ps -p "${pid}" > /dev/null; then
         minfo "Terminating the VPN process that was started ('gpclient' PID ${pid})"
@@ -886,10 +890,12 @@ function gpclient_start() {
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"
 
-    ## From here on, and until the VPN tunnel is up, an interrupted 'ucsf-vpn'
-    ## must not leave the 'gpclient' process behind
+    ## From here on, and until the VPN tunnel is up, 'ucsf-vpn' must not leave
+    ## the 'gpclient' process behind, neither when interrupted, nor when giving
+    ## up itself, e.g. when the login takes too long. The latter is why we trap
+    ## also EXIT, which covers all calls to merror() further down
     # shellcheck disable=SC2064
-    trap "gpclient_abort ${gpclient_pid}" INT TERM HUP
+    trap "gpclient_abort ${gpclient_pid}" INT TERM HUP EXIT
     
     if $use_xdotool; then
         ## Enter credential in 'GlobalProtect Login' pop-up window
@@ -1004,7 +1010,7 @@ function gpclient_start() {
 
     ## The VPN tunnel is up. From here on, an interrupted 'ucsf-vpn' should
     ## leave the VPN connection running, which 'ucsf-vpn stop' terminates
-    trap - INT TERM HUP
+    trap - INT TERM HUP EXIT
     
     ## Wait for IP routing table to stabilize
     wait_for_ip_route
