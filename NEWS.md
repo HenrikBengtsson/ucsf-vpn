@@ -14,13 +14,24 @@ ucsf-vpn
 
  * `ucsf-vpn start` would wait forever for the 'GlobalProtect Login'
    pop-up window to appear when running on Wayland, because `xdotool`
-   can only see X11 windows. Now that window is automated only on X11.
-   Otherwise, the user is asked to enter the credentials in the pop-up
-   window manually. Also, the wait for that window now times out,
-   instead of waiting forever.
+   can only see X11 windows. Now that window is populated only on X11,
+   and on all other types of sessions you are asked to enter your
+   credentials in it manually. The wait for the window also times out
+   after 30 seconds.
 
  * `ucsf-vpn start` asked for username and password also when they are
-   not used, i.e. when the login pop-up window is not automated.
+   not used, i.e. when the login pop-up window is not populated.
+
+ * If `ucsf-vpn start` was interrupted, e.g. by `Ctrl-C`, while waiting
+   for the login to complete, the `gpclient` process was left running,
+   which made the next `ucsf-vpn start` report that you are already
+   connected to the VPN. Now that process is terminated, if the
+   interrupt happens before the VPN tunnel is up.
+
+ * `ucsf-vpn start` reported "Skipping - already connected to the VPN"
+   whenever there was a `gpclient` process, also when that process had
+   not established a VPN tunnel. Now such a process is reported as a
+   login that never completed.
 
 
 ## Version 7.0.1-9000 (2025-12-20)

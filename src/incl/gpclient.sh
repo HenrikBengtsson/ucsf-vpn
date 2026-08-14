@@ -54,6 +54,43 @@ function gpclient_pid() {
 }
 
 ## sudo gpclient --fix-openssl connect --as-gateway gp-ucsf.ucsf.edu
+## Usage: gpclient_abort <pid>
+## Terminates a 'gpclient' process that we started, but never got connected,
+## e.g. because the user interrupted the login step. If we leave it running,
+## the next 'ucsf-vpn start' will mistake it for an established VPN connection
+# shellcheck disable=SC2329  ## It is invoked indirectly, i.e. by 'trap'
+function gpclient_abort() {
+    local -i pid
+
+    pid=${1:-0}
+    mdebug "gpclient_abort(pid=${pid}) ..."
+    log "gpclient_abort(pid=${pid}) ..."
+
+    mwarn "Interrupted before the VPN connection was established"
+
+    if [[ ${pid} -gt 0 ]] && ps -p "${pid}" > /dev/null; then
+        minfo "Terminating the VPN process that was started ('gpclient' PID ${pid})"
+        ## Note, we must not prompt for a password from within a signal
+        ## handler, which is why we use 'sudo -n' here
+        sudo -n kill -s TERM "${pid}" 2> /dev/null
+        timeout 5 tail --pid="${pid}" -f /dev/null
+        if ps -p "${pid}" > /dev/null; then
+            mwarn "Failed to terminate the VPN process ('gpclient' PID ${pid}). Terminate it manually with 'sudo kill ${pid}', otherwise the next 'ucsf-vpn start' will report that you are already connected"
+        else
+            ## Any 'gpauth' login window is orphaned when 'gpclient' terminates
+            pkill -TERM -u "$USER" -x gpauth 2> /dev/null
+        fi
+    fi
+
+    if [[ -f "$pid_file" ]]; then
+        mdebug "Removing PID file: $pid_file"
+        rm -f "$pid_file"
+    fi
+
+    _exit 1
+}
+
+
 function gpclient_start() {
     local gpclient_pid gpclient_log_file log_file main_reason reason post_reason
     local use_xdotool
@@ -71,6 +108,12 @@ function gpclient_start() {
 
     if ! $force; then
         if [[ $validate == *pid* ]] && [[ $pid != -1 ]]; then
+           ## A 'gpclient' process without a VPN tunnel is not a VPN
+           ## connection. It is a login that never completed, e.g. because a
+           ## previous 'ucsf-vpn start' was interrupted
+           if ! has_ip_route_tunnel; then
+               merror "A VPN process ('gpclient' PID $pid) is running, but there is no VPN tunnel, i.e. you are not connected to the VPN. Was a previous 'ucsf-vpn start' interrupted before the login completed? If so, call 'ucsf-vpn stop' to terminate that process, and then try again"
+           fi
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
@@ -164,6 +207,11 @@ function gpclient_start() {
     gpclient_pid=$!
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"
+
+    ## From here on, and until the VPN tunnel is up, an interrupted 'ucsf-vpn'
+    ## must not leave the 'gpclient' process behind
+    # shellcheck disable=SC2064
+    trap "gpclient_abort ${gpclient_pid}" INT TERM HUP
     
     if $use_xdotool; then
         ## Enter credential in 'GlobalProtect Login' pop-up window
@@ -273,6 +321,10 @@ function gpclient_start() {
     ## is why the timeout is generous
     auth_timeout=${UCSF_VPN_AUTH_TIMEOUT:-300}
     wait_for_ip_route_tunnel "${auth_timeout}" "${gpclient_pid}"
+
+    ## The VPN tunnel is up. From here on, an interrupted 'ucsf-vpn' should
+    ## leave the VPN connection running, which 'ucsf-vpn stop' terminates
+    trap - INT TERM HUP
     
     ## Wait for IP routing table to stabilize
     wait_for_ip_route
