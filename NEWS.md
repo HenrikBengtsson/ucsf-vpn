@@ -3,7 +3,15 @@ ucsf-vpn
 
 ## Version 7.1.0-9000 (2026-08-14)
 
- * ...
+### Bug Fixes
+
+ * `ucsf-vpn start --args <options>`, and environment variable
+   `UCSF_VPN_EXTRAS`, could only pass options that `gpclient` itself
+   accepts, e.g. `--ignore-tls-errors`. All other options were rejected
+   with "error: unexpected argument '--cookie-cache' found", because
+   they were passed before the `connect` command. Now each option is
+   passed either before or after that command, depending on which of
+   the two accepts it.
  
 
 ## Version 7.1.0 (2026-08-14)

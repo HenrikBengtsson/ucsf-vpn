@@ -125,7 +125,9 @@ Flags:
  --version        Display version
  --full           Display more information
  --force          Force command
- --args           Pass any remaining options to 'gpclient'
+ --args           Pass any remaining options to 'gpclient', or to
+                  'gpclient connect', depending on which of the two
+                  accepts the option
 
 Examples:
  ucsf-vpn --version --full
@@ -233,7 +235,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 51568 Aug 14 18:14 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 52648 Aug 14 18:17 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```

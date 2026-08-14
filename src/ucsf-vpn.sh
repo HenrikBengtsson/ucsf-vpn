@@ -29,7 +29,9 @@
 ###  --version        Display version
 ###  --full           Display more information
 ###  --force          Force command
-###  --args           Pass any remaining options to 'gpclient'
+###  --args           Pass any remaining options to 'gpclient', or to
+###                   'gpclient connect', depending on which of the two
+###                   accepts the option
 ###
 ### Examples:
 ###  ucsf-vpn --version --full

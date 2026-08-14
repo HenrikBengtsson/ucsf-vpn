@@ -93,8 +93,8 @@ function gpclient_abort() {
 
 function gpclient_start() {
     local gpclient_pid gpclient_log_file log_file main_reason reason post_reason
-    local use_xdotool
-    local -a opts
+    local opt use_xdotool
+    local -a connect_opts global_opts opts
     local -i auth_timeout max_iter pid
 
     mdebug "gpclient_start() ..."
@@ -155,12 +155,35 @@ function gpclient_start() {
         prompt_pwd "${pwd}"
     fi
 
+    ## Options passed via --args, and UCSF_VPN_EXTRAS, are either 'gpclient'
+    ## options, which have to be passed before the 'connect' command, or
+    ## 'gpclient connect' options, which have to be passed after it
+    global_opts=()
+    connect_opts=()
+    for opt in "${extras[@]}"; do
+        case "${opt}" in
+            --fix-openssl)
+                ## We always pass this one, and 'gpclient' rejects duplicates
+                mdebug "Dropping '${opt}', because it is always passed"
+                ;;
+            --ignore-tls-errors|-v|-vv|-vvv|--verbose|-q|-qq|--quiet)
+                global_opts+=("${opt}")
+                ;;
+            *)
+                connect_opts+=("${opt}")
+                ;;
+        esac
+    done
+    mdebug "gpclient options: [n=${#global_opts[@]}] ${global_opts[*]}"
+    mdebug "gpclient connect options: [n=${#connect_opts[@]}] ${connect_opts[*]}"
+
     ## gpclient options
     opts=()
-    opts+=("${extras[@]}")
+    opts+=("${global_opts[@]}")
 
     opts+=("--fix-openssl")
     opts+=("connect")
+    opts+=("${connect_opts[@]}")
     opts+=("--as-gateway")
 
     opts+=("${server}")
