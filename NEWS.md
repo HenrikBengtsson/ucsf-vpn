@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 7.0.1-9001 (2026-08-14)
+## Version 7.1.0 (2026-08-14)
 
 ### New Features
 
