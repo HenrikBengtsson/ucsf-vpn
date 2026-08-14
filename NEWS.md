@@ -30,6 +30,14 @@ ucsf-vpn
 
 ### Bug Fixes
 
+ * The query of the UCSF IT network service, which `--validate=ucsfit`
+   uses, had no timeout, and a failed query was indistinguishable from
+   a query reporting that we are not on the UCSF network. Now it times
+   out, and a failed query is reported as such. Also, `ucsf-vpn status`
+   now mentions that conflicting validation results can be caused by
+   another VPN or tunnel, e.g. WireGuard, taking precedence over the VPN
+   routes.
+
  * `ucsf-vpn start` left the `gpclient` process running, when it gave up
    waiting for the login to complete, e.g. after the
    `UCSF_VPN_AUTH_TIMEOUT` seconds. Because of this, the next

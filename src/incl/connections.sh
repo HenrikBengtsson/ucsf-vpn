@@ -2,7 +2,26 @@
 # Connection, e.g. checking whether connected to the VPN or not
 # -------------------------------------------------------------------------
 function ucsf_it_network_info() {
-    curl --silent https://help.ucsf.edu/HelpApps/ipNetVerify.php | grep -E "<td>(Connected to UCSF Network|IP Address|Network Location)</td>" | sed 's/<\/td><td>/=/' | sed -E 's/<[^>]+>//g' | sed 's/.*Connected to UCSF Network/connected/' | sed 's/.*IP Address/public_ip/' | sed 's/.*Network Location/network/' | sed 's/=No/=false/' | sed 's/=Yes/=true/' | sed -E "s/network=(.*)/network='\1'/" | sort
+    local url out
+    local -a info
+
+    url="https://help.ucsf.edu/HelpApps/ipNetVerify.php"
+    mdebug "ucsf_it_network_info()"
+
+    ## Note, without a timeout, this could hang for a long time, e.g. when the
+    ## traffic does not reach UCSF, despite there being a VPN tunnel
+    if ! out=$(curl --silent --connect-timeout 5.0 --max-time 20.0 "${url}"); then
+        mwarn "Failed to query the UCSF IT network service <${url}>. If you are connected to the VPN, then this suggests that your traffic does not go via the VPN"
+        return 1
+    fi
+
+    mapfile -t info < <(printf "%s\\n" "${out}" | grep -E "<td>(Connected to UCSF Network|IP Address|Network Location)</td>" | sed 's/<\/td><td>/=/' | sed -E 's/<[^>]+>//g' | sed 's/.*Connected to UCSF Network/connected/' | sed 's/.*IP Address/public_ip/' | sed 's/.*Network Location/network/' | sed 's/=No/=false/' | sed 's/=Yes/=true/' | sed -E "s/network=(.*)/network='\1'/" | sort)
+    if [[ ${#info[@]} -eq 0 ]]; then
+        mwarn "Unexpected response from the UCSF IT network service <${url}>, i.e. it did not report on the network status"
+        return 1
+    fi
+
+    printf "%s\\n" "${info[@]}"
 }
 
 function connection_details() {

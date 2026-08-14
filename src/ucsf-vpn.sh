@@ -276,7 +276,7 @@ function status() {
         for msg in "${msgs[@]}"; do
             echo "${msg}"
         done
-        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN. You might be able to fix it with 'ucsf vpn restart'"
+        merror "Conflicting results whether connected to the VPN. This can happen if the network dropped temporarily while on the VPN, in which case 'ucsf-vpn restart' might fix it. It can also happen if another VPN or tunnel, e.g. WireGuard, takes precedence over the VPN routes, i.e. there is a VPN tunnel, but the traffic does not go through it. Use 'ip rule show' and 'ip route get <hostname>' to check for that"
     fi
 
     mdebug "status() ... done"
