@@ -69,7 +69,7 @@ function gpclient_start() {
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $(gpclient_pid) != -1 ]]; then
+        if [[ $validate == *pid* ]] && [[ $pid != -1 ]]; then
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
