@@ -118,14 +118,20 @@ function public_info() {
     fi
 }
 
+## Pings the ping servers one by one, and returns 0 as soon as one of them
+## replies, i.e. the remaining ones are not pinged. Returns 1 only if all of
+## them fail to reply
 function is_online() {
-    local ping_server ping_servers ping_timeout
+    local ping_server ping_timeout
+    local -a ping_servers
 
-    ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
-    mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    ## Environment variables can only hold strings, which is why multiple
+    ## ping servers are specified as a space- or comma-separated string
+    IFS=$' \t\n,' read -r -a ping_servers <<< "${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}"
+    mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
-    for ping_server in $ping_servers; do
+    for ping_server in "${ping_servers[@]}"; do
       mdebug "Ping server: '$ping_server'"
       minfo "Pinging '$ping_server' once"
       if ping -c 1 -W "$ping_timeout" "$ping_server" > /dev/null 2> /dev/null; then
