@@ -137,9 +137,15 @@ Examples:
 
 Environment variables:
  UCSF_VPN_VALIDATE     Default value for --validate
- UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
+ UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9).
+                       Multiple servers may be specified separated by
+                       space or comma, in which case the first one that
+                       replies is used
  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
  UCSF_VPN_THEME        Default value for --theme
+ UCSF_VPN_AUTH_TIMEOUT Seconds to wait for the login to complete, e.g.
+                       entering credentials and confirming with Duo
+                       (default: 300 seconds)
  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 
 User credentials:
@@ -160,7 +166,9 @@ found, you will be prompted to enter them.
 
 Requirements:
 * GlobalProtect gpclient (installed: 2.6.5)
-* xdotool (installed: 3.20160805.1)
+* xdotool (installed: 3.20160805.1); only used for automating the
+  login pop-up window on X11. On Wayland, the credentials have to be
+  entered manually in that window
 * curl (installed: 8.5.0)
 * sudo
 

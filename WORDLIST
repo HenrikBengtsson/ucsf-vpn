@@ -14,6 +14,7 @@ Pre
 ShellCheck
 UCSF
 VPN
+Wayland
 YubiKey
 awk
 codespell
@@ -22,6 +23,7 @@ dns
 edu
 env
 gpclient
+hardcoded
 hostname
 https
 io

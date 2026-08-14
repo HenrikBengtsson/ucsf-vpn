@@ -56,8 +56,9 @@ function gpclient_pid() {
 ## sudo gpclient --fix-openssl connect --as-gateway gp-ucsf.ucsf.edu
 function gpclient_start() {
     local gpclient_pid gpclient_log_file log_file main_reason reason post_reason
+    local use_xdotool
     local -a opts
-    local -i pid
+    local -i auth_timeout max_iter pid
 
     mdebug "gpclient_start() ..."
 
@@ -91,12 +92,25 @@ function gpclient_start() {
 
     assert_sudo "start"
 
-    ## Load user credentials from file?
-    source_netrc
+    ## Is the login pop-up window automated by 'xdotool'? Only on X11, because
+    ## 'xdotool' can only see X11 windows, i.e. on Wayland it would wait forever
+    ## for a window that it can never find
+    use_xdotool=true
+    if [[ "${XDG_SESSION_TYPE}" != "x11" ]]; then
+        mdebug "Not an X11 session (XDG_SESSION_TYPE='${XDG_SESSION_TYPE}'), i.e. cannot automate the login pop-up window"
+        use_xdotool=false
+    fi
 
-    ## Prompt for username and password, if missing
-    prompt_user "${user}"
-    prompt_pwd "${pwd}"
+    ## The user credentials are only used for automating the login pop-up
+    ## window, i.e. don't ask for them, if we don't need them
+    if $use_xdotool; then
+        ## Load user credentials from file?
+        source_netrc
+
+        ## Prompt for username and password, if missing
+        prompt_user "${user}"
+        prompt_pwd "${pwd}"
+    fi
 
     ## gpclient options
     opts=()
@@ -151,49 +165,58 @@ function gpclient_start() {
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"
     
-    ## Enter credential in 'GlobalProtect Login' pop-up window
-    mdebug "Wait for 'GlobalProtect Login' pop-up window to appear"
-    while ! xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+    if $use_xdotool; then
+        ## Enter credential in 'GlobalProtect Login' pop-up window
+        mdebug "Wait for 'GlobalProtect Login' pop-up window to appear"
+        max_iter=60 ## Wait for up to 30 seconds
+        while ! xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+            max_iter=$((max_iter - 1))
+            if [[ ${max_iter} -le 0 ]]; then
+                merror "The 'GlobalProtect Login' pop-up window never appeared. If the VPN server authenticates via single sign-on, then the pop-up window is a web page, which cannot be automated"
+            fi
+            sleep 0.5
+        done
+
         sleep 0.5
-    done
-    
-    sleep 0.5
-    WINDOW_ID=$(xdotool search --name "GlobalProtect Login" | head -1)
-    mdebug "'GlobalProtect Login' window WINDOW_ID=${WINDOW_ID}"
-    if [[ -z ${WINDOW_ID} ]]; then
-        merror "Failed to locate the 'GlobalProtect Login' pop-up window"
+        WINDOW_ID=$(xdotool search --name "GlobalProtect Login" | head -1)
+        mdebug "'GlobalProtect Login' window WINDOW_ID=${WINDOW_ID}"
+        if [[ -z ${WINDOW_ID} ]]; then
+            merror "Failed to locate the 'GlobalProtect Login' pop-up window"
+        fi
+
+        mdebug "'GlobalProtect Login' window: focus window"
+        xdotool windowfocus "${WINDOW_ID}"
+        sleep 0.5
+
+        mdebug "'GlobalProtect Login' window: unfocus form"
+        xdotool mousemove --window "${WINDOW_ID}" 50 50 click 1
+        sleep 0.5
+
+        mdebug "'GlobalProtect Login' window: move to 'Login name' field"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" ctrl+a
+        mdebug "'GlobalProtect Login' window: type 'Login name' (${user})"
+        xdotool type --window "${WINDOW_ID}" "${user}"
+
+        mdebug "'GlobalProtect Login' window: move to 'Password' field"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" ctrl+a
+        mdebug "'GlobalProtect Login' window: type 'Password' (${pwd//?/*})"
+        xdotool type --window "${WINDOW_ID}" "${pwd}"
+
+        mdebug "'GlobalProtect Login' window: Press ENTER"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" Return
+
+        mdebug "Wait for 'GlobalProtect Login' pop-up window to close"
+        while xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+            sleep 0.5
+        done
+
+        mdebug "'GlobalProtect Login' closed"
+    else
+        mnote "Enter your credentials in the 'GlobalProtect' pop-up window that just opened, and confirm with Duo, if asked to ..."
     fi
-    
-    mdebug "'GlobalProtect Login' window: focus window"
-    xdotool windowfocus "${WINDOW_ID}"
-    sleep 0.5
-    
-    mdebug "'GlobalProtect Login' window: unfocus form"
-    xdotool mousemove --window "${WINDOW_ID}" 50 50 click 1
-    sleep 0.5
-    
-    mdebug "'GlobalProtect Login' window: move to 'Login name' field"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" ctrl+a
-    mdebug "'GlobalProtect Login' window: type 'Login name' (${user})"
-    xdotool type --window "${WINDOW_ID}" "${user}"
-    
-    mdebug "'GlobalProtect Login' window: move to 'Password' field"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" ctrl+a
-    mdebug "'GlobalProtect Login' window: type 'Password' (${pwd//?/*})"
-    xdotool type --window "${WINDOW_ID}" "${pwd}"
-
-    mdebug "'GlobalProtect Login' window: Press ENTER"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" Return
-
-    mdebug "Wait for 'GlobalProtect Login' pop-up window to close"
-    while xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
-        sleep 0.5
-    done
-
-    mdebug "'GlobalProtect Login' closed"
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
@@ -245,8 +268,11 @@ function gpclient_start() {
         merror "${reason}"
     fi
 
-    ## Wait for VPN tunnel to appear in IP routing table
-    wait_for_ip_route_tunnel
+    ## Wait for VPN tunnel to appear in IP routing table. This is also where we
+    ## wait for the user to sign in, including two-factor authentication, which
+    ## is why the timeout is generous
+    auth_timeout=${UCSF_VPN_AUTH_TIMEOUT:-300}
+    wait_for_ip_route_tunnel "${auth_timeout}" "${gpclient_pid}"
     
     ## Wait for IP routing table to stabilize
     wait_for_ip_route
