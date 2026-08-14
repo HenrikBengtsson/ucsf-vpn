@@ -2,7 +2,7 @@
 # Credentials, e.g. .netrc, prompting for password, etc.
 # -------------------------------------------------------------------------
 function source_netrc() {
-    local rcfile pattern found bfr home
+    local rcfile pattern found bfr home machine
 
     if [[ -z ${NETRC} ]]; then
         if [[ ${EUID} -eq 0 ]]; then
@@ -65,7 +65,7 @@ function source_netrc() {
     fi
 
     bfr=$(awk "/${pattern}/{print; flag=1; next}/machine[ \\t]/{flag=0} flag;" "${rcfile}")
-    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines}"
+    [[ -z $bfr ]] && merror "Internal error - failed to extract ${server} credentials from ${rcfile} searching for ${netrc_machines[*]}"
 
     if [[ -z "$user" ]]; then
         user=$(echo "${bfr}" | grep -F "login" | sed -E 's/.*login[[:space:]]+([^[:space:]]+).*/\1/g')
@@ -92,10 +92,10 @@ function prompt_user() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory username: "
             _tput setaf 15  ## bright white
-            read -r user
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r user
             _tput sgr0      ## reset
         } 1>&2
-        user=${user/ /}
     done
     mdebug "- user=${user}"
 }
@@ -109,10 +109,10 @@ function prompt_pwd() {
             _tput setaf 11  ## bright yellow
             printf "Enter your UCSF Active Directory password: "
             _tput setaf 15  ## bright white
-            read -r -s pwd
+            ## IFS make sure whitespace is trimmed
+            IFS=$' \t\n' read -r -s pwd
             _tput sgr0      ## reset
         } 1>&2
-        pwd=${pwd/ /}
     done
     mecho "<password>"
 

@@ -118,14 +118,34 @@ function public_info() {
     fi
 }
 
+## Pings the ping servers one by one, and returns 0 as soon as one of them
+## replies, i.e. the remaining ones are not pinged. Returns 1 only if all of
+## them fail to reply
 function is_online() {
-    local ping_server ping_servers ping_timeout
+    local ping_server ping_timeout spec
+    local -a ping_servers
 
-    ping_servers=${UCSF_VPN_PING_SERVER:-${1:-9.9.9.9}}
-    mdebug "Ping servers: [n=${#ping_servers}]: $ping_servers"
+    ## An explicitly specified ping server, e.g. the VPN server, takes
+    ## precedence over UCSF_VPN_PING_SERVER, which in turn takes precedence
+    ## over the default. Environment variables can only hold strings, which is
+    ## why multiple ping servers are specified as a space- or comma-separated
+    ## string
+    spec="${1:-${UCSF_VPN_PING_SERVER:-9.9.9.9}}"
+    IFS=$' \t,' read -r -a ping_servers <<< "${spec}"
+    mdebug "Ping servers: [n=${#ping_servers[@]}]: ${ping_servers[*]}"
+
+    ## Nothing to ping? This is the case if, and only if, the specification
+    ## comprises nothing but separators, e.g. UCSF_VPN_PING_SERVER=" " or ",,"
+    if [[ -z "${spec//[[:space:],]/}" ]]; then
+        mwarn "Cannot verify the internet connection, because no ping server was specified: '${spec}' (see environment variable UCSF_VPN_PING_SERVER)"
+        return 1
+    fi
+
     ping_timeout=${UCSF_VPN_PING_TIMEOUT:-1.0}
     mdebug "Ping timeout (in seconds): $ping_timeout"
-    for ping_server in $ping_servers; do
+    for ping_server in "${ping_servers[@]}"; do
+      ## Skip empty entries, e.g. from a ",," typo
+      [[ -n "$ping_server" ]] || continue
       mdebug "Ping server: '$ping_server'"
       minfo "Pinging '$ping_server' once"
       if ping -c 1 -W "$ping_timeout" "$ping_server" > /dev/null 2> /dev/null; then
@@ -150,14 +170,30 @@ function ip_route_novpn_interface() {
 }
 
 
+function has_ip_route_tunnel() {
+    grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"
+}
+
+
+## Usage: wait_for_ip_route_tunnel [<timeout> [<pid>]]
+## Waits for up to <timeout> seconds (default: 10) for the VPN tunnel to appear.
+## If <pid> is given, it gives up as soon as that process is no longer running
 function wait_for_ip_route_tunnel() {
-    local -i max_iter
-    mdebug "Wait for tunnel to appear in IP routing table"
-    max_iter=100 ## Wait for up to 10 seconds
-    while ! grep -q -E 'tun[[:digit:]]' <<< "$(ip route show)"; do
+    local -i max_iter timeout watch_pid
+    timeout=${1:-10}
+    watch_pid=${2:-0}
+    if [[ ${timeout} -le 0 ]]; then
+        timeout=10
+    fi
+    mdebug "Wait for tunnel to appear in IP routing table (timeout: ${timeout} seconds; watching PID: ${watch_pid})"
+    max_iter=$((10 * timeout)) ## Each iteration waits 0.1 seconds
+    while ! has_ip_route_tunnel; do
+        if [[ ${watch_pid} -gt 0 ]] && [[ ! -d "/proc/${watch_pid}" ]]; then
+            merror "The VPN process (PID ${watch_pid}) terminated before the VPN tunnel was created. Did the sign in fail or was it cancelled? See 'ucsf-vpn log' for details"
+        fi
         max_iter=$((max_iter - 1))
-        if [[ ${max_iter} -eq 0 ]]; then
-            merror "The VPN tunnel never appeared in the IP routing table:$(echo; ip route show; echo)"
+        if [[ ${max_iter} -le 0 ]]; then
+            merror "The VPN tunnel never appeared in the IP routing table after ${timeout} seconds:$(echo; ip route show; echo)"
         fi
         sleep 0.1
     done

@@ -1,4 +1,5 @@
 CLI
+GPL
 GlobalProtect
 Ivanti
 JSON
@@ -8,10 +9,12 @@ LTS
 MyAccess
 OpenConnect
 PID
+POSIX
 Pre
 ShellCheck
 UCSF
 VPN
+Wayland
 YubiKey
 awk
 codespell
@@ -20,6 +23,7 @@ dns
 edu
 env
 gpclient
+hardcoded
 hostname
 https
 io

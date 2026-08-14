@@ -1,6 +1,55 @@
 ucsf-vpn
 ========
 
+## Version 7.1.0 (2026-08-14)
+
+### New Features
+
+ * The time allowed for signing in, including any two-factor
+   authentication, can now be controlled by environment variable
+   `UCSF_VPN_AUTH_TIMEOUT` (default: 300 seconds). Previously, it was
+   hardcoded to 10 seconds.
+
+### Bug Fixes
+
+ * `ucsf-vpn start` would wait forever for the 'GlobalProtect Login'
+   pop-up window to appear when running on Wayland, because `xdotool`
+   can only see X11 windows. Now that window is populated only on X11,
+   and on all other types of sessions you are asked to enter your
+   credentials in it manually. The wait for the window also times out
+   after 30 seconds.
+
+ * `ucsf-vpn start` asked for username and password also when they are
+   not used, i.e. when the login pop-up window is not populated.
+
+ * If `ucsf-vpn start` was interrupted, e.g. by `Ctrl-C`, while waiting
+   for the login to complete, the `gpclient` process was left running,
+   which made the next `ucsf-vpn start` report that you are already
+   connected to the VPN. Now that process is terminated, if the
+   interrupt happens before the VPN tunnel is up.
+
+ * `ucsf-vpn start` reported "Skipping - already connected to the VPN"
+   whenever there was a `gpclient` process, also when that process had
+   not established a VPN tunnel. Now such a process is reported as a
+   login that never completed.
+
+
+## Version 7.0.1-9000 (2025-12-20)
+
+### Bug Fixes
+
+ * The `gpclient` log file could have intertwined output and error
+   messages.
+
+ * `ucsf-vpn` did not assert that `curl` is installed as intended.
+
+ * `ucsf-vpn start` failed with "error: command not found" when the
+   VPN client could not be started.
+ 
+ * Key-value options would parse the value incorrectly if it comprised
+   an equal sign (`=`).
+
+
 ## Version 7.0.1 (2025-12-20)
 
 ### Bug Fixes

@@ -54,22 +54,66 @@ function gpclient_pid() {
 }
 
 ## sudo gpclient --fix-openssl connect --as-gateway gp-ucsf.ucsf.edu
+## Usage: gpclient_abort <pid>
+## Terminates a 'gpclient' process that we started, but never got connected,
+## e.g. because the user interrupted the login step. If we leave it running,
+## the next 'ucsf-vpn start' will mistake it for an established VPN connection
+# shellcheck disable=SC2329  ## It is invoked indirectly, i.e. by 'trap'
+function gpclient_abort() {
+    local -i pid
+
+    pid=${1:-0}
+    mdebug "gpclient_abort(pid=${pid}) ..."
+    log "gpclient_abort(pid=${pid}) ..."
+
+    mwarn "Interrupted before the VPN connection was established"
+
+    if [[ ${pid} -gt 0 ]] && ps -p "${pid}" > /dev/null; then
+        minfo "Terminating the VPN process that was started ('gpclient' PID ${pid})"
+        ## Note, we must not prompt for a password from within a signal
+        ## handler, which is why we use 'sudo -n' here
+        sudo -n kill -s TERM "${pid}" 2> /dev/null
+        timeout 5 tail --pid="${pid}" -f /dev/null
+        if ps -p "${pid}" > /dev/null; then
+            mwarn "Failed to terminate the VPN process ('gpclient' PID ${pid}). Terminate it manually with 'sudo kill ${pid}', otherwise the next 'ucsf-vpn start' will report that you are already connected"
+        else
+            ## Any 'gpauth' login window is orphaned when 'gpclient' terminates
+            pkill -TERM -u "$USER" -x gpauth 2> /dev/null
+        fi
+    fi
+
+    if [[ -f "$pid_file" ]]; then
+        mdebug "Removing PID file: $pid_file"
+        rm -f "$pid_file"
+    fi
+
+    _exit 1
+}
+
+
 function gpclient_start() {
     local gpclient_pid gpclient_log_file log_file main_reason reason post_reason
+    local use_xdotool
     local -a opts
-    local -i pid
+    local -i auth_timeout max_iter pid
 
     mdebug "gpclient_start() ..."
 
     pid=$(gpclient_pid)
     if [[ $pid != -1 ]]; then
-        if [[ ! $force ]]; then
+        if ! $force; then
             merror "A VPN process ('gpclient' PID $pid) is already running."
         fi
     fi
 
     if ! $force; then
-        if [[ $validate == *pid* ]] && [[ $(gpclient_pid) != -1 ]]; then
+        if [[ $validate == *pid* ]] && [[ $pid != -1 ]]; then
+           ## A 'gpclient' process without a VPN tunnel is not a VPN
+           ## connection. It is a login that never completed, e.g. because a
+           ## previous 'ucsf-vpn start' was interrupted
+           if ! has_ip_route_tunnel; then
+               merror "A VPN process ('gpclient' PID $pid) is running, but there is no VPN tunnel, i.e. you are not connected to the VPN. Was a previous 'ucsf-vpn start' interrupted before the login completed? If so, call 'ucsf-vpn stop' to terminate that process, and then try again"
+           fi
            mwarn "Skipping - already connected to the VPN"
            return
         elif [[ $validate == *ipinfo* ]] && is_connected; then
@@ -91,12 +135,25 @@ function gpclient_start() {
 
     assert_sudo "start"
 
-    ## Load user credentials from file?
-    source_netrc
+    ## Is the login pop-up window automated by 'xdotool'? Only on X11, because
+    ## 'xdotool' can only see X11 windows, i.e. on Wayland it would wait forever
+    ## for a window that it can never find
+    use_xdotool=true
+    if [[ "${XDG_SESSION_TYPE}" != "x11" ]]; then
+        mdebug "Not an X11 session (XDG_SESSION_TYPE='${XDG_SESSION_TYPE}'), i.e. cannot automate the login pop-up window"
+        use_xdotool=false
+    fi
 
-    ## Prompt for username and password, if missing
-    prompt_user "${user}"
-    prompt_pwd "${pwd}"
+    ## The user credentials are only used for automating the login pop-up
+    ## window, i.e. don't ask for them, if we don't need them
+    if $use_xdotool; then
+        ## Load user credentials from file?
+        source_netrc
+
+        ## Prompt for username and password, if missing
+        prompt_user "${user}"
+        prompt_pwd "${pwd}"
+    fi
 
     ## gpclient options
     opts=()
@@ -144,55 +201,70 @@ function gpclient_start() {
     log "ip route show:"
     ip route show >> "${log_file}"
 
-    # shellcheck disable=SC2086
-    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" 2> "${gpclient_log_file}" 1> "${gpclient_log_file}" &
+    # shellcheck disable=SC2024
+    sudo UCSF_VPN_VERSION="$(version)" UCSF_VPN_LOGFILE="$(logfile)" gpclient "${opts[@]}" > "${gpclient_log_file}" 2>&1 &
+    
     gpclient_pid=$!
     echo "${gpclient_pid}" > "${pid_file}"
     mdebug "gpclient PID: ${gpclient_pid}"
+
+    ## From here on, and until the VPN tunnel is up, an interrupted 'ucsf-vpn'
+    ## must not leave the 'gpclient' process behind
+    # shellcheck disable=SC2064
+    trap "gpclient_abort ${gpclient_pid}" INT TERM HUP
     
-    ## Enter credential in 'GlobalProtect Login' pop-up window
-    mdebug "Wait for 'GlobalProtect Login' pop-up window to appear"
-    while ! xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+    if $use_xdotool; then
+        ## Enter credential in 'GlobalProtect Login' pop-up window
+        mdebug "Wait for 'GlobalProtect Login' pop-up window to appear"
+        max_iter=60 ## Wait for up to 30 seconds
+        while ! xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+            max_iter=$((max_iter - 1))
+            if [[ ${max_iter} -le 0 ]]; then
+                merror "The 'GlobalProtect Login' pop-up window never appeared. If the VPN server authenticates via single sign-on, then the pop-up window is a web page, which cannot be automated"
+            fi
+            sleep 0.5
+        done
+
         sleep 0.5
-    done
-    
-    sleep 0.5
-    WINDOW_ID=$(xdotool search --name "GlobalProtect Login" | head -1)
-    mdebug "'GlobalProtect Login' window WINDOW_ID=${WINDOW_ID}"
-    if [[ -z ${WINDOW_ID} ]]; then
-        merror "Failed to locate the 'GlobalProtect Login' pop-up window"
+        WINDOW_ID=$(xdotool search --name "GlobalProtect Login" | head -1)
+        mdebug "'GlobalProtect Login' window WINDOW_ID=${WINDOW_ID}"
+        if [[ -z ${WINDOW_ID} ]]; then
+            merror "Failed to locate the 'GlobalProtect Login' pop-up window"
+        fi
+
+        mdebug "'GlobalProtect Login' window: focus window"
+        xdotool windowfocus "${WINDOW_ID}"
+        sleep 0.5
+
+        mdebug "'GlobalProtect Login' window: unfocus form"
+        xdotool mousemove --window "${WINDOW_ID}" 50 50 click 1
+        sleep 0.5
+
+        mdebug "'GlobalProtect Login' window: move to 'Login name' field"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" ctrl+a
+        mdebug "'GlobalProtect Login' window: type 'Login name' (${user})"
+        xdotool type --window "${WINDOW_ID}" "${user}"
+
+        mdebug "'GlobalProtect Login' window: move to 'Password' field"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" ctrl+a
+        mdebug "'GlobalProtect Login' window: type 'Password' (${pwd//?/*})"
+        xdotool type --window "${WINDOW_ID}" "${pwd}"
+
+        mdebug "'GlobalProtect Login' window: Press ENTER"
+        xdotool key --window "${WINDOW_ID}" Tab
+        xdotool key --window "${WINDOW_ID}" Return
+
+        mdebug "Wait for 'GlobalProtect Login' pop-up window to close"
+        while xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
+            sleep 0.5
+        done
+
+        mdebug "'GlobalProtect Login' closed"
+    else
+        mnote "Enter your credentials in the 'GlobalProtect' pop-up window that just opened, and confirm with Duo, if asked to ..."
     fi
-    
-    mdebug "'GlobalProtect Login' window: focus window"
-    xdotool windowfocus "${WINDOW_ID}"
-    sleep 0.5
-    
-    mdebug "'GlobalProtect Login' window: unfocus form"
-    xdotool mousemove --window "${WINDOW_ID}" 50 50 click 1
-    sleep 0.5
-    
-    mdebug "'GlobalProtect Login' window: move to 'Login name' field"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" ctrl+a
-    mdebug "'GlobalProtect Login' window: type 'Login name' (${user})"
-    xdotool type --window "${WINDOW_ID}" "${user}"
-    
-    mdebug "'GlobalProtect Login' window: move to 'Password' field"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" ctrl+a
-    mdebug "'GlobalProtect Login' window: type 'Password' (${pwd//?/*})"
-    xdotool type --window "${WINDOW_ID}" "${pwd}"
-
-    mdebug "'GlobalProtect Login' window: Press ENTER"
-    xdotool key --window "${WINDOW_ID}" Tab
-    xdotool key --window "${WINDOW_ID}" Return
-
-    mdebug "Wait for 'GlobalProtect Login' pop-up window to close"
-    while xdotool search --name "GlobalProtect Login" > /dev/null 2>&1; do
-        sleep 0.5
-    done
-
-    mdebug "'GlobalProtect Login' closed"
 
     ## Update IP-info file
     pii_file=$(make_pii_file)
@@ -244,8 +316,15 @@ function gpclient_start() {
         merror "${reason}"
     fi
 
-    ## Wait for VPN tunnel to appear in IP routing table
-    wait_for_ip_route_tunnel
+    ## Wait for VPN tunnel to appear in IP routing table. This is also where we
+    ## wait for the user to sign in, including two-factor authentication, which
+    ## is why the timeout is generous
+    auth_timeout=${UCSF_VPN_AUTH_TIMEOUT:-300}
+    wait_for_ip_route_tunnel "${auth_timeout}" "${gpclient_pid}"
+
+    ## The VPN tunnel is up. From here on, an interrupted 'ucsf-vpn' should
+    ## leave the VPN connection running, which 'ucsf-vpn stop' terminates
+    trap - INT TERM HUP
     
     ## Wait for IP routing table to stabilize
     wait_for_ip_route

@@ -42,9 +42,15 @@
 ###
 ### Environment variables:
 ###  UCSF_VPN_VALIDATE     Default value for --validate
-###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9)
+###  UCSF_VPN_PING_SERVER  Ping server to validate internet (default: 9.9.9.9).
+###                        Multiple servers may be specified separated by
+###                        space or comma, in which case the first one that
+###                        replies is used
 ###  UCSF_VPN_PING_TIMEOUT Ping timeout (default: 1.0 seconds)
 ###  UCSF_VPN_THEME        Default value for --theme
+###  UCSF_VPN_AUTH_TIMEOUT Seconds to wait for the login to complete, e.g.
+###                        entering credentials and confirming with Duo
+###                        (default: 300 seconds)
 ###  UCSF_VPN_EXTRAS       Additional arguments passed to GlobalProtect
 ###
 ### User credentials:
@@ -65,11 +71,17 @@
 ###
 ### Requirements:
 ### * GlobalProtect gpclient (installed: {{gpclient_version}})
-### * xdotool (installed: {{xdotool_version}})
+### * xdotool (installed: {{xdotool_version}}); only used for automating the
+###   login pop-up window on X11. On Wayland, the credentials have to be
+###   entered manually in that window
 ### * curl (installed: {{curl_version}})
 ### * sudo
 ###
 ### Troubleshooting:
+### * `ucsf vpn start` uses `ping` to assert there is a working internet
+###   connection. If ping is disabled on your network, try with:
+###   `UCSF_VPN_PING_SERVER=127.0.0.1 ucsf vpn start`
+### 
 ### * Verify your UCSF credentials at https://remote.ucsf.edu/.
 ###   Use your UCSF email address for 'Username'.
 ###
@@ -83,8 +95,8 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.0.1
-### Copyright: Henrik Bengtsson (2016-2025)
+### Version: 7.1.0
+### Copyright: Henrik Bengtsson (2016-2026)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn
 call="$0 $*"
@@ -147,8 +159,11 @@ function status() {
                 msg="No 'gpclient' process running"
             else
                 connected+=(true)
+                age="<unknown>"
                 timestamp=$(ps -p "${pid}" -o lstart=)
-                if [[ -n ${timestamp} ]]; then
+                if [[ -z ${timestamp} ]]; then
+                    timestamp="<unknown>"
+                else
                     timestamp=$(date -d "${timestamp}" --iso-8601=seconds)
                     since=$(date -d "${timestamp}" +%s)
                     now=$(date +%s)
@@ -434,17 +449,15 @@ while [[ $# -gt 0 ]]; do
             dryrun=true
         elif [[ "$flag" == "dryrun" ]]; then
             merror "Did you mean to use '--dry-run'?"
-        elif [[ "$key" == "server" ]]; then
-            server=$value
         else
             merror "Unknown option: '$1'"
         fi
 
     ## Options (--key=value):
     elif [[ "$1" =~ ^--.*=.*$ ]]; then
-        key=${1//--}
-        key=${key//=*}
-        value=${1//--[[:alpha:]]*=}
+        key=${1%%=*}    ## split by first '='
+        key=${key#--}
+        value=${1#*=}
         mdebug "Key-value option '$1' parsed to key='$key', value='$value'"
         if [[ -z $value ]]; then
             merror "Option '--$key' must not be empty"
@@ -518,7 +531,6 @@ mdebug "force: $force"
 mdebug "validate: $validate"
 mdebug "dryrun: $dryrun"
 mdebug "extras: [n=${#extras[@]}] ${extras[*]}"
-mdebug "method: $method"
 mdebug "netrc_machines: ${netrc_machines[*]}"
 mdebug "pid_file: $pid_file"
 mdebug "gpclient_pid: $(gpclient_pid)"
@@ -545,7 +557,7 @@ if ! command -v gpclient &> /dev/null; then
     merror "Please install 'gpclient' (https://github.com/yuezk/GlobalProtect-openconnect)"
 elif ! command -v xdotool &> /dev/null; then
     merror "Please install 'xdotool' (https://github.com/jordansissel/xdotool)"
-elif ! command -v xdotool ^> /dev/null; then
+elif ! command -v curl &> /dev/null; then
     merror "Please install 'curl'"
 fi
 
@@ -559,7 +571,7 @@ elif [[ $action == "routing" ]]; then
     routing_details
     _exit $?
 elif [[ $action == "start" ]]; then
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "stop" ]]; then
     gpclient_stop
@@ -570,7 +582,7 @@ elif [[ $action == "restart" ]]; then
     if $force || is_connected; then
         gpclient_stop
     fi
-    gpclient_start || error "Failed to start VPN client"
+    gpclient_start || merror "Failed to start VPN client"
     status "connected"
 elif [[ $action == "toggle" ]]; then
     if ! is_connected; then
