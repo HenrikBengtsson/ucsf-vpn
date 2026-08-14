@@ -201,12 +201,13 @@ Troubleshooting:
 * With `--browser`, the web browser asks for permission to open the
   'globalprotectcallback' link with the 'GP Connect' application, e.g.
   "Open GP Connect?" in Chrome. That permission has to be granted,
-  because it is how the sign-in reaches the VPN client. If it is denied,
-  or the prompt is dismissed, the web browser reports "Authentication
-  Complete", but `ucsf-vpn start` waits until it times out. The
-  permission is remembered per website, if you accept it permanently.
-  Note, a web browser installed as a Snap, e.g. Ubuntu's
-  /usr/bin/firefox, is never allowed to open that application
+  because it is how the sign-in reaches the VPN client. If the prompt is
+  dismissed, the web page says "Authentication Complete", but
+  `ucsf-vpn start` waits until it times out. The permission is remembered
+  per website, if you accept it permanently. Note, a web browser installed
+  as a Snap, e.g. Ubuntu's /usr/bin/firefox, is never allowed to open that
+  application. The symptom of that is a web page saying "Authentication
+  Failed"
 
 * Verify your UCSF credentials at https://remote.ucsf.edu/.
   Use your UCSF email address for 'Username'.
@@ -264,7 +265,7 @@ use:
 $ make build
 ./build.sh
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ...
--r-xr-xr-x 1 alice alice 57008 Aug 14 20:04 bin/ucsf-vpn
+-r-xr-xr-x 1 alice alice 58999 Aug 14 20:13 bin/ucsf-vpn
 Version built: 7.1.0-9000
 Building bin/ucsf-vpn from src/ucsf-vpn.sh ... done
 ```

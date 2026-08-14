@@ -54,6 +54,53 @@ function gpclient_pid() {
 }
 
 ## sudo gpclient --fix-openssl connect --as-gateway gp-ucsf.ucsf.edu
+## Usage: is_snap_browser <browser>
+## Returns 0, if the web browser, specified by name, by path, or as 'default',
+## is installed as a Snap. Such a web browser is not allowed to open the
+## 'GP Connect' application, which is how an external sign-in is passed back
+## to the VPN client, i.e. the sign-in can never complete
+function is_snap_browser() {
+    local browser desktop path resolved
+
+    browser=$1
+    mdebug "is_snap_browser('${browser}') ..."
+
+    ## The default web browser of the desktop environment?
+    if [[ "${browser}" == "default" ]]; then
+        desktop=$(xdg-settings get default-web-browser 2> /dev/null)
+        mdebug "Default web browser: ${desktop:-<unknown>}"
+        if [[ -n "${desktop}" ]] && [[ -f "/var/lib/snapd/desktop/applications/${desktop}" ]]; then
+            return 0
+        fi
+        return 1
+    fi
+
+    if [[ "${browser}" == */* ]]; then
+        path=${browser}
+    else
+        path=$(command -v "${browser}" 2> /dev/null)
+    fi
+    if [[ -z "${path}" ]]; then
+        return 1
+    fi
+    resolved=$(readlink -f "${path}")
+    mdebug "Web browser: ${path} (${resolved})"
+
+    ## Installed as a Snap, e.g. /snap/bin/firefox?
+    if [[ "${path}" == /snap/* ]] || [[ "${resolved}" == /snap/* ]]; then
+        return 0
+    fi
+
+    ## A wrapper script that launches a Snap, e.g. Ubuntu's /usr/bin/firefox?
+    if [[ "$(head -c 2 "${resolved}" 2> /dev/null)" == "#!" ]] &&
+       grep -q -E "/snap/bin/|snap run " "${resolved}" 2> /dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
+
 ## Usage: gpclient_abort <pid>
 ## Terminates a 'gpclient' process that we started, but never got connected,
 ## e.g. because the user interrupted the login step. If we leave it running,
@@ -149,6 +196,9 @@ function gpclient_start() {
     if [[ -n "${browser}" ]]; then
         mdebug "Signing in via an external web browser ('${browser}'), i.e. there is no login pop-up window to automate"
         use_xdotool=false
+        if is_snap_browser "${browser}"; then
+            mwarn "The web browser ('${browser}') is installed as a Snap, which is not allowed to open the 'GP Connect' application. Because of that, the sign-in cannot be passed back to the VPN client, and the web browser will end up on a page saying \"Authentication Failed\". Use a web browser that is not installed as a Snap, e.g. --browser=chrome"
+        fi
     elif [[ "${XDG_SESSION_TYPE}" != "x11" ]]; then
         mdebug "Not an X11 session (XDG_SESSION_TYPE='${XDG_SESSION_TYPE}'), i.e. cannot automate the login pop-up window"
         use_xdotool=false

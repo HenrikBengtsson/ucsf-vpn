@@ -23,8 +23,10 @@ ucsf-vpn
    browser asks to open the 'GP Connect' application, which has to be
    confirmed, because that is how the sign-in is passed back to the VPN
    client. Note, a web browser installed as a Snap, e.g. Ubuntu's
-   `/usr/bin/firefox`, cannot open that application, and will therefore
-   never complete the sign-in.
+   `/usr/bin/firefox`, is not allowed to open that application, and the
+   sign-in can therefore never complete. The symptom of that is a web
+   page saying "Authentication Failed". `ucsf-vpn start` warns when the
+   web browser is installed as a Snap.
 
 ### Bug Fixes
 
