@@ -22,22 +22,13 @@
 ###  --server=<host>  VPN server (gateway) to connect to, specified as a
 ###                   hostname (default: gp-ucsf.ucsf.edu)
 ###
-###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit',
-###                   e.g. 'pid,iproute,ucsfit' (default)
+###  --validate=<how> One or more of 'ipinfo', 'iproute', 'pid', 'ucsfit', e.g.
+###                   'pid,iproute,ucsfit' (default)
 ###  --theme=<theme>  Either 'cli' (default) or 'none'
 ###  --browser[=<browser>]
 ###                   Sign in to the VPN in an external web browser, instead of
 ###                   in the built-in pop-up window, e.g. 'firefox', 'chrome',
-###                   'default', or the path to a web browser. Without a value,
-###                   the default web browser of your desktop environment is
-###                   used. Use this to have the web browser, and not
-###                   'ucsf-vpn', fill in the single sign-on form. At the end of
-###                   the sign-in, the web browser asks to open the 'GP Connect'
-###                   application, which has to be confirmed, because that is
-###                   how the sign-in reaches the VPN client. Note, a web
-###                   browser installed as a Snap, e.g. Ubuntu's
-###                   /usr/bin/firefox, cannot open that application, and will
-###                   therefore never complete the sign-in
+###                   'default', or the path to a web browser.
 ###
 ### Flags:
 ###  --verbose        More verbose output
@@ -45,9 +36,9 @@
 ###  --version        Display version
 ###  --full           Display more information
 ###  --force          Force command
-###  --args           Pass any remaining options to 'gpclient', or to
-###                   'gpclient connect', depending on which of the two
-###                   accepts the option
+###  --args           Pass remaining options to 'gpclient connect' or 
+###                   to 'gpclient', depending on which of the two accepts
+###                   the option
 ###
 ### Examples:
 ###  ucsf-vpn --version --full
@@ -109,14 +100,10 @@
 ### 
 ### * With `--browser`, the web browser asks for permission to open the
 ###   'globalprotectcallback' link with the 'GP Connect' application, e.g.
-###   "Open GP Connect?" in Chrome. That permission has to be granted,
-###   because it is how the sign-in reaches the VPN client. If the prompt is
-###   dismissed, the web page says "Authentication Complete", but
-###   `ucsf-vpn start` waits until it times out. The permission is remembered
-###   per website, if you accept it permanently. Note, a web browser installed
-###   as a Snap, e.g. Ubuntu's /usr/bin/firefox, is never allowed to open that
-###   application. The symptom of that is a web page saying "Authentication
-###   Failed"
+###   "Open GP Connect?". That permission has to be granted, because it is
+###   how the sign-in reaches the VPN client. Accept permanently. If the
+###   prompt is dismissed, the web page says "Authentication Complete",
+###   resulting `ucsf-vpn start` waiting until it times out.
 ###
 ### * Verify your UCSF credentials at https://remote.ucsf.edu/.
 ###   Use your UCSF email address for 'Username'.
@@ -131,7 +118,7 @@
 ### * UCSF Managing Your Passwords:
 ###   - https://it.ucsf.edu/services/managing-your-passwords
 ###
-### Version: 7.1.0-9000
+### Version: 7.2.0
 ### Copyright: Henrik Bengtsson (2016-2026)
 ### License: GPL (>= 2.1) [https://www.gnu.org/licenses/gpl.html]
 ### Source: https://github.com/HenrikBengtsson/ucsf-vpn

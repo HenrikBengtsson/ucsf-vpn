@@ -1,7 +1,7 @@
 ucsf-vpn
 ========
 
-## Version 7.1.0-9000 (2026-08-14)
+## Version 7.2.0 (2026-09-15)
 
 ### New Features
 
@@ -10,10 +10,8 @@ ucsf-vpn
    built-in pop-up window. Its default can be set by environment
    variable `UCSF_VPN_BROWSER`. The web browser can then fill in the
    single sign-on form, and remember the two-factor authentication,
-   the same way it does for any other web page. Note that sandboxed
-   Snap-installed web browsers, e.g. Ubuntu's `/usr/bin/firefox`, do
-   not work work.
-
+   the same way it does for any other web page.
+   
  * Add `--server=<host>` for connecting to another UCSF VPN server
    (gateway) than `gp-ucsf.ucsf.edu`, e.g.
    `--server=gp-ucsf-mb.ucsf.edu`. Its default can be set by
