@@ -5,67 +5,40 @@ ucsf-vpn
 
 ### New Features
 
- * Add `--server=<host>`, with default given by environment variable
-   `UCSF_VPN_SERVER`, for connecting to another UCSF VPN server
-   (gateway) than `gp-ucsf.ucsf.edu`, e.g.
-   `--server=gp-ucsf-mb.ucsf.edu`. If the NETRC file has no entry for
-   that server, the entry for `gp-ucsf.ucsf.edu` is used.
-
- * Add `--browser[=<browser>]`, with default given by environment
-   variable `UCSF_VPN_BROWSER`, for signing in to the VPN in an
+ * Add `--browser[=<browser>]` for signing in to the VPN in an
    external web browser, e.g. `--browser=firefox`, instead of in the
-   built-in pop-up window. The web browser can then fill in the single
-   sign-on form, and remember the two-factor authentication, the same
-   way it does for any other web page. Without a value, `--browser`
-   uses the default web browser of your desktop environment. The value
-   may also be the path to a web browser, e.g.
-   `--browser=/path/to/firefox`. At the end of the sign-in, the web
-   browser asks to open the 'GP Connect' application, which has to be
-   confirmed, because that is how the sign-in is passed back to the VPN
-   client. Note, a web browser installed as a Snap, e.g. Ubuntu's
-   `/usr/bin/firefox`, is not allowed to open that application, and the
-   sign-in can therefore never complete. The symptom of that is a web
-   page saying "Authentication Failed". `ucsf-vpn start` warns when the
-   web browser is installed as a Snap.
+   built-in pop-up window. Its default can be set by environment
+   variable `UCSF_VPN_BROWSER`. The web browser can then fill in the
+   single sign-on form, and remember the two-factor authentication,
+   the same way it does for any other web page. Note that sandboxed
+   Snap-installed web browsers, e.g. Ubuntu's `/usr/bin/firefox`, do
+   not work work.
+
+ * Add `--server=<host>` for connecting to another UCSF VPN server
+   (gateway) than `gp-ucsf.ucsf.edu`, e.g.
+   `--server=gp-ucsf-mb.ucsf.edu`. Its default can be set by
+   environment variable `UCSF_VPN_SERVER`,
 
 ### Bug Fixes
 
  * `ucsf-vpn start` could end with "ERROR: Conflicting results whether
-   connected to the VPN", despite the VPN connection working. The reason
-   was that it may take a few seconds from that the VPN tunnel appears
-   until the traffic goes through it, and the query of the UCSF IT
-   network service, which `--validate=ucsfit` uses, was done too early.
-   Now that query is attempted several times, controlled by environment
-   variables `UCSF_VPN_UCSFIT_ATTEMPTS` (default: 5) and
-   `UCSF_VPN_UCSFIT_DELAY` (default: 3 seconds), before giving up. Also,
-   a failed query no longer counts as being disconnected from the VPN,
-   because a service that cannot be reached says nothing about which
-   network we are on. It is now reported as unknown, and ignored when
-   validation methods are compared.
+   connected to the VPN", despite the VPN connection working. This was
+   due to validation being done too soon. Now that query is attempted
+   fives times every three seconds before giving up.
 
- * The query of the UCSF IT network service, which `--validate=ucsfit`
-   uses, had no timeout, and a failed query was indistinguishable from
-   a query reporting that we are not on the UCSF network. Now it times
-   out, and a failed query is reported as such. Also, `ucsf-vpn status`
-   now mentions that conflicting validation results can be caused by
-   another VPN or tunnel, e.g. WireGuard, taking precedence over the VPN
-   routes.
+ * The query of the UCSF IT network service (`--validate=ucsfit`) had
+   no timeout. It was possible to distinguish a failed query from a
+   query reporting that we are not on the UCSF network.
 
- * `ucsf-vpn start` left the `gpclient` process running, when it gave up
-   waiting for the login to complete, e.g. after the
-   `UCSF_VPN_AUTH_TIMEOUT` seconds. Because of this, the next
-   `ucsf-vpn start` would report that a login never completed. Only an
-   interrupted `ucsf-vpn start`, e.g. by `Ctrl-C`, terminated that
-   process. Now it is terminated whenever `ucsf-vpn start` ends before
-   the VPN tunnel is up.
+ * `ucsf-vpn start` left the `gpclient` process running when the login
+   validation failed. This introduced problems for following `ucsf-vpn
+   start` attempts.
 
  * `ucsf-vpn start --force` failed with "Hmm, this might be a bug. Do
    you already have an active VPN connection?" when a VPN process was
    already running. Now it explains that such a process has to be
    terminated first, e.g. by calling `ucsf-vpn stop` or `ucsf-vpn
-   restart`. The check for a VPN process without a VPN tunnel, i.e. a
-   login that never completed, now applies also to `--force`, and
-   regardless of `--validate`.
+   restart`.
 
  * `ucsf-vpn start --args <options>`, and environment variable
    `UCSF_VPN_EXTRAS`, could only pass options that `gpclient` itself
